@@ -33,12 +33,12 @@ bridge 會從畫面角落讀取 addon 傳出的訊息，呼叫本機的 Claude C
    ```powershell
    node setup.js --wow "C:\Program Files (x86)\World of Warcraft\_retail_"
    ```
-   這會安裝 `WoWChatHelper` addon、200 個資料槽 addon（`WoWChatHelper_S001`..`S200`）
-   和訊號檔案。bridge 不需要 `npm install`（沒有執行期套件）。
+   這會安裝 `WoWChatHelper` addon、9 個語言的詞彙表 addon（`WoWChatHelper_Glossary_zhTW` 等）、
+   200 個資料槽 addon（`WoWChatHelper_S001`..`S200`）和訊號檔案。bridge 不需要 `npm install`（沒有執行期套件）。
 3. **完全關閉並重新啟動 WoW**。新增的資料槽、訊號檔案和字型只有在 client 啟動時才會被發現，
    `/reload` 不夠。
 4. 在角色選擇畫面按「AddOns」，勾選 `WoW Chat Helper`（`WoWChatHelper_S001`..`S200` 是按需載入的資料槽，
-   不需要手動勾選）。進入遊戲。
+   `WoWChatHelper_Glossary_*` 是按需載入的詞彙表，都不需要手動勾選，但不要停用它們）。進入遊戲。
 5. 在 repo 資料夾開一個 PowerShell 視窗執行：
    ```powershell
    npm start
@@ -61,6 +61,12 @@ bridge 會從畫面角落讀取 addon 傳出的訊息，呼叫本機的 Claude C
 5. 點 `[詳細]` 會請 Sonnet 分析語氣、情境與建議，結果印在聊天框。
 6. 交易、綜合等頻道不會自動翻譯；每行訊息後面有一個 `[?]`，點它就會翻譯那一行。
 7. 詞彙表：`/wch g` 開啟，在搜尋框輸入就會過濾；也可以 `/wch g tank` 直接搜尋。
+8. 語言：預設跟著遊戲 client 的語系（繁中 client 就是繁中）。要換成其他語言：
+   `/wch lang zhCN`（可選 zhTW、zhCN、koKR、deDE、frFR、esES、ptBR、ruRU、itIT），
+   `/wch lang auto` 恢復跟著 client，`/wch lang` 列出目前語言和清單。
+   解釋、詞彙說明和介面會改用該語言；英文回覆一律是美服玩家的寫法。
+   繁中以外的翻譯是 AI 產生的，沒有母語者審過。
+9. 聊天框字型：`/wch font auto`（預設，依語言和 client 自動決定）、`/wch font on`、`/wch font off`。
 
 ## 疑難排解
 
@@ -97,4 +103,7 @@ bridge 會從畫面角落讀取 addon 傳出的訊息，呼叫本機的 Claude C
 git pull
 node setup.js
 ```
-然後完全重啟 WoW。
+**每次更新後都要重跑 `node setup.js`**：這一版新增了詞彙表 addon 和字型，並刪除舊的
+`WoWChatHelper/Glossary.lua`，只靠 `git pull` 不會裝到遊戲裡。
+然後完全重啟 WoW（新的 addon 資料夾和字型只在 client 啟動時被發現），
+bridge 也要重開（`npm start` 視窗關掉再開），才會載入新的詞彙表。

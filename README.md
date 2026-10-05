@@ -1,10 +1,26 @@
 # wow-ai-chat-helper
 
-An in-game AI chat helper for **World of Warcraft: Forever**, built for Chinese-speaking
-players on US realms. It explains incoming chat in Traditional Chinese (with slang and
-jargon broken down), suggests natural English replies you can drop into the chat box with
-one click, translates your Chinese into English, and keeps a searchable glossary of WoW
-terms, all inside the game window.
+An in-game AI chat helper for **World of Warcraft: Forever**, built for non-native
+players on US realms. It explains incoming chat in your language (with slang and jargon
+broken down), suggests English replies in US-realm chat style that you can drop into the
+chat box with one click, translates your language into English, and keeps a searchable
+glossary of WoW terms, all inside the game window.
+
+## Languages
+
+Traditional Chinese (zhTW, the default for this project), Simplified Chinese (zhCN),
+Korean (koKR), German (deDE), French (frFR), Spanish (esES, also used for esMX),
+Brazilian Portuguese (ptBR), Russian (ruRU) and Italian (itIT). The addon follows your
+client's language when it is one of these; pick another in game with `/wch lang <code>`
+(e.g. `/wch lang koKR`, `/wch lang auto` to follow the client again, `/wch lang` for the
+list). Explanations, term glosses and the UI use that language; the English reply
+candidates are always written like US-realm players write.
+
+> **Note:** only the zhTW texts were written for a known reader. The glossary
+> translations, UI strings and prompt wording for the other eight languages are
+> AI-generated and have **not** been reviewed by native speakers. Corrections welcome
+> (edit `data/glossary/terms.json` / `phrases.json`, then `node tools/build-glossary.js`;
+> UI strings are in `addon/WoWChatHelper/Locales.lua`).
 
 ## Status
 
@@ -16,8 +32,13 @@ parts (`bridge/capture.ps1` screen capture, CJK font rendering, IME, hyperlink c
 still need the phase-0 spike on the real client.
 
 - Addon `WoWChatHelper`: auto-explains whisper/party/raid/guild, `[?]` for other
-  channels, reply picker, `/wtr` translate, glossary panel (756 terms, 216 offline
-  phrases), status frame, bundled Noto Sans TC subset font.
+  channels, reply picker, `/wtr` translate, glossary panel, status frame, `/wch lang`,
+  bundled Noto Sans TC / SC / KR subset fonts.
+- Glossary: about 1,800 WoW terms (US realms, Classic-era / Forever level-60 world,
+  general MMO slang) and 274 offline phrases in `data/glossary/`, with ambiguity notes
+  (e.g. `ah` the interjection vs `AH` the Auction House). The bridge gives the matching
+  terms to the AI with every request; the addon gets one generated load-on-demand
+  `WoWChatHelper_Glossary_<locale>` addon per language.
 - Bridge (Node.js ≥ 22.2, no runtime dependencies): Claude Code CLI with Haiku
   (persistent, batched) and Sonnet for "detail"; 200 load-on-demand slots and wav
   signals, as in wow-ai.

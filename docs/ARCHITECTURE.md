@@ -33,6 +33,8 @@ What it can do that reaches the outside world:
                                       ▼
                  bridge.js: dedup (session,id) ─▶ ack signal ─▶ queue + batch (400 ms)
                                       ▼
+                 glossary.js: terms in text+ctx ─▶ "Known WoW terms" block
+                                      ▼
                  ai.js: claude -p (haiku persistent; sonnet one-shot for detail)
                                       ▼ JSON array (spec 3.2), validated, retried once
                  bridge.js: store state.json ─▶ publish: same Inbox.lua to 200 slots
@@ -86,8 +88,11 @@ The magic bytes differ from wow-ai's (`C7 1A`), so the two never decode each oth
 
 | Path | Role |
 |---|---|
-| `addon/WoWChatHelper/` | in-game addon (Codec, Transport, Chat, UI, Glossary, Core, Fonts) |
-| `bridge/` | Node.js bridge: `protocol.js`, `bridge.js`, `ai.js`, capture, slot installer, supervisor |
+| `addon/WoWChatHelper/` | in-game addon (Codec, Locales, Transport, Chat, UI, Core, Fonts) |
+| `addon/WoWChatHelper_Glossary_<loc>/` | generated load-on-demand glossary per locale (do not edit) |
+| `data/glossary/` | glossary master data: `terms.json`, `phrases.json` (`raw-terms.json` = unaudited source) |
+| `tools/` | `build-glossary.js` (JSON → glossary addons, `--check`), `build-font.py` (TC/SC/KR subsets) |
+| `bridge/` | Node.js bridge: `protocol.js`, `bridge.js`, `ai.js`, `glossary.js`, capture, slot installer, supervisor |
 | `spike/WCHSpike/` | throwaway diagnostics addon for the Windows spike (spec section 7) |
 | `setup.js` | installs addon, slot pool and signal files into the client |
 | `tests/` | `node:test` suites; fengari Lua VM with a WoW stub (`tests/helpers/lua.js`) |
@@ -104,3 +109,25 @@ presence) are covered by the spike and manual checklist, see
 ## Unsupported
 
 Running this bridge and wow-ai's bridge simultaneously: both capture the same screen corner.
+
+## Glossary and locales (spec section 10)
+
+- **One source, two consumers.** `data/glossary/terms.json` / `phrases.json` feed both the
+  bridge (loaded at start; `glossary.js` finds the terms in each message and `ctx` and puts
+  them, with expansion, ambiguity note and the active locale's translation, in the request)
+  and the addon (via `tools/build-glossary.js`, which writes one load-on-demand
+  `WoWChatHelper_Glossary_<loc>` addon per locale). Edit the JSON, run
+  `node tools/build-glossary.js`, commit the generated addons; `tests/glossary_test.js`
+  fails if they are stale. The bug that motivated this: the AI never saw the glossary and
+  read `ah isn't down for everyone` as an interjection.
+- **Language selection.** The addon picks `WCH_DB.lang` (`/wch lang`), else the client's
+  `GetLocale()` if supported, else zhTW with a one-time prompt. It sends `lang=<code>` in
+  the hello settings; the bridge keeps one system prompt and one persistent Claude process
+  per `model|locale`, and stamps each queued request with the language in force.
+- **Wire fields.** Explanations and glosses are `tr` (was `zh`) in the AI JSON and the
+  slot data; English replies stay in `en`.
+- **Fonts.** TC/SC/KR subsets ship in `Fonts/`; the chat-frame font is switched only when
+  the chosen CJK/Hangul language differs from the client locale.
+- **Quality.** Non-zhTW texts are AI-generated, not native-reviewed. A live eval
+  (`tests/live/eval_glossary_style.js`, results in `docs/research/eval-results.md`) is the
+  regression check for prompt or glossary changes.
