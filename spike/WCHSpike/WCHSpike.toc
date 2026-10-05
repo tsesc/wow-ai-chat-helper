@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: WCH Spike
+## Notes: Throwaway diagnostics for wow-ai-chat-helper (CJK fonts, IME, API presence, hyperlinks). Type /wchspike.
+## Author: tsesc
+## Version: 0.1.0
+
+WCHSpike.lua
