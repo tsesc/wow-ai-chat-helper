@@ -1,0 +1,28 @@
+{
+  "wowPath": "C:\\Program Files (x86)\\World of Warcraft\\_forever_",
+  "claudePath": "",
+  "models": {
+    "explain": "haiku",
+    "translate": "haiku",
+    "detail": "sonnet"
+  },
+  "capture": {
+    "enabled": true,
+    "corner": "TOPLEFT",
+    "intervalMs": 250,
+    "processName": "WowB",
+    "cellPx": 4,
+    "cellsPerRow": 200,
+    "maxRows": 48
+  },
+  "timeoutMs": 60000,
+  "batchWindowMs": 400,
+  "persistent": true,
+  "persistentMaxTurns": 40,
+  "maxThinkingTokens": 0,
+  "slots": 200,
+  "presenceMax": 2000,
+  "presenceIntervalMs": 30000,
+  "progressWriteMs": 2000,
+  "tocInterface": "16001"
+}
