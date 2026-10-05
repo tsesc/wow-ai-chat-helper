@@ -119,7 +119,8 @@ function stale(root = ROOT) {
   const bad = [];
   for (const [rel, content] of Object.entries(outputs(loadData(root)))) {
     let cur = null;
-    try { cur = fs.readFileSync(path.join(root, rel), 'utf8'); } catch {}
+    // Windows checkouts may convert to CRLF; compare content, not line endings.
+    try { cur = fs.readFileSync(path.join(root, rel), 'utf8').replace(/\r\n/g, '\n'); } catch {}
     if (cur !== content) bad.push(rel);
   }
   return bad;
