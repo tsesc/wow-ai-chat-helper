@@ -6,4 +6,9 @@
 ## SavedVariables: WCH_DB
 
 Codec.lua
+Glossary.lua
+Core.lua
+Transport.lua
+Chat.lua
+UI.lua
 Inbox.lua
