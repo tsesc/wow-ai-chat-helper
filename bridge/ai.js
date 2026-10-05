@@ -15,6 +15,12 @@
 //
 // A request missing from the reply or invalid is retried once alone (one-shot), then
 // resolved as { status: "error", err }. Timeouts kill the whole process tree.
+// Game link names ([Name] in text/ctx) go out as tokens [I1], [I2]... with a "Linked game
+// names" block saying what each is, and come back restored in tr, terms, replies and detail
+// (linkTokens / restoreLinks): the model never sees a name it could translate.
+// Safety net: an explain result whose "tr" still lacks a [Name] of the text is retried once
+// alone with a stricter note; if the names are still missing the answer is accepted with
+// the names appended to "tr".
 'use strict';
 
 const fs = require('fs');
@@ -111,7 +117,7 @@ const LOCALE_INFO = {
 // Incoming line -> natural replies, from docs/research/us-chat-style.md section 4.
 const STYLE_EXAMPLES = [
   ['inv pls', [['sure sec', 'casual'], ['inv sent', 'short'], ["sry group's full", 'polite']]],
-  ['LF2M BRD need tank and heals', [['warrior tank here, inv?', 'casual'], ['can heal, inv pls', 'polite'], ['heals lf inv', 'short']]],
+  ['LF2M BRD need tank and heals', [['warrior tank here, inv?', 'casual'], ['can heal, inv pls', 'polite'], ['heals, inv?', 'short']]],
   ['WTS [Arcanite Bar] 25g', [['how much for 5?', 'casual'], ['would u do 22?', 'polite'], ['ill take one', 'short']]],
   ['would u take 15g', [['meet at 17?', 'casual'], ['sure', 'short'], ['nah sry, 20 firm', 'polite']]],
   ['is the ah down?', [['ya mine too', 'casual'], ['works for me', 'short'], ['try relogging', 'polite']]],
@@ -124,7 +130,8 @@ const STYLE_EXAMPLES = [
   ['123', [['summoning u next', 'casual'], ['k', 'short']]],
   ['where is mankrik\'s wife', [['lol south of the crossroads', 'casual'], ['south of crossroads', 'short']]],
   ['ding!', [['gz', 'short'], ['grats!', 'casual']]],
-  ['ur dps is trash', [['ill work on it', 'polite'], ['ok', 'short']]],
+  ['ur dps is trash', [['k', 'short'], ['doing my best lol', 'casual'], ['tips welcome, otherwise chill', 'polite']]],
+  ['cheap gold 10k=5$ fast delivery www goldxx dot com', [['no ty', 'short'], ['not interested', 'polite']]],
 ];
 
 function exampleFor(info) {
@@ -153,7 +160,7 @@ function buildSystemPrompt(locale = DEFAULT_LOCALE) {
 
 LANGUAGES. Every explanation, gloss and term translation ("tr" fields, "detail") is in ${info.name}. Every reply "en" is English exactly as a US-realm WoW player types it. Never mix them up.
 
-INPUT. Each user turn has an optional "Known WoW terms in this message" block, then a JSON array of requests:
+INPUT. Each user turn has an optional "Known WoW terms in this message" block, an optional "Linked game names" block, then a JSON array of requests:
   {"id": <int>, "kind": "x" | "t" | "d", "channel": "WHISPER|PARTY|RAID|GUILD|OFFICER|INSTANCE|SAY|YELL|CHANNEL:<name>|BN", "sender": "<name>", "ctx": "<earlier lines>", "text": "<the message>"}
 - kind "x" (explain): "text" is an incoming English chat line that "sender" wrote in "channel".
 - kind "t" (translate): "text" is what the player wants to say, written in their own language, to be said in "channel" (to "sender" when it is a whisper). "ctx" shows what was said before.
@@ -172,7 +179,7 @@ READING CHAT. The literal words are often not the meaning. Get the speaker's int
 - "ss on <name>" = a Soulstone is on that player. "123" typed alone in raid/party = asking the warlock for a summon. "need N to click" = the summoning portal needs N more clickers.
 - "share tags" = group up so both get credit/loot from the same mobs. "ninja" = took loot they had no right to (an accusation).
 - "wb" = welcome back (alone or with a name, e.g. after someone logs in); world buff only with buff context ("wb dropping", "need wbs", "ony wb in 5"); "hr" = hard reserve (nobody else may roll), "sr" = soft reserve.
-- Gold-seller ads and links are spam: say so; the replies are what a player would do (ignore/report) or say.
+- Gold sellers, power-leveling ads, "free mount"/giveaway whispers, fake GM or account-warning messages and any website in chat are spam or scams: "tr" says so and advises to ignore them, not visit the site and report the sender (right-click the name -> Report Spam). Replies stay neutral and short ("no ty", "not interested"): never ask about prices, the site or the offer.
 - Only state what the line says: do not invent who the speaker is (raid leader, enemy) or details that are not there.
 
 OUTPUT. Exactly one JSON array with one object per request, same ids, in the same order. Nothing before or after it: no prose, no markdown, no code fences.
@@ -183,7 +190,9 @@ OUTPUT. Exactly one JSON array with one object per request, same ids, in the sam
 
 EXPLANATIONS (${info.name}). ${info.rules}
 - "tr" (x): a natural, short explanation of what the line means and what is going on, not word by word. Spell out abbreviations and slang instead of leaving English slang in it.
-- Item, NPC, zone and place names (item links show as [Name]; "the Barrens", "Crossroads", "Orgrimmar") keep their English name unless the known-terms block gives a translation: never make up a translated name.
+- GAME NAMES. Text inside [square brackets] is a game link (item, spell, quest, recipe): copy it into "tr" exactly as written, brackets included ("wts [Elixir of the Mongoose] 5g ea" -> the explanation contains "[Elixir of the Mongoose]"). Never translate, shorten or guess it, and never say what kind of thing it is (weapon type, armor slot, stats, effect) unless the line itself says so ("2h" only means a two-handed weapon).
+- LINK TOKENS. Game links usually arrive as tokens [I1], [I2], ... and the "Linked game names" block says which name each stands for (read it to understand the line). Wherever you refer to that thing, in "tr", "terms", "detail" and reply "en"/"tr", write the token itself, brackets included ("WTS [I1] 25g" -> the explanation contains "[I1]"; reply "how much for [I1]?"). Never write the name, a translation or a description in its place: the addon puts the real name back.
+- Other proper nouns stay in English in "tr" too: items, spells, quests, NPCs, bosses, zones, dungeons, cities ("Stratholme", "Baron Rivendare", "the Barrens", "Crossroads", "Orgrimmar"). Never make up a translated name. Exception: a name in the known-terms block uses its listed translation (you may add the English after it).
 - Keep "tr" short: one or two sentences, at most about 60 CJK characters or 30 words. Mention a rude or angry tone when there is one.
 - "terms": only jargon, abbreviations, slang or WoW-specific names that actually appear in "text" (the known-terms block plus any other real WoW or MMO jargon you are sure of). Ordinary English words get no entry. "expansion" is the full English form (or ""), "tr" at most 12 characters (CJK) or 3 words. Use [] when there is nothing to explain.
 - "detail" (d): three lines, each at most 60 characters, labelled ${l1} (tone and attitude), ${l2} (what is going on), ${l3} (what the player could do or say).
@@ -195,7 +204,14 @@ REPLIES. Natural US-realm WoW chat English, never textbook English:
 - no greeting ritual: the first line is the actual request. One thanks or one apology, never stacked. Declining needs no reason ("no ty", "nah im good").
 - "group"/"party" not "team"; prices like "25g", "5g ea", "obo", "cod"; Classic-era words only (brd, strat, ubrs, mc, ony, wb), no retail-only slang (m+, keys, io, lust).
 - tones: casual = relaxed, may use lol or :) ; polite = still short and lowercase, adds pls/ty/np/sry, for strangers and trade; short = 1-3 words for combat, ready checks, summons.
-- 2 or 3 replies with different tones, each something the player would really say to THIS line right now: answer what was asked (they need heals + dps -> offer heals or dps, not tank; a price -> haggle or accept; a ready check -> "r"), never generic filler like "noted", "understood", "appreciated", "ty for the feedback". With a rude line, at least one reply is calm and neutral without grovelling ("k", "chill", "my bad" only if the player was at fault); never offer an insult. If the meaning is unclear, one reply can ask ("wdym?", "which one?"). "gg" after a wipe is sarcastic or means "we're done": don't suggest "gg" back unless the run really ended.
+- 2 or 3 replies with different tones, each something the player would really say to THIS line right now. Every reply responds to the specifics of the message: the role asked for, the item, the price, the dungeon, the question. Test each reply: if it would fit under a different message just as well, it is filler; rewrite it.
+  - LFG/LFM: offer exactly one of the roles they ask for (they need heals + dps -> "heals here, inv?" or "dps lf inv", never tank); "pst" means whisper them, so the replies are that whisper.
+  - Trade (WTS/WTB): the replies are what the player whispers to the seller/buyer ("how much for 5?", "ill take 2, cod ok?"); never tell the seller to "pst" you back.
+  - Trade (wts/wtb/selling/cod): about that item or price: ask the price, haggle with a number, take it, or ask for mats/cod ("how much for [Name]?", "would u do 4g ea?", "ill take 5"). Item links may be repeated in "en" exactly as written.
+  - A question: answer it or say you don't know ("idk", "no sry"); a ready check -> "r".
+  - Never generic filler like "noted", "understood", "appreciated", "sounds good", "ty for the feedback", "cool".
+- Insults and taunts: offer a calm short reply ("k", "ok") and/or a light, non-mocking one ("doing my best lol", "carry me then"; avoid sarcasm like "cool story bro", it reads as escalating); never apologize, promise to improve or explain yourself (no "sry ill do better", "ill work on it"), unless the line names a concrete mistake the player made ("my bad" then); this holds for the polite tone too (polite = "tips welcome, otherwise chill", not "sry if i messed up"); never insult back or escalate.
+- If the meaning is unclear, one reply can ask ("wdym?", "which one?"). "gg" after a wipe is sarcastic or means "we're done": don't suggest "gg" back unless the run really ended.
 - "t": the replies ARE the player's own message, said in English by the player (first person), in this chat style: never an answer to it. Keep the player's meaning, add no claims they did not make.
 Style examples (incoming -> replies):
 ${style}
@@ -246,8 +262,30 @@ function termsBlock(requests, glossary, locale) {
   return lines.length ? 'Known WoW terms in this message:\n' + lines.join('\n') + '\n' : '';
 }
 
-// The text of one user turn for a list of requests. opts: { locale, glossary }; the
-// locale defaults to the first request's `lang`, then zhTW.
+// The note added to a retry whose first answer translated or dropped game link names.
+// links (optional, from linkTokens): names sent as tokens are asked for as their token.
+function namesNote(names, links = []) {
+  const toks = [], plain = [];
+  for (const n of names) { const l = links.find(x => x.name === n); if (l) toks.push('[' + l.token + ']'); else plain.push(n); }
+  let s = '';
+  if (toks.length) s += 'IMPORTANT: your previous answer translated, changed or dropped game links. In "tr", write each of these tokens exactly as below, ' +
+    'brackets included, where you mean that thing, and do not describe what the item is: ' + toks.join(' ') + '\n';
+  if (plain.length) s += 'IMPORTANT: your previous answer translated, changed or dropped these game link names. In "tr", write each one exactly as below, ' +
+    'brackets included, in English, character for character, and do not describe what the item is: ' + plain.join(' ') + '\n';
+  return s;
+}
+
+// The "Linked game names" block for requests that carry `links` (see linkTokens). '' if none.
+function linksBlock(requests) {
+  const lines = [];
+  for (const r of requests) for (const l of r.links || []) lines.push(`#${r.id} ${l.token} = ${l.name.slice(1, -1)}`);
+  return lines.length ? 'Linked game names (write the token, e.g. [I1], wherever you mean that thing; never the name or a translation):\n' + lines.join('\n') + '\n' : '';
+}
+
+// The text of one user turn for a list of requests. opts: { locale, glossary, note }; the
+// locale defaults to the first request's `lang`, then zhTW; `note` (optional) goes right
+// before the requests. Requests with `links` (linkTokens) are sent with their tokens and
+// a "Linked game names" block.
 function buildPrompt(requests, opts = {}) {
   const locale = normalizeLocale(opts.locale || (requests[0] && requests[0].lang)) || DEFAULT_LOCALE;
   const list = requests.map(r => ({
@@ -255,6 +293,8 @@ function buildPrompt(requests, opts = {}) {
   }));
   return `Player language: ${locale}, ${LOCALE_INFO[locale].name} (explanations, glosses and term translations in it; replies in US-realm English).\n` +
     termsBlock(requests, opts.glossary, locale) +
+    linksBlock(requests) +
+    (opts.note || '') +
     'Requests (answer with the JSON array only):\n' + JSON.stringify(list);
 }
 
@@ -464,7 +504,9 @@ function matchResults(text, requests) {
   for (const item of arr) if (item && typeof item === 'object' && !byId.has(Number(item.id))) byId.set(Number(item.id), item);
   const done = new Map(), failed = [];
   for (const req of requests) {
-    const r = validateItem(byId.get(req.id), req);
+    // Tokens go back to the real names before validation (a restored reply is checked
+    // for length like any other).
+    const r = validateItem(restoreLinks(byId.get(req.id), req.links), req);
     if (r) done.set(req.id, r); else failed.push(req);
   }
   return { done, failed, parsed: arr.length > 0 };
@@ -472,6 +514,66 @@ function matchResults(text, requests) {
 
 function errorResult(req, err) {
   return { id: req.id, kind: req.kind, status: 'error', err: String(err || 'error').slice(0, 160) };
+}
+
+// Game links arrive expanded as [Name] (addon Chat.lua). -> the distinct "[Name]" strings
+// in a text, in order.
+function bracketNames(text) {
+  const out = [];
+  for (const m of String(text || '').matchAll(/\[([^\[\]\n]{1,100})\]/g)) {
+    const n = '[' + m[1].trim() + ']';
+    if (m[1].trim() && !out.includes(n)) out.push(n);
+  }
+  return out;
+}
+
+// The [Name]s of an explain request that its result's "tr" lacks. A name counts as
+// present when its text appears verbatim (case-sensitive), with or without the brackets:
+// a translated or guessed name ("貓鼬藥劑") does not.
+function missingNames(result, req) {
+  if (!result || result.kind !== 'x' || req.kind !== 'x') return [];
+  const tr = String(result.tr || '');
+  return bracketNames(req.text).filter(n => !tr.includes(n.slice(1, -1)));
+}
+
+// Game link names -> tokens, before a request goes to the model. -> a copy of `req` whose
+// text and ctx have each distinct [Name] replaced by [I1], [I2]... (the same name twice ->
+// the same token), plus links: [{ token: 'I1', name: '[Name]' }]. Names containing '|'
+// (a raw WoW escape, not a clean link) stay as they are; so does an item written without
+// brackets. No names -> links: [].
+const LINK_RE = /\[([^\[\]\n]{1,100})\]/g;
+const MAX_LINKS = 20;
+function linkTokens(req) {
+  const links = [];
+  const sub = (s) => String(s || '').replace(LINK_RE, (m, inner) => {
+    const name = '[' + inner.trim() + ']';
+    if (!inner.trim() || inner.includes('|')) return m;
+    let l = links.find(x => x.name === name);
+    if (!l) {
+      if (links.length >= MAX_LINKS) return m;
+      l = { token: 'I' + (links.length + 1), name };
+      links.push(l);
+    }
+    return '[' + l.token + ']';
+  });
+  const text = sub(req.text), ctx = sub(req.ctx);
+  return { ...req, text, ctx, links };
+}
+
+// Tokens -> real names in every string of a reply object (tr, detail, terms, replies),
+// in one pass ([I1] or a bare I1 -> "[Name]"). Unknown tokens are left alone.
+function restoreLinks(item, links) {
+  if (!item || typeof item !== 'object' || !links || !links.length) return item;
+  const byTok = new Map(links.map(l => [l.token, l.name]));
+  const fix = (s) => s.replace(/\[\s*(I\d{1,2})\s*\]|\b(I\d{1,2})\b/g, (m, a, b) => byTok.get(a || b) || m);
+  const walk = (v) => typeof v === 'string' ? fix(v) : Array.isArray(v) ? v.map(walk)
+    : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)])) : v;
+  return walk(item);
+}
+
+// Last resort: keep the answer usable by appending the missing names to "tr".
+function withNames(result, names) {
+  return names.length ? { ...result, tr: result.tr + ' ' + names.join(' ') } : result;
 }
 
 // A Claude result event that reports failure -> short error text.
@@ -621,7 +723,7 @@ class AiRunner {
     this.queues = new Map();   // "model|locale" -> { items: [{req, resolve}], timer, busy }
     this.procs = new Map();    // "model|locale" -> PersistentClaude
     this.children = new Set(); // one-shot processes running
-    this.stats = { turns: 0, oneShots: 0, retries: 0 };
+    this.stats = { turns: 0, oneShots: 0, retries: 0, nameRetries: 0, namesAppended: 0 };
     this.stopped = false;
   }
 
@@ -678,9 +780,10 @@ class AiRunner {
     }
     // Retries are one-shot processes of their own: run them off the queue so one bad or
     // hanging item doesn't hold up the requests behind it (no head-of-line blocking).
-    for (const { req, resolve, err } of retry) {
+    for (const { req, resolve, err, names, fallback } of retry) {
       this.stats.retries++;
-      this.runAlone(req, model, false, err).then(resolve, (e) => resolve(errorResult(req, String(e && e.message || e))));
+      if (names) this.stats.nameRetries++;
+      this.runAlone(req, model, false, err, { names, fallback }).then(resolve, (e) => resolve(fallback ? withNames(fallback, names) : errorResult(req, String(e && e.message || e))));
     }
   }
 
@@ -700,7 +803,7 @@ class AiRunner {
   }
 
   async runBatch(batch, model, locale = DEFAULT_LOCALE) {
-    const reqs = batch.map(b => b.req);
+    const reqs = batch.map(b => linkTokens(b.req));
     const prompt = this.promptFor(reqs, locale);
     let r;
     const persistent = this.usesPersistent(model);
@@ -722,27 +825,46 @@ class AiRunner {
     // Valid items resolve now; the rest are returned for flush() to retry once alone.
     const retry = [];
     for (const { req, resolve } of batch) {
-      if (done.has(req.id)) resolve(done.get(req.id));
+      const res = done.get(req.id);
+      const missing = missingNames(res, req);
+      // A result that translated a [Name] is retried alone with a stricter note; it is
+      // kept as the fallback (with the names appended) if the retry fails.
+      if (res && missing.length) retry.push({ req, resolve, err: 'translated names: ' + missing.join(' '), names: missing, fallback: res });
+      else if (res) resolve(res);
       else retry.push({ req, resolve, err: firstErr });
     }
     return retry;
   }
 
   // One request alone, one-shot. `first` = this is its first attempt (detail), so one more
-  // try is allowed after it; otherwise this is the retry.
-  async runAlone(req, model, first, prevErr) {
+  // try is allowed after it; otherwise this is the retry. retry: { names, fallback } when
+  // the first answer was valid but translated game link names: the prompt then carries
+  // a stricter note, and `fallback` (names appended) is used if the retry fails.
+  async runAlone(req, model, first, prevErr, retry = {}) {
     if (this.stopped) return errorResult(req, 'bridge stopping');
     this.stats.oneShots++;
     const locale = this.localeFor(req);
-    const r = await runOnce(this.cmd, model, this.promptFor([req], locale), this.optsFor(locale), this.children);
+    const sent = linkTokens(req);
+    const note = retry.names && retry.names.length ? namesNote(retry.names, sent.links) : '';
+    const prompt = buildPrompt([sent], { locale, glossary: this.glossary, note });
+    const r = await runOnce(this.cmd, model, prompt, this.optsFor(locale), this.children);
     if (this.stopped) return errorResult(req, 'bridge stopping');
     if (r.ok) {
-      const { done } = matchResults(r.text, [req]);
-      if (done.has(req.id)) return done.get(req.id);
+      const { done } = matchResults(r.text, [sent]);
+      const res = done.get(req.id);
+      if (res) {
+        const missing = missingNames(res, req);
+        if (!missing.length) return res;
+        // Still translated: accept, but keep the real names visible.
+        this.log(`ai: request ${req.id} still lacks ${missing.join(' ')} after the retry; appended`);
+        this.stats.namesAppended++;
+        return withNames(res, missing);
+      }
     }
     const err = r.ok ? 'invalid reply' : r.err;
     this.log(`ai: request ${req.id} ${first ? 'attempt' : 'retry'} failed: ${err}${prevErr ? ' (first: ' + prevErr + ')' : ''}`);
     if (first) { this.stats.retries++; return this.runAlone(req, model, false, err); }
+    if (retry.fallback) { this.stats.namesAppended++; return withNames(retry.fallback, retry.names || []); }
     return errorResult(req, err);
   }
 
@@ -774,5 +896,6 @@ module.exports = {
   buildSystemPrompt, claudeArgs, buildPrompt, termsBlock, userTurnLine,
   resolveCommand, unwrapShim, pathDirs, killTree, claudeEnv,
   extractJson, validateItem, matchResults, errorResult, claudeError,
+  bracketNames, missingNames, withNames, namesNote, linkTokens, restoreLinks, linksBlock,
   runOnce, PersistentClaude, AiRunner,
 };

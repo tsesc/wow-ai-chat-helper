@@ -85,6 +85,26 @@ function termPattern(t) {
   return pre + body + post;
 }
 
+// Web addresses, including gold-seller spellings ("wowgold.com", "www.x.net",
+// "wowgold dot com", "wowgold(dot)com", "w0wgold . c0m") and a bare "dot com": nothing
+// inside one is jargon ("dot" is not DoT, "com" not commission). A spaced " . " only
+// counts before com/net (". org" could be Orgrimmar after a sentence end).
+const DOT_WORD = String.raw`(?:\s*[(\[{<]\s*dot\s*[)\]}>]\s*|\s+dot\s+)`;
+const TLD = String.raw`(?:c\s?[o0]\s?m|net|org|info|biz|ru|cn|xyz|top)`;
+const URL_RE = new RegExp([
+  String.raw`(?:https?:\/\/|www\.)\S+`,
+  String.raw`[\p{L}\p{N}][\p{L}\p{N}-]*(?:(?:\.|${DOT_WORD})[\p{L}\p{N}-]+)*?(?:\.|${DOT_WORD})${TLD}(?![\p{L}\p{N}])`,
+  String.raw`[\p{L}\p{N}][\p{L}\p{N}-]*\s+\.\s+(?:c\s?[o0]\s?m|net)(?![\p{L}\p{N}])`,
+  String.raw`(?<![\p{L}\p{N}])dot\s+(?:com|net|org)(?![\p{L}\p{N}])`,
+].join('|'), 'giu');
+
+// [[start, end)] of every web address in `s`.
+function urlSpans(s) {
+  const out = [];
+  for (const m of s.matchAll(URL_RE)) out.push([m.index, m.index + m[0].length]);
+  return out;
+}
+
 // Whether the chat spelling `found` of glossary form `surface` counts (see ENGLISH_WORDS).
 function formMatches(surface, found, viaAlias) {
   const low = found.toLowerCase();
@@ -162,7 +182,9 @@ class Glossary {
     if (!text) return out;
     const seen = new Set();
     const loc = normalizeLocale(locale) || DEFAULT_LOCALE;
-    for (const { text: found } of this.scan(text)) {
+    const urls = urlSpans(String(text));
+    for (const { index, text: found } of this.scan(text)) {
+      if (urls.some(([a, b]) => index < b && index + found.length > a)) continue;
       const list = this.byKey.get(norm(found)) || [];
       for (const { entry, surface, viaAlias } of list) {
         if (seen.has(entry)) continue;
@@ -212,4 +234,4 @@ function loadGlossary(file, log = () => {}) {
   return g;
 }
 
-module.exports = { LOCALES, DEFAULT_LOCALE, normalizeLocale, Glossary, loadGlossary, termPattern, formMatches, ENGLISH_WORDS };
+module.exports = { LOCALES, DEFAULT_LOCALE, normalizeLocale, Glossary, loadGlossary, termPattern, formMatches, urlSpans, ENGLISH_WORDS };

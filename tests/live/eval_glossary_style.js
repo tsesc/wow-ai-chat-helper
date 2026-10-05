@@ -16,8 +16,9 @@
 //              tuned on the first run, to check the tuning did not just fit the eval set.
 //   --ai PATH  use another copy of bridge/ai.js (e.g. the pre-tuning prompt) for the run.
 //
-// Outputs (DIR defaults to $TMPDIR/wch-eval): <tag>-outputs.json, <tag>-grades.json and a
-// summary on stdout.
+// Outputs (DIR defaults to $TMPDIR/wch-eval): <tag>-outputs.json, <tag>-grades.json,
+// <tag>-meta.json (runner stats, ms per batch turn, [Name] verbatim count) and a summary
+// on stdout.
 'use strict';
 
 const os = require('os');
@@ -70,6 +71,13 @@ async function run() {
   const runner = new ai.AiRunner({ workDir, timeoutMs: 180000, persistent: true, maxThinkingTokens: 0, log });
   if (!runner.cmd.found) { console.error('claude not found:', runner.cmd.note); process.exit(1); }
   console.log(`glossary: ${runner.glossary.file} (${runner.glossary.terms ? runner.glossary.terms.length : '?'} terms)`);
+  // Time every persistent batch turn (latency per batch, retries excluded).
+  const batchMs = [];
+  const runBatch = runner.runBatch.bind(runner);
+  runner.runBatch = async (batch, ...rest) => {
+    const t = Date.now();
+    try { return await runBatch(batch, ...rest); } finally { batchMs.push({ n: batch.length, ms: Date.now() - t }); }
+  };
   const results = [];
   try {
     for (const locale of LOCS) {
@@ -86,6 +94,13 @@ async function run() {
     }
   } finally { runner.stop(); }
   console.log(`\nstats: ${JSON.stringify(runner.stats)}`);
+  const avg = batchMs.length ? Math.round(batchMs.reduce((s, b) => s + b.ms, 0) / batchMs.length) : 0;
+  console.log(`batches: ${batchMs.length}, avg ${avg} ms per batch (${batchMs.map(b => b.n + ':' + b.ms).join(' ')})`);
+  // Game link names: items with a [Name] whose final "tr" holds every name verbatim.
+  const linked = results.filter(r => ai.bracketNames(r.text).length);
+  const verbatim = linked.filter(r => r.out && r.out.status === 'done' && !ai.missingNames(r.out, { kind: 'x', text: r.text }).length);
+  console.log(`link names: ${verbatim.length}/${linked.length} items verbatim in the final tr; first-pass misses (nameRetries) ${runner.stats.nameRetries}, appended ${runner.stats.namesAppended}`);
+  fs.writeFileSync(path.join(OUT, `${TAG}-meta.json`), JSON.stringify({ stats: runner.stats, batchMs, avgBatchMs: avg, linked: linked.length, verbatim: verbatim.length }, null, 1));
   fs.writeFileSync(outFile, JSON.stringify(results, null, 1));
   console.log(`outputs -> ${outFile}`);
 }

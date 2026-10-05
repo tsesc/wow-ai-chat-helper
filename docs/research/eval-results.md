@@ -180,3 +180,87 @@ item or have a human review the ~25 contested items above.
 3. Re-run this eval after the data fix; it should move meaning more than prompt edits did.
 4. Non-zhTW explanations are AI-generated, and German wording was judged by Sonnet only:
    none of it has been reviewed by a native speaker.
+
+## Round 2 (2026-10-06): link tokens for game names
+
+### What changed since round 1
+
+- **Link tokens (`bridge/ai.js`, `linkTokens` / `restoreLinks`).** Each distinct `[Name]` in
+  `text` and `ctx` is sent as `[I1]`, `[I2]`, and so on. A "Linked game names" block
+  (`#<id> I1 = Elixir of the Mongoose`) tells the model what each token is and to write
+  the token itself. After parsing, tokens (bracketed or bare `I1`) are restored to
+  `[Name]` in `tr`, `terms`, `detail` and the replies (`en` and `tr`). The verbatim
+  check plus one retry (`stats.nameRetries`) stays as a safety net. Names containing `|`
+  are not tokenized, and neither are names written in plain words.
+- **Not only the tokens changed (the comparison is confounded).** Between round 1 and
+  this run the tree also got:
+  - glossary data fixes from another track (`data/glossary/terms.json`, `phrases.json`,
+    `bridge/glossary.js`);
+  - reply rules (fit the specifics, no grovelling to insults, scam handling);
+  - the GAME NAMES rule.
+
+  Read the deltas below as "the current tree vs round 1", not as "tokens alone".
+- **Harness.** It now also records ms per persistent batch turn, runner stats and a
+  `[Name]` verbatim count (`<tag>-meta.json`).
+
+### Method
+
+The method is the same as round 1: the 50 zhTW lines, plus the same 15 lines for zhCN
+and deDE. The runner is persistent haiku with `MAX_THINKING_TOKENS=0`, `maxBatch` 8 and
+no ctx. The judge is one Sonnet call per 8 items, with the same prompt.
+Command: `node tests/live/eval_glossary_style.js --tag round2`.
+
+Live calls: 11 persistent turns, 7 one-shot retries and 11 judge calls, so **29 in
+total**. The holdout was not re-run.
+
+### Results
+
+| run | locale | n | meaning | terms | natural (1-5) | language |
+|---|---|---|---|---|---|---|
+| round 1 "after" (baseline) | zhTW | 50 | 74% | 80% | 3.60 | 100% |
+| | zhCN | 15 | 80% | 80% | 3.40 | 100% |
+| | deDE | 15 | 53% | 73% | 3.47 | 100% |
+| | **all** | 80 | **71%** | 79% | **3.54** | 100% |
+| round 2 (tokens + current tree) | zhTW | 50 | 90% | 88% | 3.44 | 98% |
+| | zhCN | 15 | 80% | 87% | 3.00 | 100% |
+| | deDE | 15 | 87% | 80% | 3.53 | 73% |
+| | **all** | 80 | **88%** | 86% | **3.38** | 94% |
+
+| game link names | round 1 "after" | round 2 |
+|---|---|---|
+| items with a `[Name]` (zhTW 7, zhCN 3, deDE 3) | 13 | 13 |
+| `[Name]` verbatim in final `tr` | **0/13** (奧金錠, 貓鼬藥劑, Löwenherzhelm, ...) | **13/13** |
+| first-pass name misses (`nameRetries`) | n/a (no check yet) | **0** |
+| names appended as last resort | n/a | 0 |
+| 13 bracket items: meaning / terms / natural / language | 11 / 13 / 3.46 / 13 | 12 / 12 / 3.23 / 12 |
+
+Latency: there were 11 persistent batch turns, averaging **12.8 s per turn** (8 items:
+12.8-17.0 s; 7 items: 10.4-12.6 s; 2 items: 3.4 s). Round 1 did not record per-batch
+latency. The smoke run before tokens needed one extra one-shot call per bracket line;
+this run needed none.
+
+Other retries: 7 one-shot retries were for items that were missing or invalid in a
+batch reply, not for names. Round 1 run 1 also had 7. The harness does not log which
+items they were.
+
+### Reading the numbers
+
+- **The goal is met.** Names survive on the first pass: 13/13 items, with 0 name
+  retries. Restoring tokens in replies works too: "how much for 5 [Arcanite Bar]?"
+  (deDE #2), and the Thunderfury meme echo (zhTW #26).
+- **Meaning rose from 71% to 88%.** This is mostly not the tokens. The 13 bracket items
+  went from 11 to 12. The rest comes from glossary data and prompt changes in the tree,
+  plus judge noise (±5 points; see "Judge reliability").
+- **Naturalness fell from 3.54 to 3.38.** The new insult rule's "cool story bro" is graded
+  as escalating (zhTW #20, #21). "pst" is used in the wrong direction ("pst for price"
+  replying to a WTB/WTS; zhTW #3, #10, #44). zhCN dropped 3.40 → 3.00.
+- **deDE language fell from 100% to 73%** (4 items). The causes are garbled or stiff
+  German ("getarnt", "Zweitrüstung", wrong gender) and invented names ("Angrydps",
+  "Moonlock", "Ahmad meint ..."). This is not related to the tokens.
+- **The tokens hide the glossary's item translations.** The glossary now has entries like
+  `Arcanite Bar = 奧金錠` and `Lionheart Helm = 獅心頭盔`. They no longer match, because
+  the glossary sees `[I1]`. `tr` therefore shows only the English name. This matches the
+  "names verbatim" requirement but drops the local name. Option: put the local name in
+  the links block as a hint (`I1 = Arcanite Bar (奧金錠)`) and allow "token + local name".
+
+Raw files: `$TMPDIR/wch-eval/round2-{outputs,grades,meta}.json` (not committed).

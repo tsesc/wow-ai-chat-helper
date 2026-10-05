@@ -20,6 +20,10 @@
 //   #crash         exit 1 with an error on stderr, no result
 //   #autherr       result with is_error: true, "Invalid API key · Please run /login"
 //   #tone          replies carry an unknown tone ("friendly") and 4 entries
+//   #names         "tr" translates every [Name] of the text (drops it) every time
+//   #names-once    "tr" translates the [Name]s the first time this id is seen only
+//   #linkreply     the first reply asks about the first link token of the text
+//                  ("how much for [I1]?"), its "tr" and a term use the token too
 //
 // Replies use the field names of spec 3.2 (tr, terms[].tr, replies[].tr). The turn log
 // carries the "Player language" of the prompt (lang) and the prompt itself.
@@ -85,9 +89,14 @@ function answer(req, alone) {
     replies[0].tone = 'friendly';
     replies.push({ en: 'inv', tr: '邀', tone: 'short' }, { en: 'extra', tr: '多的', tone: 'short' });
   }
+  const link = t.includes('#linkreply') ? (/\[I\d+\]/.exec(t) || [])[0] : undefined;
+  if (link) replies[0] = { en: 'how much for ' + link + '?', tr: link + ' 多少錢？', tone: 'casual' };
   if (req.kind === 'x') {
     const terms = /LF1M/.test(t) ? [{ term: 'LF1M', expansion: 'Looking For 1 More', tr: '還缺一人' }] : [];
-    return { id: req.id, kind: 'x', tr: '譯：' + t, terms, replies };
+    const translate = (t.includes('#names') && !t.includes('#names-once')) || (t.includes('#names-once') && seen('names-' + req.id) === 0);
+    const tr = '譯：' + (translate ? t.replace(/\[[^\]]*\]/g, '某物品') : t);
+    if (link) terms.push({ term: link, expansion: '', tr: '物品' });
+    return { id: req.id, kind: 'x', tr, terms, replies };
   }
   if (req.kind === 't') return { id: req.id, kind: 't', replies: [{ en: 'omw, 5 min', tr: '我在路上，5 分鐘', tone: 'short' }, ...replies] };
   if (req.kind === 'd') return { id: req.id, kind: 'd', detail: '語氣：輕鬆\n情境：' + t + '\n建議：回 ty' };

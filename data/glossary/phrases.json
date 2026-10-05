@@ -2635,6 +2635,24 @@
   }
  },
  {
+  "key": "rez inc",
+  "terms": [
+   "rez",
+   "inc"
+  ],
+  "tr": {
+   "zhTW": "馬上幫你復活",
+   "zhCN": "马上复活你",
+   "koKR": "부활 갑니다",
+   "deDE": "Rez kommt",
+   "frFR": "Rez en cours",
+   "esES": "Ya va el rez",
+   "ptBR": "Rez chegando",
+   "ruRU": "Рес идёт",
+   "itIT": "Rez in arrivo"
+  }
+ },
+ {
   "key": "rez pls",
   "terms": [
    "rez pls"
@@ -4529,6 +4547,23 @@
    "ptBR": "Servidor caiu",
    "ruRU": "Сервер лежит",
    "itIT": "Server giù"
+  }
+ },
+ {
+  "key": "share tags",
+  "terms": [
+   "share tags"
+  ],
+  "tr": {
+   "zhTW": "要不要組隊共享怪？",
+   "zhCN": "要不要组队共享怪？",
+   "koKR": "파티해서 몹 같이 잡을래?",
+   "deDE": "Gruppe zum Tags teilen?",
+   "frFR": "On groupe pour les tags?",
+   "esES": "¿Agrupamos por los tags?",
+   "ptBR": "Bora agrupar pelos tags?",
+   "ruRU": "Групнёмся на тег?",
+   "itIT": "Gruppo per i tag?"
   }
  },
  {

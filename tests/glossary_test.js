@@ -362,3 +362,26 @@ test('terms.json lint: no numeric price aliases, no everyday-word aliases that c
   assert.deepStrictEqual(by('Expose Armor').aliases, ['EA']);
   assert.match(by('123').expansion, /summon me/);
 });
+
+// Glossary data round 2: the entries the live eval misread (docs/research/eval-results.md).
+test('terms.json: eval fixes (gg, share tags, SS, def, Strat Live, jump runs, inc, dot/com)', () => {
+  assert.match(byTerm.get('gg').ambiguity, /wipe/);
+  const st = byTerm.get('share tags');
+  assert.ok(st && st.cat === 'lfg' && /kill credit/.test(st.expansion));
+  const ss = byTerm.get('ss');
+  assert.match(ss.expansion, /^Soulstone/);
+  for (const other of ['sinister strike', 'sweeping strikes', 'southshore']) {
+    assert.ok(!byTerm.get(other).aliases.some((a) => a.toLowerCase() === 'ss'), `${other} still aliases SS`);
+  }
+  assert.match(byTerm.get('def').expansion, /^definitely/);
+  assert.match(byTerm.get('def').ambiguity, /defend/);
+  const sl = byTerm.get('strat live');
+  assert.match(sl.expansion, /^Stratholme/);
+  assert.equal(sl.tr.zhTW, '斯坦索姆活人區');
+  for (const l of LOCALES) assert.ok(!/血色|Scarlet|Écarlate|Escarlat|Алого|Scarlatt|붉은/i.test(sl.tr[l]), `${l}: ${sl.tr[l]}`);
+  assert.ok(byTerm.get('jump runs').aliases.includes('jumpruns'));
+  assert.match(byTerm.get('inc').ambiguity, /rez inc/);
+  assert.ok(!byTerm.get('commission').aliases.includes('com'));
+  assert.ok(!byTerm.get('res').aliases.includes('rez'), 'rez is its own entry');
+  assert.ok(!byTerm.has('mine') && byTerm.has('gold mine'), 'lowercase term "mine" matched "mine too"');
+});

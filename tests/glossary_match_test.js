@@ -189,3 +189,86 @@ test('kind "t": the player\'s own words are not scanned as English jargon, only 
   assert.deepStrictEqual(real.findForRequest({ kind: 't', text: 'Bin in 5 Minuten da, lad mich ein', ctx: '' }, 'deDE'), []);
   assert.ok(real.findForRequest({ kind: 'x', text: 'ah is down', ctx: '' }, 'deDE').some(x => x.term === 'AH'));
 });
+
+// ---------------------------------------------------------------------------
+// Glossary data round 2 (eval failures): web addresses / gold spam, and the lines the
+// live eval misread because of the data.
+// ---------------------------------------------------------------------------
+test('urlSpans: web addresses and spam spellings, not ordinary sentences', () => {
+  const spans = (s) => G.urlSpans(s).map(([a, b]) => s.slice(a, b));
+  assert.deepStrictEqual(spans('free gold visit wowgold dot com'), ['wowgold dot com']);
+  assert.deepStrictEqual(spans('www.wowgold.com cheap'), ['www.wowgold.com']);
+  assert.deepStrictEqual(spans('go to wowgold.com now'), ['wowgold.com']);
+  assert.deepStrictEqual(spans('wowgold(dot)com'), ['wowgold(dot)com']);
+  assert.deepStrictEqual(spans('w0wgold . c0m 50% off'), ['w0wgold . c0m']);
+  assert.deepStrictEqual(spans('https://x.y/z?a=1 lol'), ['https://x.y/z?a=1']);
+  assert.deepStrictEqual(spans('its a dot com scam'), ['a dot com']);
+  for (const s of ['dot him up', 'ty. org later', 'meet in org.', 'inv. net worth', 'com on guys', 'wb dropping in org']) {
+    assert.deepStrictEqual(spans(s), [], s);
+  }
+});
+
+test('real glossary: "dot" / "com" inside a web address are not DoT / commission', () => {
+  for (const line of ['free gold visit wowgold dot com', 'buy gold at wowgold dot com', 'www.wowgold.com cheap',
+    'wowgold.com 10k = 5$', 'wowgold(dot)com', 'w0wgold . c0m']) {
+    const h = hits(line);
+    assert.ok(!h.some(x => /=(DoT|commission)$/.test(x)), `${line}: ${h}`);
+  }
+  assert.ok(hits('buy gold at wowgold dot com').includes('gold=gold'), 'words outside the address still match');
+  assert.ok(hits('dot him up').includes('dot=DoT'));
+  assert.ok(hits('ty. org later').includes('org=Org'));
+});
+
+test('real glossary: eval lines get the right entry and note', () => {
+  const one = (line, term) => real.find(line, 'zhTW').find(x => x.term === term);
+  // gg after a wipe is resigned, not praise
+  assert.match(one('gg wipe, run back', 'gg').ambiguity, /wipe.*not praise/);
+  // share tags: a multiword entry beats "share" = share the quest
+  for (const line of ['can we share tags on these?', 'can we share tags', 'wanna share tag?', 'can we share the mob']) {
+    assert.deepStrictEqual(real.find(line).map(x => x.term).filter(t => /share/.test(t)), ['share tags'], line);
+  }
+  assert.match(one('can u share the quest', 'share').ambiguity, /share tags/);
+  // SS: one Soulstone entry with the other senses in its note
+  for (const line of ['ss me pls', 'ss on priest']) {
+    const h = real.find(line);
+    assert.deepStrictEqual(h.filter(x => x.match.toLowerCase() === 'ss').map(x => x.term), ['SS'], line);
+    assert.match(h[0].expansion, /Soulstone/);
+    assert.match(h[0].ambiguity, /Sinister Strike/);
+    assert.match(h[0].ambiguity, /Southshore/);
+  }
+  // def: definitely by default, defend in a BG
+  const def = one('flag carrier is at mid, def our fc', 'def');
+  assert.match(def.expansion, /^definitely/);
+  assert.match(def.ambiguity, /defend/);
+  // Strat Live is Stratholme
+  for (const loc of G.LOCALES) {
+    const s = real.find('LF1M strat live last spot dps', loc).find(x => x.term === 'Strat Live');
+    assert.ok(s && !/血色|붉은십자군|Scarlet|Écarlate|Escarlata|Escarlate|Алого|Scarlatt/i.test(s.tr), `${loc}: ${s && s.tr}`);
+  }
+  assert.match(one('strat live run', 'Strat Live').expansion, /^Stratholme/);
+  assert.match(real.find('strat live', 'zhTW')[0].tr, /斯坦索姆/);
+  // jump runs
+  for (const line of ['anyone want to run dm east for jumpruns?', 'jumprun?', 'LF jump runs', 'wts dme jump runs']) {
+    assert.ok(real.find(line).some(x => x.term === 'jump runs'), line);
+  }
+  assert.deepStrictEqual(real.find('LF DME').map(x => x.term), ['LF', 'DM East']);
+  // "<thing> inc"
+  const rezInc = real.find('rez inc').map(x => x.term);
+  assert.deepStrictEqual(rezInc, ['rez', 'inc'], 'one rez entry, then inc');
+  assert.match(one('rez inc', 'inc').ambiguity, /rez inc/);
+  // wb dropping names the dragon head
+  assert.match(one('wb dropping in org 10 min', 'world buffs').ambiguity, /Rallying Cry/);
+  // "min 50" in a bid
+  assert.match(one('dkp bids open, min 50', 'min').ambiguity, /minimum/);
+  // "mine" is the ordinary word unless written "gold mine"
+  assert.deepStrictEqual(real.find('ya mine too').map(x => x.term).filter(t => /mine/i.test(t)), []);
+  assert.ok(real.find('inc gold mine').some(x => x.term === 'Gold Mine'));
+});
+
+test('real glossary: common English surfaces that do match carry a note', () => {
+  for (const w of ['main', 'focus', 'stack', 'stacks', 'click', 'dropped', 'q', 'behind', 'fire', 'cut', 'charge', 'blind',
+    'prep', 'plans', 'buff', 'cons', 'epic', 'blue', 'classic', 'vent', 'ping', 'pal', 'moon', 'wipe', 'bind', 'min', 'def', 'gg']) {
+    const h = real.find(w);
+    assert.ok(h.length && h.every(x => x.ambiguity), `${w}: ${JSON.stringify(h.map(x => [x.term, x.ambiguity]))}`);
+  }
+});

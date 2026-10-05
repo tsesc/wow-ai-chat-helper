@@ -57,8 +57,8 @@ test('system prompt covers role, schema, zh-TW, US-realm replies, known terms, n
   }
   assert.ok(!/"zh"/.test(s), 'no old "zh" field left in the schema');
   assert.ok(s.includes('"tr"'), 'schema uses "tr"');
-  // 10-15 style examples taken from the US chat style guide, the AH case as the worked example.
-  assert.ok(ai.STYLE_EXAMPLES.length >= 10 && ai.STYLE_EXAMPLES.length <= 15);
+  // 10-16 style examples taken from the US chat style guide, the AH case as the worked example.
+  assert.ok(ai.STYLE_EXAMPLES.length >= 10 && ai.STYLE_EXAMPLES.length <= 16);
   for (const [inc] of ai.STYLE_EXAMPLES) assert.ok(s.includes(JSON.stringify(inc)), 'style example ' + inc);
   assert.ok(s.includes("ah isn't down for everyone") && s.includes('"term":"AH"'));
   const ex = s.slice(s.indexOf('EXAMPLE.'));
@@ -510,4 +510,175 @@ test('system prompt: "wb" is welcome back unless there is buff context; "123" as
   assert.match(p, /"wb" = welcome back \(alone or with a name/);
   assert.doesNotMatch(p, /"wb" in guild chat = world buff/);
   assert.match(p, /"123" typed alone in raid\/party = asking the warlock for a summon/);
+});
+
+// ---------------------------------------------------------------------------
+// Game link names ([Name]) stay verbatim; replies fit the message
+// ---------------------------------------------------------------------------
+
+test('system prompt: [Name] links copied verbatim, proper nouns in English, no guessed item types', () => {
+  const p = ai.buildSystemPrompt('zhTW');
+  assert.match(p, /Text inside \[square brackets\] is a game link/);
+  assert.match(p, /copy it into "tr" exactly as written, brackets included/);
+  assert.match(p, /Never translate, shorten or guess it, and never say what kind of thing it is/);
+  assert.match(p, /Other proper nouns stay in English in "tr" too: items, spells, quests, NPCs, bosses, zones, dungeons/);
+  assert.match(p, /a name in the known-terms block uses its listed translation/);
+});
+
+test('system prompt: replies fit the message; insults without grovelling; scams get ignore/report advice', () => {
+  const p = ai.buildSystemPrompt('zhTW');
+  assert.match(p, /Every reply responds to the specifics of the message: the role asked for, the item, the price/);
+  assert.match(p, /never apologize, promise to improve or explain yourself/);
+  assert.match(p, /advises to ignore them, not visit the site and report the sender/);
+  // The style examples follow the same rules: no meek answer to an insult, a neutral one to spam.
+  const insult = ai.STYLE_EXAMPLES.find(([inc]) => inc === 'ur dps is trash')[1].map(([en]) => en);
+  assert.ok(!insult.some(en => /sry|sorry|work on it|ill do better/.test(en)), insult.join(' / '));
+  assert.ok(ai.STYLE_EXAMPLES.some(([inc, reps]) => /gold/.test(inc) && reps.every(([en]) => /^(no ty|not interested)$/.test(en))));
+  for (const [, reps] of ai.STYLE_EXAMPLES) for (const [en] of reps) assert.ok(en === en.toLowerCase() && !/\.$/.test(en), en);
+});
+
+test('bracketNames / missingNames / withNames', () => {
+  assert.deepStrictEqual(ai.bracketNames('wts [Elixir of the Mongoose] x5, [Arcanite Bar] and [Elixir of the Mongoose]'), ['[Elixir of the Mongoose]', '[Arcanite Bar]']);
+  assert.deepStrictEqual(ai.bracketNames('no links [] here'), []);
+  const r = { id: 1, kind: 'x', tr: '有人在賣 [Elixir of the Mongoose]，還有 Arcanite Bar', terms: [], replies: [] };
+  assert.deepStrictEqual(ai.missingNames(r, req(1, 'wts [Elixir of the Mongoose] [Arcanite Bar] [Lionheart Helm]')), ['[Lionheart Helm]']);
+  assert.deepStrictEqual(ai.missingNames({ ...r, kind: 't' }, req(1, '[Lionheart Helm]', 't')), [], 'only explain results are checked');
+  assert.strictEqual(ai.withNames(r, ['[Lionheart Helm]']).tr, r.tr + ' [Lionheart Helm]');
+  assert.match(ai.namesNote(['[Lionheart Helm]']), /exactly as below, brackets included.*\[Lionheart Helm\]/);
+});
+
+test('names: a result that keeps the [Name] verbatim is accepted with no retry', async () => {
+  const { runner, events } = setup();
+  try {
+    const r = await runner.request(req(1, 'wts [Elixir of the Mongoose] 5g each'));
+    assert.strictEqual(r.status, 'done');
+    assert.strictEqual(r.tr, '譯：wts [Elixir of the Mongoose] 5g each');
+    assert.strictEqual(events().filter(e => e.event === 'turn').length, 1);
+    assert.strictEqual(runner.stats.nameRetries, 0);
+  } finally { runner.stop(); }
+});
+
+test('names: a translated [Name] is retried alone with a stricter note, and the retry passes', async () => {
+  const { runner, events } = setup();
+  try {
+    const out = await Promise.all([runner.request(req(1, 'anyone got [Lionheart Helm] mats? #names-once')), runner.request(req(2, 'inv pls'))]);
+    assert.deepStrictEqual(out.map(r => r.status), ['done', 'done']);
+    assert.strictEqual(out[0].tr, '譯：anyone got [Lionheart Helm] mats? #names-once', 'the retry answer, nothing appended');
+    const turns = events().filter(e => e.event === 'turn');
+    assert.deepStrictEqual(turns.map(t => t.ids.join()), ['1,2', '1']);
+    assert.ok(!turns[0].prompt.includes('IMPORTANT'));
+    assert.match(turns[1].prompt, /IMPORTANT: your previous answer translated.*tokens exactly as below.*: \[I1\]\n/);
+    assert.strictEqual(events().filter(e => e.event === 'start' && e.mode === 'oneshot').length, 1, 'the retry is one-shot');
+    assert.deepStrictEqual([runner.stats.nameRetries, runner.stats.namesAppended], [1, 0]);
+  } finally { runner.stop(); }
+});
+
+test('names: still translated after the retry -> accepted with the names appended', async () => {
+  const { runner, events } = setup();
+  try {
+    const r = await runner.request(req(1, 'selling 2h [Arcanite Reaper] and [Arcanite Bar] cod #names'));
+    assert.strictEqual(r.status, 'done');
+    assert.strictEqual(r.tr, '譯：selling 2h 某物品 and 某物品 cod #names [Arcanite Reaper] [Arcanite Bar]');
+    assert.strictEqual(r.replies.length, 2);
+    assert.strictEqual(events().filter(e => e.event === 'turn').length, 2, 'first try + one retry, no more');
+    assert.deepStrictEqual([runner.stats.nameRetries, runner.stats.namesAppended], [1, 1]);
+  } finally { runner.stop(); }
+});
+
+test('names: if the retry itself fails, the first answer is kept with the names appended', async () => {
+  const { runner } = setup({ timeoutMs: 1500 });
+  try {
+    // The retry (one-shot) hangs until the timeout; the first (persistent) answer is valid.
+    const orig = runner.runAlone.bind(runner);
+    runner.runAlone = (rq, model, first, prevErr, retry) => orig({ ...rq, text: rq.text + ' #hang' }, model, first, prevErr, retry);
+    const r = await runner.request(req(1, 'wts [Elixir of the Mongoose] #names'));
+    assert.strictEqual(r.status, 'done');
+    assert.strictEqual(r.tr, '譯：wts 某物品 #names [Elixir of the Mongoose]');
+  } finally { runner.stop(); }
+});
+
+// ---------------------------------------------------------------------------
+// Link tokens: [Name] -> [I1] before sending, restored after parsing
+// ---------------------------------------------------------------------------
+
+test('linkTokens: distinct names -> I1, I2; same name twice -> same token; ctx shares the map', () => {
+  const r = ai.linkTokens(req(7, 'wts [Elixir of the Mongoose] x5, [Arcanite Bar] and [Elixir of the Mongoose]', 'x',
+    { ctx: 'Ann: got [Arcanite Bar]?\nBo: [Lionheart Helm] pls' }));
+  assert.strictEqual(r.text, 'wts [I1] x5, [I2] and [I1]');
+  assert.strictEqual(r.ctx, 'Ann: got [I2]?\nBo: [I3] pls');
+  assert.deepStrictEqual(r.links, [
+    { token: 'I1', name: '[Elixir of the Mongoose]' }, { token: 'I2', name: '[Arcanite Bar]' }, { token: 'I3', name: '[Lionheart Helm]' }]);
+  assert.strictEqual(r.id, 7);
+});
+
+test('linkTokens: names with "|" or "]" inside, empty brackets and plain-word names are left alone', () => {
+  const piped = ai.linkTokens(req(1, 'wts [a|b] and [Runecloth Bag]'));
+  assert.strictEqual(piped.text, 'wts [a|b] and [I1]', 'a name with | is not tokenized');
+  assert.deepStrictEqual(piped.links, [{ token: 'I1', name: '[Runecloth Bag]' }]);
+  // "]" cannot be inside a link name: "[Foo]bar]" is the link [Foo] followed by "bar]".
+  const r = ai.linkTokens(req(1, 'got [Foo]bar] and elixir of the mongoose'));
+  assert.strictEqual(r.text, 'got [I1]bar] and elixir of the mongoose', 'the plain-word item is untouched');
+  assert.deepStrictEqual(r.links, [{ token: 'I1', name: '[Foo]' }]);
+  const none = ai.linkTokens(req(1, 'no links [] here'));
+  assert.strictEqual(none.text, 'no links [] here');
+  assert.deepStrictEqual(none.links, []);
+});
+
+test('restoreLinks: tokens (bracketed or bare) -> "[Name]" in tr, terms, replies and detail; one pass', () => {
+  const links = [{ token: 'I1', name: '[Elixir of the Mongoose]' }, { token: 'I2', name: '[I1]' }];
+  const item = { id: 3, kind: 'x', tr: '有人在賣 [I1]，還有 I2 和 [I9]', terms: [{ term: '[I1]', expansion: '', tr: '物品' }],
+    replies: [{ en: 'how much for [I1]?', tr: '[I1] 多少錢', tone: 'casual' }], detail: '情境：[ I1 ]' };
+  const out = ai.restoreLinks(item, links);
+  assert.strictEqual(out.tr, '有人在賣 [Elixir of the Mongoose]，還有 [I1] 和 [I9]', 'I2 -> "[I1]" is not re-expanded; unknown [I9] stays');
+  assert.strictEqual(out.terms[0].term, '[Elixir of the Mongoose]');
+  assert.strictEqual(out.replies[0].en, 'how much for [Elixir of the Mongoose]?');
+  assert.strictEqual(out.replies[0].tr, '[Elixir of the Mongoose] 多少錢');
+  assert.strictEqual(out.detail, '情境：[Elixir of the Mongoose]');
+  assert.strictEqual(out.id, 3);
+  assert.strictEqual(ai.restoreLinks(item, []), item);
+});
+
+test('buildPrompt: tokenized requests carry a "Linked game names" block, no names in the requests', () => {
+  const p = ai.buildPrompt([ai.linkTokens(req(4, 'WTS [Arcanite Bar] 25g ea')), ai.linkTokens(req(5, 'inv pls'))], { locale: 'zhTW' });
+  assert.match(p, /Linked game names \(write the token, e\.g\. \[I1\]/);
+  assert.match(p, /\n#4 I1 = Arcanite Bar\n/);
+  assert.ok(!p.includes('#5 I'), 'no links for #5');
+  const reqs = JSON.parse(p.slice(p.indexOf('[', p.indexOf('Requests'))));
+  assert.strictEqual(reqs[0].text, 'WTS [I1] 25g ea');
+  assert.ok(!ai.buildPrompt([req(1, 'inv pls')]).includes('Linked game names'));
+  assert.match(ai.buildSystemPrompt('deDE'), /LINK TOKENS\. Game links usually arrive as tokens \[I1\], \[I2\]/);
+});
+
+test('links: names go out as tokens and come back restored in tr, terms and replies, first pass, no retry', async () => {
+  const { runner, events } = setup();
+  try {
+    const out = await Promise.all([
+      runner.request(req(1, 'wts [Elixir of the Mongoose] 5g ea, [Elixir of the Mongoose] x20 #linkreply', 'x', { ctx: 'Al: [Arcanite Bar]?' })),
+      runner.request(req(2, 'inv pls')),
+    ]);
+    assert.deepStrictEqual(out.map(r => r.status), ['done', 'done']);
+    assert.strictEqual(out[0].tr, '譯：wts [Elixir of the Mongoose] 5g ea, [Elixir of the Mongoose] x20 #linkreply');
+    assert.strictEqual(out[0].replies[0].en, 'how much for [Elixir of the Mongoose]?');
+    assert.strictEqual(out[0].replies[0].tr, '[Elixir of the Mongoose] 多少錢？');
+    assert.strictEqual(out[0].terms.find(t => t.tr === '物品').term, '[Elixir of the Mongoose]');
+    const turns = events().filter(e => e.event === 'turn');
+    assert.strictEqual(turns.length, 1, 'one batch turn, no retry');
+    const sent = turns[0].prompt.slice(turns[0].prompt.indexOf('Requests'));
+    assert.ok(!sent.includes('Elixir') && !sent.includes('Arcanite'), 'the requests carry tokens only');
+    assert.match(sent, /"ctx":"Al: \[I2\]\?"/);
+    assert.match(turns[0].prompt, /#1 I1 = Elixir of the Mongoose\n#1 I2 = Arcanite Bar\n/);
+    assert.deepStrictEqual([runner.stats.retries, runner.stats.nameRetries, runner.stats.namesAppended], [0, 0, 0]);
+  } finally { runner.stop(); }
+});
+
+test('links: translate (t) and detail (d) results are restored too', async () => {
+  const { runner } = setup();
+  try {
+    const d = await runner.request(req(1, 'need [Onyxia Hide Backpack]', 'd'));
+    assert.strictEqual(d.status, 'done');
+    assert.match(d.detail, /情境：need \[Onyxia Hide Backpack\]/);
+    const t = await runner.request(req(2, '我要 [Black Lotus] #linkreply', 't'));
+    assert.strictEqual(t.status, 'done');
+    assert.ok(t.replies.some(r => r.en === 'how much for [Black Lotus]?'), JSON.stringify(t.replies));
+  } finally { runner.stop(); }
 });

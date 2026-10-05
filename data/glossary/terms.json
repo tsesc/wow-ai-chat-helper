@@ -611,24 +611,25 @@
  {
   "term": "inc",
   "aliases": [],
-  "expansion": "incoming (enemies or mobs coming)",
+  "expansion": "incoming (something is on its way)",
   "cat": "lfg",
-  "ambiguity": "in PvP 'inc mid', '3 inc farm' = enemies coming to that place; in dungeons a pull is coming",
+  "ambiguity": "'<thing> inc' = that thing is coming now: 'rez inc' = I am resurrecting you, 'heals inc', 'summon inc', 'port inc', 'pull inc'; alone or with a place in PvP ('inc mid', '3 inc farm') = enemies coming there; in dungeons a pull or patrol is coming",
   "examples": [
-   "inc BS",
+   "rez inc",
    "inc mid",
-   "inc 3 farm"
+   "inc 3 farm",
+   "heals inc"
   ],
   "tr": {
-   "zhTW": "有敵人／怪過來了",
-   "zhCN": "有怪/敌人来了",
-   "koKR": "몹/적 온다",
-   "deDE": "Kommt!",
-   "frFR": "Ça arrive",
-   "esES": "Vienen",
-   "ptBR": "Vindo aí",
-   "ruRU": "Идут",
-   "itIT": "In arrivo"
+   "zhTW": "即將到來（敵人／復活等）",
+   "zhCN": "来了（敌人/复活等）",
+   "koKR": "온다 (적/부활 등)",
+   "deDE": "Kommt (Feinde, Rez)",
+   "frFR": "Ça arrive (ennemis, rez)",
+   "esES": "Ya viene (enemigos, rez)",
+   "ptBR": "Vindo aí (inimigos, rez)",
+   "ruRU": "Идёт/идут (враги, рес)",
+   "itIT": "In arrivo (nemici, rez)"
   }
  },
  {
@@ -987,7 +988,7 @@
   "aliases": [],
   "expansion": "alternate character",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "'on my alt' = alternate character; 'alt+tab' is the keyboard key",
   "examples": [],
   "tr": {
    "zhTW": "小號",
@@ -1006,7 +1007,7 @@
   "aliases": [],
   "expansion": "main character",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "'my main' = main character; otherwise ordinary 'main' ('main thing'); main tank is MT",
   "examples": [],
   "tr": {
    "zhTW": "主角色",
@@ -1124,7 +1125,10 @@
  },
  {
   "term": "DM East",
-  "aliases": [],
+  "aliases": [
+   "DME",
+   "DM:E"
+  ],
   "expansion": "Dire Maul East",
   "cat": "zone",
   "ambiguity": "",
@@ -2815,7 +2819,7 @@
   ],
   "expansion": "set Hearthstone home",
   "cat": "zone",
-  "ambiguity": "",
+  "ambiguity": "set Hearthstone home ('bind in IF'); 'key bind' = keyboard binding",
   "examples": [
    "bind in IF"
   ],
@@ -3122,7 +3126,7 @@
   "aliases": [],
   "expansion": "whole group dies",
   "cat": "raid",
-  "ambiguity": "",
+  "ambiguity": "'we wiped', 'gg wipe' = everyone died; raid leader 'wipe it', 'just wipe' = die on purpose to reset the fight",
   "examples": [],
   "tr": {
    "zhTW": "滅團",
@@ -3160,8 +3164,11 @@
   "aliases": [],
   "expansion": "resurrect",
   "cat": "raid",
-  "ambiguity": "",
-  "examples": [],
+  "ambiguity": "'rez inc' = a resurrection is on its way (the speaker is casting it); 'rez pls', 'need rez' = asking for one",
+  "examples": [
+   "rez inc",
+   "rez pls"
+  ],
   "tr": {
    "zhTW": "復活",
    "zhCN": "复活",
@@ -3177,7 +3184,6 @@
  {
   "term": "res",
   "aliases": [
-   "rez",
    "ress"
   ],
   "expansion": "resurrect",
@@ -3242,8 +3248,32 @@
   "aliases": [],
   "expansion": "warlock self-rez item",
   "cat": "raid",
-  "ambiguity": "",
+  "ambiguity": "chat usually writes it 'ss' ('ss on priest', 'ss me')",
   "examples": [],
+  "tr": {
+   "zhTW": "靈魂石",
+   "zhCN": "灵魂石",
+   "koKR": "영혼석",
+   "deDE": "Seelenstein",
+   "frFR": "Pierre d'âme",
+   "esES": "Piedra de alma",
+   "ptBR": "Pedra da Alma",
+   "ruRU": "Камень души",
+   "itIT": "Pietra dell'Anima"
+  }
+ },
+ {
+  "term": "SS",
+  "aliases": [],
+  "expansion": "Soulstone (warlock buff: the target can resurrect itself after dying)",
+  "cat": "raid",
+  "ambiguity": "'ss on <name>', 'ss me', 'who has ss', 'ss the healer' = Soulstone; rogue ability talk ('ss spam') = Sinister Strike; arms warrior ('ss + ww') = Sweeping Strikes; Hillsbrad world PvP ('TM vs SS', 'raid SS') = Southshore",
+  "examples": [
+   "ss on priest",
+   "ss me pls",
+   "who has ss?",
+   "TM vs SS"
+  ],
   "tr": {
    "zhTW": "靈魂石",
    "zhCN": "灵魂石",
@@ -3853,7 +3883,7 @@
   "aliases": [],
   "expansion": "damage over time",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "'dot' in a web address or gold-seller spam ('wowgold dot com') is the punctuation word, not damage over time",
   "examples": [],
   "tr": {
    "zhTW": "持續傷害",
@@ -4264,7 +4294,7 @@
   "aliases": [],
   "expansion": "warrior resource",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "warrior resource; 'rage quit', 'raging' = angry",
   "examples": [],
   "tr": {
    "zhTW": "怒氣",
@@ -4302,7 +4332,7 @@
   "aliases": [],
   "expansion": "focus fire on a target",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "'focus skull', 'focus the healer' = everyone attacks that target; otherwise ordinary 'focus' (pay attention)",
   "examples": [],
   "tr": {
    "zhTW": "集火",
@@ -4410,7 +4440,7 @@
   ],
   "expansion": "moon raid marker",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "raid marker when talking about kill order or CC ('sheep moon'); otherwise the ordinary word",
   "examples": [
    "sheep moon"
   ],
@@ -4433,7 +4463,7 @@
   ],
   "expansion": "square raid marker",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "raid marker when talking about kill order or CC ('kill square first'); otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "方塊標記",
@@ -4452,7 +4482,7 @@
   "aliases": [],
   "expansion": "triangle raid marker",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "raid marker when talking about kill order or CC ('trap triangle'); otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "三角標記",
@@ -4471,7 +4501,7 @@
   "aliases": [],
   "expansion": "diamond raid marker",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "raid marker when talking about kill order or CC ('sap diamond'); otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "菱形標記",
@@ -4490,7 +4520,7 @@
   "aliases": [],
   "expansion": "circle raid marker",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "raid marker when talking about kill order or CC ('circle is sheeped'); otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "圓圈標記",
@@ -4590,10 +4620,12 @@
  },
  {
   "term": "stack",
-  "aliases": [],
+  "aliases": [
+   "stacks"
+  ],
   "expansion": "stand close together",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "'stack (up/on me)' = stand together; in trade '20 stacks of X', 'per stack' = a full stack of items (often 20)",
   "examples": [],
   "tr": {
    "zhTW": "站一起",
@@ -4612,7 +4644,7 @@
   "aliases": [],
   "expansion": "spread out",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "'spread (out)' = move apart for a mechanic; otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "散開",
@@ -4751,7 +4783,7 @@
   "aliases": [],
   "expansion": "latency",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "network latency ('200 ping'); 'ping me' (Discord) = mention / notify me",
   "examples": [],
   "tr": {
    "zhTW": "延遲",
@@ -4770,7 +4802,7 @@
   "aliases": [],
   "expansion": "release spirit",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "'release' after dying = release spirit to the graveyard; 'release date' etc. is ordinary",
   "examples": [],
   "tr": {
    "zhTW": "釋放靈魂",
@@ -4827,7 +4859,7 @@
   "aliases": [],
   "expansion": "beneficial effect",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "beneficial spell effect ('buff pls'); 'X got buffed' = made stronger in a patch (opposite of nerf)",
   "examples": [],
   "tr": {
    "zhTW": "增益",
@@ -4885,10 +4917,13 @@
    "WBs",
    "WB"
   ],
-  "expansion": "strong buffs from world bosses",
+  "expansion": "world buffs: Ony/Nef head (Rallying Cry), Rend (Warchief's Blessing), ZG heart, Songflower, DMT",
   "cat": "combat",
-  "ambiguity": "lowercase 'wb' in social chat usually means welcome back; with dropping/head/org/raid context it means world buffs",
-  "examples": [],
+  "ambiguity": "lowercase 'wb' in social chat usually means welcome back; 'wb dropping/going up in org/SW' = a dragon head (Onyxia/Nefarian: Rallying Cry of the Dragonslayer) or Rend's head (Warchief's Blessing, Horde) is turned in there soon; 'need wbs' = needs these buffs",
+  "examples": [
+   "wb dropping in org 10 min",
+   "head going up in SW"
+  ],
   "tr": {
    "zhTW": "世界增益",
    "zhCN": "世界BUFF",
@@ -5006,7 +5041,7 @@
   "aliases": [],
   "expansion": "consumables",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "consumables ('bring cons'); 'pros and cons' is ordinary",
   "examples": [],
   "tr": {
    "zhTW": "消耗品",
@@ -5165,7 +5200,7 @@
   "aliases": [],
   "expansion": "force mob to attack you",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "tank ability that forces a mob to attack you; also mocking someone in chat",
   "examples": [],
   "tr": {
    "zhTW": "嘲諷",
@@ -5753,7 +5788,7 @@
   "aliases": [],
   "expansion": "lead the group",
   "cat": "role",
-  "ambiguity": "",
+  "ambiguity": "'give lead', 'who has lead' = group/raid leader role; otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "帶隊",
@@ -6297,7 +6332,7 @@
   "aliases": [],
   "expansion": "Paladin",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "Paladin ('LF pal'); 'thanks pal' = buddy",
   "examples": [],
   "tr": {
    "zhTW": "聖騎",
@@ -7146,7 +7181,7 @@
   "aliases": [],
   "expansion": "items that drop",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "loot that drops ('what drops here'); 'price drops' = goes down",
   "examples": [],
   "tr": {
    "zhTW": "掉落物",
@@ -7701,7 +7736,7 @@
   "aliases": [],
   "expansion": "purple quality item",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "purple-quality item ('epic mount', 'BoE epic'); 'that was epic' = awesome",
   "examples": [],
   "tr": {
    "zhTW": "紫裝",
@@ -7758,7 +7793,7 @@
   "aliases": [],
   "expansion": "blue quality item",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "blue-quality (rare) item ('blue BoE'); 'blue post' = Blizzard staff forum post; also the color",
   "examples": [],
   "tr": {
    "zhTW": "藍裝",
@@ -7796,7 +7831,7 @@
   "aliases": [],
   "expansion": "legendary item",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "legendary-quality item; otherwise the color or the fruit",
   "examples": [],
   "tr": {
    "zhTW": "橘裝（傳說）",
@@ -7815,7 +7850,7 @@
   "aliases": [],
   "expansion": "orange quality item",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "orange-quality item (Thunderfury, Sulfuras); 'legendary' can also just mean awesome",
   "examples": [],
   "tr": {
    "zhTW": "傳說",
@@ -9301,20 +9336,24 @@
  {
   "term": "gg",
   "aliases": [],
-  "expansion": "good game",
+  "expansion": "good game (after a wipe: resigned 'that's it')",
   "cat": "social",
-  "ambiguity": "",
-  "examples": [],
+  "ambiguity": "after a wipe, death or failed attempt ('gg wipe', 'well gg', 'gg were done') it is ironic or resigned = 'well, that's it', not praise; after a won BG, duel or boss kill = good game; 'gg ez' = taunt",
+  "examples": [
+   "gg wipe, run back",
+   "gg wp",
+   "gg ez"
+  ],
   "tr": {
-   "zhTW": "打得好",
-   "zhCN": "GG",
-   "koKR": "ㅈㅈ",
-   "deDE": "GG",
-   "frFR": "GG",
-   "esES": "GG",
-   "ptBR": "GG",
-   "ruRU": "ГГ",
-   "itIT": "GG"
+   "zhTW": "GG（打得好／沒救了）",
+   "zhCN": "GG（打得好/没戏了）",
+   "koKR": "ㅈㅈ (수고/망했다)",
+   "deDE": "GG (gut gespielt/vorbei)",
+   "frFR": "GG (bien joué/fini)",
+   "esES": "GG (bien jugado/ya está)",
+   "ptBR": "GG (boa/já era)",
+   "ruRU": "ГГ (молодцы/всё, конец)",
+   "itIT": "GG (ben giocato/finita)"
   }
  },
  {
@@ -9781,7 +9820,7 @@
   "aliases": [],
   "expansion": "welcome back",
   "cat": "social",
-  "ambiguity": "'wb' alone or to a returning player = welcome back; in raid/buff context ('wb dropping', 'need wbs', 'wb in org') = world buffs",
+  "ambiguity": "'wb' alone or to a returning player = welcome back; in raid/buff context ('wb dropping in org', 'need wbs') = world buffs (dragon head / Rend turn-in)",
   "examples": [],
   "tr": {
    "zhTW": "歡迎回來",
@@ -10361,7 +10400,7 @@
   ],
   "expansion": "minute",
   "cat": "social",
-  "ambiguity": "",
+  "ambiguity": "after a number = minutes ('5 min'); in bids and prices ('min 50', 'min bid', 'min price') = minimum",
   "examples": [
    "5 min",
    "2 mins"
@@ -10841,7 +10880,7 @@
   "aliases": [],
   "expansion": "Ventrilo voice chat",
   "cat": "social",
-  "ambiguity": "",
+  "ambiguity": "Ventrilo voice chat ('get on vent'); 'just venting' = complaining",
   "examples": [],
   "tr": {
    "zhTW": "語音（Ventrilo）",
@@ -11012,7 +11051,7 @@
   "aliases": [],
   "expansion": "original WoW",
   "cat": "social",
-  "ambiguity": "",
+  "ambiguity": "WoW Classic / original WoW ('on classic'); 'classic' can also mean typical ('classic blizz')",
   "examples": [],
   "tr": {
    "zhTW": "經典版",
@@ -11876,7 +11915,7 @@
   ],
   "expansion": "Alliance",
   "cat": "misc",
-  "ambiguity": "",
+  "ambiguity": "Alliance faction ('ally', 'alli'); 'an ally' can be the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "聯盟",
@@ -12754,7 +12793,7 @@
   "aliases": [],
   "expansion": "skip enemies",
   "cat": "misc",
-  "ambiguity": "",
+  "ambiguity": "'skip (the) trash/boss' = avoid fighting it; otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "跳過",
@@ -14107,12 +14146,14 @@
  {
   "term": "def",
   "aliases": [],
-  "expansion": "definitely",
+  "expansion": "definitely (BG: defend; tank gear: Defense)",
   "cat": "social",
-  "ambiguity": "\"def\" can also mean defense (stat), Defensive Stance, or defend a node in BGs",
+  "ambiguity": "usually 'definitely' (plain slang, not a WoW term): 'def coming', 'id def go'. In a battleground 'def <flag/fc/node>' or 'need def' = defend ('def our fc' = protect our flag carrier, 'def BS' = guard Blacksmith); tank gear talk ('def cap', '440 def') = Defense skill",
   "examples": [
    "def coming",
-   "def BS"
+   "def our fc",
+   "need def at farm",
+   "440 def"
   ],
   "tr": {
    "zhTW": "絕對／一定",
@@ -16568,7 +16609,7 @@
   ],
   "expansion": "Classic Era realms (permanent level 60)",
   "cat": "misc",
-  "ambiguity": "",
+  "ambiguity": "Classic Era realms; otherwise the ordinary word ('2004 era')",
   "examples": [],
   "tr": {
    "zhTW": "經典永久服",
@@ -17193,7 +17234,7 @@
   ],
   "expansion": "help click the summoning portal / meeting stone",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "near a summon or meeting stone 'click (pls)' = help click the portal; 'click the link', 'click here' (often spam) is ordinary",
   "examples": [],
   "tr": {
    "zhTW": "幫忙點召喚",
@@ -17452,7 +17493,7 @@
   ],
   "expansion": "left the group",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "'X dropped (group)' = left the group; '[item] dropped', 'it dropped' = loot dropped; 'dropped the flag' in WSG",
   "examples": [],
   "tr": {
    "zhTW": "離隊了",
@@ -17557,7 +17598,7 @@
   ],
   "expansion": "quest",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "quest ('q done', 'share q'); 'in q', 'q up', 'q for WSG' = queue (battleground or login queue)",
   "examples": [],
   "tr": {
    "zhTW": "任務",
@@ -17580,8 +17621,11 @@
   ],
   "expansion": "share the quest",
   "cat": "lfg",
-  "ambiguity": "",
-  "examples": [],
+  "ambiguity": "'share', 'share quest', 'pls share' = share a quest from the quest log; about mobs or kills ('share tags?', 'can we share the mob', 'share credit') = group up so both get kill credit (see share tags)",
+  "examples": [
+   "pls share",
+   "can u share the quest"
+  ],
   "tr": {
    "zhTW": "分享任務",
    "zhCN": "共享任务",
@@ -17765,7 +17809,7 @@
   ],
   "expansion": "first hit claims the mob",
   "cat": "lfg",
-  "ambiguity": "\"tap\" is also warlock Life Tap",
+  "ambiguity": "\"tap\" is also warlock Life Tap; 'share tags' = group up so both get credit for the same mobs",
   "examples": [
    "i tagged it"
   ],
@@ -17779,6 +17823,39 @@
    "ptBR": "Marcar",
    "ruRU": "Тапнуть моба",
    "itIT": "Taggare"
+  }
+ },
+ {
+  "term": "share tags",
+  "aliases": [
+   "share tag",
+   "sharing tags",
+   "tag share",
+   "share mobs",
+   "share the mob",
+   "share the mobs",
+   "share credit",
+   "share kills",
+   "group for tags"
+  ],
+  "expansion": "group up so both players get kill credit and loot from the same mobs",
+  "cat": "lfg",
+  "ambiguity": "a mob belongs to whoever tags (hits) it first; 'share tags?' near quest mobs or a rare = invite each other so kills count for both, not sharing a quest",
+  "examples": [
+   "can we share tags on these?",
+   "wanna share tags?",
+   "can we share the mob"
+  ],
+  "tr": {
+   "zhTW": "組隊共享怪物歸屬",
+   "zhCN": "组队共享怪物归属",
+   "koKR": "파티로 몹 태그 공유",
+   "deDE": "Tags teilen (Gruppe)",
+   "frFR": "Partager les tags",
+   "esES": "Compartir tags (grupo)",
+   "ptBR": "Dividir tag (grupo)",
+   "ruRU": "Общий тег (в группе)",
+   "itIT": "Condividere i tag"
   }
  },
  {
@@ -17930,7 +18007,7 @@
   ],
   "expansion": "not saved / fresh ID",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "'fresh (ID)' = raid/dungeon lockout not used yet; 'fresh 60' = just reached level 60",
   "examples": [],
   "tr": {
    "zhTW": "新進度（沒CD）",
@@ -18289,22 +18366,26 @@
   "term": "Strat Live",
   "aliases": [
    "live strat",
-   "live side"
+   "live side",
+   "strat living",
+   "living side"
   ],
-  "expansion": "Stratholme Scarlet/Living side",
+  "expansion": "Stratholme, living side (Scarlet Crusade half)",
   "cat": "zone",
-  "ambiguity": "",
-  "examples": [],
+  "ambiguity": "this is Stratholme, not Scarlet Monastery (SM): the main-gate half held by the Scarlet Crusade (Timmy, Cannon Master, Archivist, Balnazzar); the other half is Strat UD (Baron)",
+  "examples": [
+   "LF1M strat live last spot dps"
+  ],
   "tr": {
-   "zhTW": "斯坦索姆血色區",
-   "zhCN": "斯坦索姆血色区",
-   "koKR": "스트라솔름 붉은십자군",
-   "deDE": "Strat Lebendig",
-   "frFR": "Strat vivant",
-   "esES": "Strat vivo",
-   "ptBR": "Strat vivo",
-   "ruRU": "Страт: живая",
-   "itIT": "Strat vivi"
+   "zhTW": "斯坦索姆活人區",
+   "zhCN": "斯坦索姆活人区",
+   "koKR": "스트라솔름 정문",
+   "deDE": "Stratholme lebende Seite",
+   "frFR": "Stratholme côté vivant",
+   "esES": "Stratholme lado vivo",
+   "ptBR": "Stratholme lado vivo",
+   "ruRU": "Стратхольм: живая часть",
+   "itIT": "Stratholme lato vivo"
   }
  },
  {
@@ -18895,17 +18976,24 @@
   }
  },
  {
-  "term": "DME jumps",
+  "term": "jump runs",
   "aliases": [
+   "jump run",
+   "jumprun",
+   "jumpruns",
+   "jump-run",
+   "jump-runs",
    "DMJR",
-   "jump runs",
-   "DME",
-   "jump run"
+   "DME jumps",
+   "DME jump runs"
   ],
-  "expansion": "Dire Maul East jump runs (farm)",
+  "expansion": "Dire Maul East jump runs: fast runs that jump down ledges to skip trash (farm or boost)",
   "cat": "zone",
-  "ambiguity": "",
-  "examples": [],
+  "ambiguity": "usually DM East ('dm east for jumpruns'); not jumping practice",
+  "examples": [
+   "anyone want to run dm east for jumpruns?",
+   "WTS DME jump runs"
+  ],
   "tr": {
    "zhTW": "厄運東區跳刷",
    "zhCN": "厄运东跳刷",
@@ -20890,7 +20978,7 @@
   ],
   "expansion": "stand behind the boss",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "'get behind' = stand behind the boss (avoid cleave/breath, allow backstab); otherwise ordinary ('fell behind')",
   "examples": [],
   "tr": {
    "zhTW": "站王背後",
@@ -20933,7 +21021,7 @@
   ],
   "expansion": "don't stand in fire",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "'dont stand in fire' = move out of ground fire; 'fire res' = Fire Resistance; 'fire mage' = Fire spec",
   "examples": [],
   "tr": {
    "zhTW": "別站火裡",
@@ -21691,7 +21779,7 @@
   ],
   "expansion": "mob fleeing at low health",
   "cat": "combat",
-  "ambiguity": "",
+  "ambiguity": "mob fleeing at low health ('runner, stop it'); in BG talk a fast player or flag runner",
   "examples": [],
   "tr": {
    "zhTW": "逃跑的怪",
@@ -22104,7 +22192,7 @@
   ],
   "expansion": "payout share in GDKP",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "GDKP or boost payout share ('cut is 200g'); otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "分紅",
@@ -22334,7 +22422,7 @@
   ],
   "expansion": "link the item in chat",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "'link it' = shift-click the item into chat; a web link in a whisper is often spam",
   "examples": [],
   "tr": {
    "zhTW": "貼連結",
@@ -22520,7 +22608,7 @@
   ],
   "expansion": "Bindings of the Windseeker",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "'left/right binding' = Bindings of the Windseeker (Thunderfury); 'key bindings' = keyboard binds",
   "examples": [],
   "tr": {
    "zhTW": "風之使者的束縛",
@@ -24655,7 +24743,7 @@
   ],
   "expansion": "Multi-Shot",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "hunter Multi-Shot ('dont multi the sheep'); 'multi-box' = playing several accounts at once",
   "examples": [
    "don't multi the sheep"
   ],
@@ -25686,7 +25774,7 @@
   ],
   "expansion": "paladin Seal",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "paladin Seal ('SoC'); 'Seal of Ascension' = UBRS key",
   "examples": [],
   "tr": {
    "zhTW": "聖印",
@@ -26559,7 +26647,7 @@
   "aliases": [],
   "expansion": "Preparation",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "rogue Preparation; usually 'prep' = prepare ('raid prep', 'prep consumes')",
   "examples": [],
   "tr": {
    "zhTW": "伺機待發",
@@ -26594,12 +26682,10 @@
  },
  {
   "term": "sinister strike",
-  "aliases": [
-   "SS"
-  ],
+  "aliases": [],
   "expansion": "Sinister Strike",
   "cat": "class",
-  "ambiguity": "\"SS\" usually = Soulstone",
+  "ambiguity": "chat 'SS' usually = Soulstone; Sinister Strike only in rogue ability talk ('ss spam')",
   "examples": [],
   "tr": {
    "zhTW": "邪惡攻擊",
@@ -26637,7 +26723,7 @@
   "aliases": [],
   "expansion": "Blind",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "rogue Blind (crowd control); 'are you blind' is an ordinary insult",
   "examples": [],
   "tr": {
    "zhTW": "致盲",
@@ -27429,7 +27515,7 @@
   "aliases": [],
   "expansion": "shaman Purge",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "shaman Purge (removes an enemy buff); otherwise the ordinary word",
   "examples": [],
   "tr": {
    "zhTW": "淨化術",
@@ -28339,7 +28425,7 @@
   ],
   "expansion": "Execute",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "warrior Execute (target under 20% health); 'execute the plan' is ordinary",
   "examples": [],
   "tr": {
    "zhTW": "斬殺",
@@ -28458,13 +28544,10 @@
  },
  {
   "term": "sweeping strikes",
-  "aliases": [
-   "SS",
-   "shield slam"
-  ],
+  "aliases": [],
   "expansion": "Sweeping Strikes",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "chat 'SS' usually = Soulstone; Sweeping Strikes only in arms warrior talk ('ss + ww')",
   "examples": [],
   "tr": {
    "zhTW": "橫掃攻擊",
@@ -28476,6 +28559,25 @@
    "ptBR": "Golpes Arrebatadores",
    "ruRU": "Размашистые удары",
    "itIT": "Assalto Rotante"
+  }
+ },
+ {
+  "term": "shield slam",
+  "aliases": [],
+  "expansion": "Shield Slam (protection warrior attack)",
+  "cat": "class",
+  "ambiguity": "",
+  "examples": [],
+  "tr": {
+   "zhTW": "盾牌猛擊",
+   "zhCN": "盾牌猛击",
+   "koKR": "방패 밀쳐내기",
+   "deDE": "Schildschlag",
+   "frFR": "Heurt de bouclier",
+   "esES": "Embate con escudo",
+   "ptBR": "Batida de Escudo",
+   "ruRU": "Мощный удар щитом",
+   "itIT": "Colpo di Scudo"
   }
  },
  {
@@ -28543,12 +28645,10 @@
  },
  {
   "term": "charge",
-  "aliases": [
-   "intercept"
-  ],
+  "aliases": [],
   "expansion": "warrior Charge",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "warrior Charge; 'in charge', 'free of charge' are ordinary",
   "examples": [],
   "tr": {
    "zhTW": "衝鋒",
@@ -28608,7 +28708,7 @@
   "aliases": [],
   "expansion": "Revenge",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "warrior Revenge (prot ability); in PvP banter ordinary revenge",
   "examples": [],
   "tr": {
    "zhTW": "復仇",
@@ -29552,7 +29652,6 @@
  {
   "term": "commission",
   "aliases": [
-   "com",
    "fee"
   ],
   "expansion": "crafting fee",
@@ -30713,7 +30812,7 @@
   ],
   "expansion": "blacksmithing plans",
   "cat": "trade",
-  "ambiguity": "",
+  "ambiguity": "blacksmithing plans (recipes); 'any plans tonight' is ordinary",
   "examples": [],
   "tr": {
    "zhTW": "設計圖（鍛造）",
@@ -31628,12 +31727,10 @@
  },
  {
   "term": "Southshore",
-  "aliases": [
-   "SS"
-  ],
+  "aliases": [],
   "expansion": "Southshore",
   "cat": "zone",
-  "ambiguity": "\"SS\" usually Soulstone",
+  "ambiguity": "Hillsbrad town; chat 'SS' usually = Soulstone, but 'TM vs SS' / 'raid SS' (world PvP) = Southshore",
   "examples": [],
   "tr": {
    "zhTW": "南海鎮",
@@ -32303,7 +32400,7 @@
   ],
   "expansion": "battleground marks of honor",
   "cat": "misc",
-  "ambiguity": "",
+  "ambiguity": "battleground Marks of Honor; 'use marks' in a dungeon = raid target markers",
   "examples": [],
   "tr": {
    "zhTW": "戰場榮譽印記",
@@ -32509,14 +32606,13 @@
   }
  },
  {
-  "term": "mine",
+  "term": "Gold Mine",
   "aliases": [
-   "GM",
-   "gold mine"
+   "mine"
   ],
   "expansion": "Gold Mine (AB)",
   "cat": "misc",
-  "ambiguity": "",
+  "ambiguity": "Arathi Basin node; 'mine' alone ('inc mine', 'def mine') means it only in AB chat, otherwise 'mine' is the ordinary word; 'GM' in AB = Gold Mine",
   "examples": [],
   "tr": {
    "zhTW": "金礦",
@@ -33418,15 +33514,10 @@
  },
  {
   "term": "honored",
-  "aliases": [
-   "friendly",
-   "neutral",
-   "hated",
-   "unfriendly"
-  ],
+  "aliases": [],
   "expansion": "honored reputation",
   "cat": "misc",
-  "ambiguity": "",
+  "ambiguity": "reputation level Honored; 'im honored' is ordinary",
   "examples": [],
   "tr": {
    "zhTW": "尊敬",
