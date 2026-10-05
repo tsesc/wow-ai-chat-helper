@@ -165,7 +165,7 @@ end
 
 local HELP = {
 	"/wch — 狀態視窗（橋接燈號、slot、開關）",
-	"/wch tr <中文> — 翻成英文候選句（/tr 也可以，除非別的插件用掉了）",
+	"/wtr <中文> — 翻成英文候選句（同 /wch tr；/tr 沒被佔用時也可以）",
 	"/wch g [關鍵字] — 術語表",
 	"/wch auto <whisper|party|raid|guild> on|off — 自動解釋的頻道",
 	"/wch font on|off — 聊天框使用內建中文字型",
@@ -249,15 +249,19 @@ function ns.SlashTaken(cmd)
 	return nil
 end
 
+-- /wtr is always ours (short, unlikely to clash); /tr only when nothing else has it.
 local function RegisterTr()
-	if ns.trRegistered then return end
-	if ns.SlashTaken("/tr") then
-		ns.trBlocked = true
-		return
-	end
-	SLASH_WCHTR1 = "/tr"
+	if ns.trRegistered or ns.trBlocked then return end
+	local trFree = not ns.SlashTaken("/tr")
+	SLASH_WCHTR1 = "/wtr"
+	if trFree then SLASH_WCHTR2 = "/tr" end
 	SlashCmdList.WCHTR = function(msg) if ns.UI then ns.UI.Translate(msg) end end
-	ns.trRegistered = true
+	if trFree then
+		ns.trRegistered = true
+	else
+		ns.trBlocked = true
+		ns.Print("/tr 已被遊戲或其他插件使用，翻譯請改用 /wtr <中文>")
+	end
 end
 ns.RegisterTr = RegisterTr
 

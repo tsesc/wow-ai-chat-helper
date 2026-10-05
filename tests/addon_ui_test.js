@@ -120,6 +120,20 @@ test('/tr is not taken over when another addon registered it; /wch tr still work
   vm.slash('/chathelper tr 你好');
   vm.advance(0.6);
   assert.equal(vm.decodeStrip().records.at(-1).text, '你好');
+  // The short alias still works, and login said so.
+  assert.ok(vm.chatText().some(t => t.includes('/tr') && t.includes('/wtr')), 'login notice names /wtr');
+  vm.slash('/wtr 等我一下');
+  vm.advance(0.6);
+  assert.equal(vm.decodeStrip().records.at(-1).text, '等我一下');
+});
+
+test('/wtr is always a translate shortcut, next to /tr', () => {
+  const vm = boot();
+  vm.slash('/wtr 我五分鐘後到');
+  vm.advance(0.6);
+  const r = vm.decodeStrip().records.at(-1);
+  assert.deepEqual([r.kind, r.text], ['t', '我五分鐘後到']);
+  assert.ok(!vm.chatText().some(t => t.includes('/wtr') && t.includes('/tr ')), 'no notice when /tr is free');
 });
 
 test('[詳細] sends a d request with the original text and ctx; the result prints [詳細] lines', () => {

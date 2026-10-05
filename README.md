@@ -16,7 +16,7 @@ parts (`bridge/capture.ps1` screen capture, CJK font rendering, IME, hyperlink c
 still need the phase-0 spike on the real client.
 
 - Addon `WoWChatHelper`: auto-explains whisper/party/raid/guild, `[?]` for other
-  channels, reply picker, `/tr` translate, glossary panel (756 terms, 216 offline
+  channels, reply picker, `/wtr` translate, glossary panel (756 terms, 216 offline
   phrases), status frame, bundled Noto Sans TC subset font.
 - Bridge (Node.js ≥ 22.2, no runtime dependencies): Claude Code CLI with Haiku
   (persistent, batched) and Sonnet for "detail"; 200 load-on-demand slots and wav
