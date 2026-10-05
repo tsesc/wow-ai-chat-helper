@@ -163,7 +163,7 @@ test('generated glossary addons are up to date with the JSON (rebuilt in memory)
   const stale = [];
   for (const [rel, content] of Object.entries(fresh)) {
     let cur = null;
-    try { cur = fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch {}
+    try { cur = fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n'); } catch {}
     if (cur !== content) stale.push(rel);
   }
   assert.deepEqual(stale, [], 'stale: run `node tools/build-glossary.js`');
