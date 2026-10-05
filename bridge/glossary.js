@@ -32,29 +32,65 @@ function normalizeLocale(v) {
   return LOCALE_ALIASES[hit] || hit;
 }
 
-// All-caps glossary terms that are also everyday English words: when the chat line has
-// them in lowercase ("if", "as", "am") they are the English word, not the abbreviation.
-// Only that case is skipped; "IF" in capitals still matches Ironforge.
-const ENGLISH_WORDS = new Set(('a an and am are as at be by do go he hi i if in is it me my no of oh on or ' +
-  'so to up us we all any ago one per pet run see set two war way who why yes').split(' '));
+// Glossary forms that are also everyday English words. A form written with capitals
+// ("IF", "AS", "HoW", "WAs", "DoN", "Ash", "Van") matches one of these words only when
+// the chat line has exactly that spelling: "how r u" is not Hammer of Wrath, "If" at the
+// start of a sentence is not Ironforge, but "IF" and "HoW" still match. A lowercase
+// ALIAS in this list never matches ("at" is not "@", "go" is not "gogo"); an entry's own
+// lowercase term ("need", "down", "up") still does, and carries an ambiguity note.
+const ENGLISH_WORDS = new Set((
+  'a an and am are as at be by do go he hi i if in is it me my no of oh on or so to up us we ' +
+  'all any ago one per pet run see set two war way who why yes was how don ve id es ad ma em ' +
+  'hot tot sod bow cow cot sos gee lip lib arm van ash fade patch shield general forever heroic ' +
+  'bubble details legacy prince beast baron emperor inferno razor twins titans giants brood ' +
+  'scarab omen atlas gadget gads blasted library armory cathedral survival subtlety ' +
+  'reincarnation mine horsemen sepulcher snowfall rag darn fort stocks rend mm fr w x l ' +
+  'sum cross might kings hero morning light cause howdy say yell pop transfer convert replace ' +
+  'chain tap tapped quick arena princess tribute stairs ruins bomb breath sand heart bugs ' +
+  'dragons dogs meter cleave tail pack pot split flower boon gift judge box each guard friendly ' +
+  'neutral hated unfriendly load binds talent points bound junk white whatever graves wolf ram ' +
+  'horse saber bat inn plan orb orbs crystal tin silk wool linen maxed fee tips icy ham chicken ' +
+  'grenades dirge chops runes buyers middle camp tower bunker bunkers glide gryphon owl hawk ' +
+  'monkey kitty nova light seals sharing kick assist ship drinking adds sunders bandages ' +
+  'materials minute salute salt tilt sweat sweaty yup dinged banker emotes layering casuals ' +
+  'chars critters portals disbanding gray reserved bidding bindings root cat bear serpent ' +
+  'missiles sanctuary salvation freedom judgement consecration eviscerate pp boxes crippling ' +
+  'corruption immolate shards seduce exec thunderclap whirlwind intercept recklessness allies ' +
+  'enchants transmute plans guardian capping capped tun flagged parses logs pumping banned ' +
+  'ea suspended runners enraged soaking crafting crafted cookie cookies ranged tots'
+).split(' '));
 
 const WORD = /[\p{L}\p{N}]/u;
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const norm = (s) => String(s).toLowerCase().replace(/\s+/g, ' ').trim();
-const isAllCaps = (s) => /[A-Z]/.test(s) && s === s.toUpperCase();
+const hasCaps = (s) => /[A-Z]/.test(s);
 
 const LETTER = /\p{L}/u;
+// Letter-initial forms that may follow a number: units ("80g", "5k", "2h", "10min", "x2").
+const UNITS = new Set(['g', 's', 'c', 'k', 'm', 'h', 'min', 'mins', 'sec', 'secs', 'hr', 'hrs', 'gold', 'silver', 'copper', 'x']);
 
 // One pattern for a term: boundaries only on sides where the term itself starts/ends
-// with a letter or digit ("<3", "/w", "price?" carry their own punctuation). A term that
-// starts with a letter may follow a digit ("80g", "5k", "2h"); one that starts with a
-// digit may not follow a letter or digit ("lvl60" has no "60").
+// with a letter or digit ("<3", "/w", "price?" carry their own punctuation).
+// Left: a letter-initial form may not follow a letter, a digit (except unit forms:
+// "80g", "5k") or an apostrophe ("we've" has no "ve"); a digit-initial one may not
+// follow a letter or digit ("lvl60" has no "60"). Right: no letter or digit, and no
+// contraction ("don't" has no "don"; "ah's prices" still has "ah").
 function termPattern(t) {
   t = t.trim();
   const body = t.split(/\s+/).map(escapeRe).join('\\s+');
-  const pre = LETTER.test(t[0]) ? '(?<!\\p{L})' : WORD.test(t[0]) ? '(?<![\\p{L}\\p{N}])' : '';
-  const post = WORD.test(t.slice(-1)) ? '(?![\\p{L}\\p{N}])' : '';
+  let pre = '';
+  if (LETTER.test(t[0])) pre = UNITS.has(t.toLowerCase()) ? "(?<![\\p{L}'\u2019])" : "(?<![\\p{L}\\p{N}'\u2019])";
+  else if (WORD.test(t[0])) pre = '(?<![\\p{L}\\p{N}])';
+  const post = WORD.test(t.slice(-1)) ? "(?![\\p{L}\\p{N}])(?!['\u2019](?:t|ve|re|ll|d|m)(?![\\p{L}]))" : '';
   return pre + body + post;
+}
+
+// Whether the chat spelling `found` of glossary form `surface` counts (see ENGLISH_WORDS).
+function formMatches(surface, found, viaAlias) {
+  const low = found.toLowerCase();
+  if (!ENGLISH_WORDS.has(low)) return true;
+  if (hasCaps(surface)) return found === surface;
+  return !viaAlias;
 }
 
 class Glossary {
@@ -128,10 +164,10 @@ class Glossary {
     const loc = normalizeLocale(locale) || DEFAULT_LOCALE;
     for (const { text: found } of this.scan(text)) {
       const list = this.byKey.get(norm(found)) || [];
-      for (const { entry, surface } of list) {
+      for (const { entry, surface, viaAlias } of list) {
         if (seen.has(entry)) continue;
-        // "if"/"as"/"am" in lowercase are English, not IF/AS/AM.
-        if (isAllCaps(surface) && found === found.toLowerCase() && ENGLISH_WORDS.has(found.toLowerCase())) continue;
+        // "if"/"how"/"was" in ordinary spelling are English, not IF/HoW/WAs.
+        if (!formMatches(surface, found, viaAlias)) continue;
         seen.add(entry);
         out.push({
           term: entry.term, expansion: entry.expansion, ambiguity: entry.ambiguity, cat: entry.cat,
@@ -144,9 +180,11 @@ class Glossary {
   }
 
   // Hits for a request: its text first, then ctx lines (flagged inCtx), no duplicates.
+  // For kind "t" the text is the player's own language, not English chat: only the
+  // (English) ctx lines are scanned ("ma place" is not MA, "em 5 minutos" is not EM).
   findForRequest(req, locale, opts = {}) {
     const max = opts.max ?? 20;
-    const inText = this.find(req.text || '', locale, { max });
+    const inText = req.kind === 't' ? [] : this.find(req.text || '', locale, { max });
     const terms = new Set(inText.map(h => h.term));
     const inCtx = this.find(req.ctx || '', locale, { max })
       .filter(h => !terms.has(h.term)).map(h => ({ ...h, inCtx: true }));
@@ -174,4 +212,4 @@ function loadGlossary(file, log = () => {}) {
   return g;
 }
 
-module.exports = { LOCALES, DEFAULT_LOCALE, normalizeLocale, Glossary, loadGlossary, termPattern, ENGLISH_WORDS };
+module.exports = { LOCALES, DEFAULT_LOCALE, normalizeLocale, Glossary, loadGlossary, termPattern, formMatches, ENGLISH_WORDS };

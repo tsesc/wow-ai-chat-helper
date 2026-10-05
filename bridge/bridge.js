@@ -355,13 +355,16 @@ class Bridge {
     if (changed) this.publish(urgent);
   }
 
-  // The record goes to the AI with the language in force when it is sent.
+  // The record goes to the AI with the language in force when it is sent; the result
+  // names that language (lang), so the addon files learned terms under it even if the
+  // player switched language meanwhile.
   dispatch(rec) {
-    const p = this.runner.request({ ...rec, lang: this.locale() }).then((result) => {
+    const lang = this.locale();
+    const p = this.runner.request({ ...rec, lang }).then((result) => {
       if (this.stopped) return;
       if (rec.session !== this.state.session) return; // the session changed meanwhile
       delete this.state.pending[rec.id];
-      this.setResult({ ...result, id: rec.id, kind: rec.kind });
+      this.setResult({ ...result, id: rec.id, kind: rec.kind, lang });
       this.saveState();
       this.publish(true);
       this.raiseReady(rec.id);

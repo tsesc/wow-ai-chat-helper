@@ -177,7 +177,7 @@ test('/wch lang: no argument shows the current one, unknown codes are refused, a
   assert.equal(vm.str('WCH.lang'), 'frFR');
 });
 
-test('learned terms keep their language; a term learned in zhTW gets the new language on re-learn; old entries migrate', () => {
+test('learned terms are kept per language: re-learning in koKR adds a Korean entry, the zhTW one stays; old entries migrate', () => {
   const vm = boot({ saved: { WCH_DB: { learned: { zg: { term: 'ZG', expansion: "Zul'Gurub", zh: '祖爾格拉布', t: 1790000001 } } } } });
   assert.equal(vm.str('WCH_DB.learned.zg.tr'), '祖爾格拉布');
   assert.equal(vm.str('WCH_DB.learned.zg.locale'), 'zhTW');
@@ -191,12 +191,44 @@ test('learned terms keep their language; a term learned in zhTW gets the new lan
   deliver(vm, id, [sample.x(id, { tr: '오늘 밤 줄구룹?', terms: [{ term: 'ZG', expansion: "Zul'Gurub", tr: '줄구룹' }] })]);
   assert.ok(vm.chatText().some(t => t.includes('[번역]|r 오늘 밤 줄구룹?')));
   assert.ok(vm.chatText().some(t => t.includes('ZG=줄구룹')));
-  const zg = vm.eval('WCH_DB.learned.zg');
-  assert.deepEqual([zg.tr, zg.locale, zg.t], ['줄구룹', 'koKR', 1790000001]);
+  const zg = vm.eval('WCH_DB.learned["zg\\31koKR"]');
+  assert.deepEqual([zg.tr, zg.locale], ['줄구룹', 'koKR']);
+  assert.deepEqual([vm.str('WCH_DB.learned.zg.tr'), vm.str('WCH_DB.learned.zg.locale')], ['祖爾格拉布', 'zhTW'], 'zhTW entry untouched');
+  assert.deepEqual(vm.eval('WCH.UI.SearchGlossary("zul")').map(e => [e.term, e.tr]), [['ZG', '줄구룹']]);
   // Reply gloss and tone label in Korean.
   vm.clickLink(`wch:r:${id}`);
   assert.match(vm.str('WCHPickerButton2.gloss:GetText()'), /· 정중$/);
   assert.match(vm.str('WCHPicker.title:GetText()'), /^답장 선택 → 귓속말 Bob/);
+  // Back in zhTW the Traditional Chinese entry is still there.
+  vm.slash('/wch lang zhTW');
+  assert.deepEqual(vm.eval('WCH.UI.SearchGlossary("zul")').map(e => [e.term, e.tr]), [['ZG', '祖爾格拉布']]);
+});
+
+test('a result that arrives after /wch lang is learned under the language it was written in', () => {
+  const vm = boot({ locale: 'zhTW' });
+  vm.receiveChat('WHISPER', 'BRD later?', 'Bob');
+  vm.advance(0.6);
+  const id = vm.decodeStrip().records.at(-1).id;
+  ackStrip(vm);
+  vm.slash('/wch lang koKR'); // while the request runs
+  ackStrip(vm);
+  deliver(vm, id, [sample.x(id, { tr: '晚點打黑石深淵？', terms: [{ term: 'BRDX', expansion: 'Blackrock Depths', tr: '黑石深淵' }] })]);
+  assert.equal(vm.str('WCH_DB.learned.brdx.locale'), 'zhTW', 'request language, not the current one');
+  assert.equal(vm.str('type(WCH_DB.learned["brdx\\31koKR"])'), 'nil');
+  // The bridge's lang on the result wins.
+  vm.receiveChat('WHISPER', 'MCX tonight', 'Bob');
+  vm.advance(0.6);
+  const id2 = vm.decodeStrip().records.at(-1).id;
+  ackStrip(vm);
+  deliver(vm, id2, [{ ...sample.x(id2, { tr: '오늘 밤 MC', terms: [{ term: 'MCX', expansion: 'Molten Core', tr: '화심' }] }), lang: 'koKR' }]);
+  assert.equal(vm.str('WCH_DB.learned["mcx\\31koKR"].tr'), '화심');
+});
+
+test('saved learned entries of another language under a plain key move to "<term>\\31<lang>"', () => {
+  const vm = boot({ locale: 'koKR', saved: { WCH_DB: { learned: { hr: { term: 'hr', tr: '하드 예약', locale: 'koKR', t: 5 }, sr: { term: 'sr', tr: '軟預訂', locale: 'zhTW', t: 6 } } } } });
+  assert.equal(vm.str('type(WCH_DB.learned.hr)'), 'nil');
+  assert.equal(vm.str('WCH_DB.learned["hr\\31koKR"].tr'), '하드 예약');
+  assert.equal(vm.str('WCH_DB.learned.sr.tr'), '軟預訂');
 });
 
 test('font setting migration: a saved true from before (the old default) becomes automatic; false stays', () => {
@@ -215,14 +247,26 @@ test('font setting migration: a saved true from before (the old default) becomes
   assert.equal(off.eval('ChatFrame1.font')[0], 'Fonts\\ARIALN.TTF');
 });
 
-test('koKR on a zhTW client: the bundled Hangul font goes on the chat frames by default', () => {
+test('koKR / zhCN on a zhTW client: the chat frames keep the client font (its Chinese stays readable); a notice says how to opt in', () => {
   const vm = boot({ locale: 'zhTW' });
   assert.equal(vm.eval('ChatFrame1.font')[0], 'Fonts\\ARIALN.TTF');
   vm.slash('/wch lang koKR');
-  assert.equal(vm.eval('ChatFrame1.font')[0], FONTS.koKR);
-  assert.equal(vm.eval('ChatFrame1EditBox.font')[0], FONTS.koKR);
+  assert.equal(vm.eval('ChatFrame1.font')[0], 'Fonts\\ARIALN.TTF', 'no Han-less KR subset on a Chinese client');
+  assert.notEqual((vm.eval('ChatFrame1EditBox.font') || [])[0], FONTS.koKR);
+  const notice = (t) => t.includes('/wch font on') && t.includes('네모');
+  assert.equal(vm.chatText().filter(notice).length, 1, 'one notice');
+  vm.slash('/wch lang zhCN');
+  assert.equal(vm.eval('ChatFrame1.font')[0], 'Fonts\\ARIALN.TTF');
+  // The player can still opt in.
+  vm.slash('/wch font on');
+  assert.equal(vm.eval('ChatFrame1.font')[0], FONTS.zhCN);
   vm.slash('/wch lang zhTW');
+  assert.equal(vm.eval('ChatFrame1.font')[0], FONTS.zhTW, 'explicit on is kept');
+  vm.slash('/wch font auto');
   assert.equal(vm.eval('ChatFrame1.font')[0], 'Fonts\\ARIALN.TTF', 'original font restored');
+  // A Latin client has no CJK script of its own to lose: koKR gets the Hangul font.
+  const en = boot({ locale: 'enUS', saved: { WCH_DB: { lang: 'koKR' } } });
+  assert.equal(en.eval('ChatFrame1.font')[0], FONTS.koKR);
 });
 
 test('no glossary addons installed at all: login still works, translate and explain still go to the AI', () => {

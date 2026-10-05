@@ -140,7 +140,24 @@ function ns.LangFont() return ns.ROOT .. "Fonts\\" .. ns.LangFontFile() end
 function ns.NeedsBundledFont()
 	return ns.LANG_FONT[ns.lang] ~= nil and ns.ClientLang() ~= ns.lang
 end
-ns.FontDefault = ns.NeedsBundledFont
+
+-- The automatic chat-frame font. WoW's SetFont has no per-glyph fallback, and each
+-- bundled subset carries only its own CJK script (plus Latin/Cyrillic): on a CJK client
+-- it would turn the client's own text in chat (system and loot lines, channel names,
+-- player names) into boxes, e.g. WCH-KR has no Han at all. So a CJK client keeps its
+-- chat font unless the player turns ours on (/wch font on; ns.CrossCJK says when to
+-- tell them). On a Latin/Cyrillic client the subsets cover the client's script.
+local CJK_CLIENT = { zhTW = true, zhCN = true, koKR = true }
+function ns.FontDefault()
+	if CJK_CLIENT[ns.ClientLang() or ""] then return false end
+	return ns.NeedsBundledFont()
+end
+
+-- A CJK language on a client of another CJK locale: the client font may lack some of
+-- its characters, and our font would hide the client's.
+function ns.CrossCJK()
+	return CJK_CLIENT[ns.ClientLang() or ""] == true and ns.NeedsBundledFont()
+end
 
 -- WCH_DB.chatFont: true/false = the player's choice, nil = automatic.
 function ns.ChatFontOn()
@@ -289,6 +306,21 @@ local function InitDB()
 			e.tr = e.zh
 			e.locale = e.locale or "zhTW"
 		end
+	end
+	-- One entry per term and language: plain keys are Traditional Chinese, others
+	-- "<term>\31<lang>" (UI.LearnKey). Move plain-keyed entries of another language.
+	local moves = {}
+	for k, e in pairs(db.learned) do
+		if type(k) == "string" and not k:find("\31", 1, true) and type(e) == "table"
+			and e.locale and e.locale ~= "zhTW" then
+			moves[#moves + 1] = k
+		end
+	end
+	for _, k in ipairs(moves) do
+		local e = db.learned[k]
+		local nk = k .. "\31" .. e.locale
+		if db.learned[nk] == nil then db.learned[nk] = e end
+		db.learned[k] = nil
 	end
 	if db.lang ~= nil and not ns.ValidLang(db.lang) then db.lang = nil end
 	ns.lang = ns.ValidLang(db.lang) or ns.ClientLang() or "zhTW"

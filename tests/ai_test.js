@@ -486,3 +486,28 @@ test('runner: a fixed systemPrompt overrides the per-language prompts; default g
   assert.ok(logs.some(l => /no glossary file found/.test(l)));
   assert.ok(!ai.buildPrompt([req(1, 'ah is down')], { glossary: r3.glossary }).includes('Known WoW terms'));
 });
+
+test('validateItem: replies that would run as slash commands or carry escape codes are dropped', () => {
+  const base = { id: 1, kind: 'x', tr: '譯', terms: [] };
+  const r = ai.validateItem({ ...base, replies: [{ en: '/gquit' }, { en: ' /run x()' }, { en: 'hi |cffff0000x|r' }, { en: 'ok' }, { en: 'sure thing' }] }, req(1, ''));
+  assert.deepStrictEqual(r.replies.map(x => x.en), ['ok', 'sure thing']);
+  assert.strictEqual(ai.validateItem({ ...base, replies: [{ en: '/gquit' }, { en: 'ok' }] }, req(1, '')), null, 'fewer than 2 safe replies');
+  assert.strictEqual(ai.validateItem({ ...base, replies: [{ en: 'x'.repeat(201) }, { en: 'a' }, { en: 'b' }] }, req(1, '')).replies.length, 2);
+});
+
+test('validateItem: terms capped at 6, long fields cut', () => {
+  const terms = Array.from({ length: 20 }, (_, i) => ({ term: 'T' + i, expansion: 'e'.repeat(300), tr: '譯'.repeat(100) }));
+  terms.unshift({ term: 'x'.repeat(41), tr: 'too long term' });
+  const r = ai.validateItem({ id: 1, kind: 'x', tr: '譯', terms, replies: [{ en: 'a' }, { en: 'b' }] }, req(1, ''));
+  assert.strictEqual(r.terms.length, 6);
+  assert.strictEqual(r.terms[0].term, 'T0');
+  assert.strictEqual(r.terms[0].expansion.length, 80);
+  assert.strictEqual(r.terms[0].tr.length, 40);
+});
+
+test('system prompt: "wb" is welcome back unless there is buff context; "123" asks for a summon', () => {
+  const p = ai.buildSystemPrompt('zhTW');
+  assert.match(p, /"wb" = welcome back \(alone or with a name/);
+  assert.doesNotMatch(p, /"wb" in guild chat = world buff/);
+  assert.match(p, /"123" typed alone in raid\/party = asking the warlock for a summon/);
+});

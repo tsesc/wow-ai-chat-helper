@@ -136,7 +136,10 @@ The bridge asks Claude for a JSON array, one object per request id:
 empty. `tr` (explanation), `terms[].tr` and `replies[].tr` (gloss of the English reply)
 are in the player's language for that request (section 10; the example is zhTW, Taiwan
 gamer wording); `replies[].en` is always US-realm WoW chat English. The old field name
-`zh` is not accepted. The bridge validates;
+`zh` is not accepted. The bridge validates; a reply `en` that starts with `/`, contains
+`|` or a control character, or is over 200 characters is dropped (it would run as a
+slash command or an escape sequence in the edit box); `terms` keeps at most 6 entries
+(term ≤ 40, expansion ≤ 80, tr ≤ 40 characters);
 an item missing or invalid is retried once alone, then published as `status="error"`.
 
 ### 3.3 Slot data (bridge → game)
@@ -149,7 +152,7 @@ Every publish writes the same file to all 200 slots
 WCH_SlotData = {
   v = 1, now = 1790000000, session = "<token>",
   results = {
-    { id = 12, kind = "x", status = "done", tr = "...",
+    { id = 12, kind = "x", status = "done", lang = "zhTW", tr = "...",
       terms = { { term = "LF1M", expansion = "Looking For 1 More", tr = "還缺一人" } },
       replies = { { en = "inv pls, tank here", tr = "請邀我，我是坦", tone = "casual" } } },
     { id = 13, kind = "t", status = "working" },
@@ -158,7 +161,8 @@ WCH_SlotData = {
 }
 ```
 
-Keep the most recent 100 results of the current session. Lua string escaping must be
+`lang` on a result is the language the bridge asked for when it dispatched the request
+(10.4); the addon files learned terms under it. Keep the most recent 100 results of the current session. Lua string escaping must be
 safe for any UTF-8 and quotes/newlines (use `string.format("%q")`-equivalent escaping in
 JS; unit-test it). Atomic write per file (write temp + rename).
 
@@ -334,8 +338,14 @@ Single source of truth in `data/glossary/` (research and audit in `docs/research
   is normalized: lowercase, trimmed, single spaces, no trailing sentence punctuation
   (including `?`).
 - Matching (bridge `glossary.js`): case-insensitive on word boundaries, multiword terms and
-  aliases, symbol terms (`<3`, `/w`), longest match wins, no overlaps; an all-caps term
-  that is also a common English word (e.g. `IF`) is skipped when written in lowercase.
+  aliases, symbol terms (`<3`, `/w`), longest match wins, no overlaps. Apostrophes count
+  as part of a word (`don't` has no `DoN`, `we've` no `VE`), and a letter-initial term
+  may follow a digit only when it is a unit (`80g`, `5k`; `1st` has no `ST`). A form
+  that is also an everyday English word (list `ENGLISH_WORDS`: `was`, `how`, `if`,
+  `at`, `go`, ...) matches only in its own spelling when written with capitals (`HoW`,
+  `WAs`, `IF`; not `how`, `If`), and never as a lowercase alias (`at` is not `@`); an
+  entry's own lowercase term (`need`, `down`) still matches and carries an ambiguity note.
+  For `t` requests only `ctx` is scanned (the text is the player's own language).
 
 ### 10.2 Glossary in the AI request
 
@@ -361,7 +371,10 @@ zone names stay in English. Only `tr` fields are in the player's language.
 - `/wch lang <code>` sets `WCH_DB.lang` (persisted); `/wch lang auto` follows the client
   again; `/wch lang` alone lists the languages. Each change sends a new hello with
   `lang=<code>` in its settings; the bridge answers every request in that language
-  (fallback: hello `locale=` if supported, else zhTW).
+  (fallback: hello `locale=` if supported, else zhTW). A hello that expired unacked
+  (bridge not running) is sent again as soon as the bridge shows up (presence/ack) and,
+  in any case, right before the next request (lower id, so the bridge reads it first).
+  Without signals, a slot result for a later record acks the hellos shown before it.
 - UI strings: `addon/WoWChatHelper/Locales.lua`, one table per locale (zhTW = the original
   strings); a missing key falls back to zhTW.
 - Generated glossary addons: `node tools/build-glossary.js` writes
@@ -372,14 +385,23 @@ zone names stay in English. Only `tr` fields are in the player's language.
   the active locale's addon at login and on `/wch lang` (cached per locale). Generated files
   are committed; `tests/glossary_test.js` fails when they are stale (`--check`).
   `setup.js` installs all of them.
-- Learned (AI) glossary entries store `{ term, expansion, tr, locale, t }`; search shows the
-  active locale's entries. Old `zh` entries migrate to `tr` with `locale = "zhTW"`.
+- Learned (AI) glossary entries store `{ term, expansion, tr, locale, t }`, one per term
+  and language (key: the lowercase term for zhTW, `<term>\31<lang>` otherwise); search
+  shows the active locale's entries. The language is the result's `lang` (else the
+  request's), not the setting when the result arrives. Old `zh` entries migrate to `tr`
+  with `locale = "zhTW"`; plain-keyed entries of another language move to their key.
 - Fonts: `Fonts/WCH-CJK.ttf` (Noto Sans TC), `WCH-SC.ttf` (Noto Sans SC, GB2312),
   `WCH-KR.ttf` (Noto Sans KR, KS X 1001), each under 3 MB, SIL OFL, built by
-  `tools/build-font.py`. `WCH_DB.chatFont = nil` means automatic: on only when the
-  language is zhTW/zhCN/koKR and the client locale is a different one (only the same
-  locale counts as covered). Latin and Cyrillic languages use the client fonts
-  (Cyrillic on CJK clients is unverified). `/wch font on|off|auto`.
+  `tools/build-font.py`. Each subset holds one CJK script plus Latin/Cyrillic, and WoW's
+  `SetFont` has no glyph fallback, so on a CJK client a subset of another script would
+  turn the client's own text in chat into boxes (`WCH-KR` has no Han, `WCH-SC` lacks
+  traditional forms). `WCH_DB.chatFont = nil` means automatic: on only when the language
+  is zhTW/zhCN/koKR, differs from the client locale, and the client is not a CJK locale
+  (a Latin/Cyrillic client loses nothing). A CJK client with another CJK language keeps
+  its chat font and gets a one-time notice (`FONT_CROSS`) that `/wch font on` uses the
+  bundled font at that cost. The addon's own windows always use the language's font.
+  Latin and Cyrillic languages use the client fonts. `/wch font on|off|auto`. Open:
+  merged subsets (client script + chosen script) would remove the trade-off.
 - Non-zhTW translations (glossary, UI strings, prompt wording) are AI-generated and not
   reviewed by native speakers.
 

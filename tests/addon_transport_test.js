@@ -408,3 +408,55 @@ test('the strip is not under UIParent: hiding the UI (Alt+Z) keeps it visible', 
   const f = vm.decodeStrip();
   assert.ok(f && f.records.some(r => r.text === 'are you there?'));
 });
+
+// Review fix: the language only reaches the bridge in a hello; a hello that expired
+// unread (bridge not running yet, or restarting during /wch lang) must be sent again.
+const helloRecs = (vm) => { const f = vm.decodeStrip(); return f && !f.error ? f.records.filter(r => r.kind === 'h') : []; };
+const langOf = (rec) => P.parseSettings(rec.text).lang;
+
+test('bridge down at login: the expired hello is sent again when the bridge shows up', () => {
+  const vm = boot({ hello: false, locale: 'deDE' });
+  vm.advance(2.5);
+  assert.equal(helloRecs(vm).length, 1, 'login hello up');
+  vm.advance(25); // nobody acks it: dropped
+  assert.equal(vm.decodeStrip(), null);
+  vm.raiseSignal('presence', 1); // the bridge starts
+  vm.advance(1.2);
+  const h = helloRecs(vm);
+  assert.equal(h.length, 1, 'hello re-sent');
+  assert.equal(langOf(h[0]), 'deDE');
+  ackStrip(vm);
+  assert.equal(vm.decodeStrip(), null);
+  vm.raiseSignal('presence', 2);
+  vm.advance(1.2);
+  assert.equal(vm.decodeStrip(), null, 'no further hello once one was read');
+});
+
+test('/wch lang while the bridge is away: the next request carries a fresh hello first', () => {
+  const vm = boot();
+  vm.slash('/wch lang frFR');
+  vm.advance(0.6);
+  assert.equal(langOf(helloRecs(vm)[0]), 'frFR');
+  vm.advance(25); // the bridge was restarting: unread
+  assert.equal(vm.decodeStrip(), null);
+  vm.receiveChat('WHISPER', 'ah isnt down for everyone', 'Bob');
+  vm.advance(0.6);
+  const recs = vm.decodeStrip().records;
+  assert.deepEqual(recs.map(r => r.kind), ['h', 'x'], 'hello before the request');
+  assert.equal(langOf(recs[0]), 'frFR');
+  assert.ok(recs[0].id < recs[1].id);
+});
+
+test('without signals a hello is acked by a later record\'s slot result (no hello per request)', () => {
+  const vm = boot({ signals: false });
+  vm.receiveChat('WHISPER', 'one', 'Bob');
+  vm.advance(0.6);
+  const recs = vm.decodeStrip().records;
+  assert.deepEqual(recs.map(r => r.kind), ['h', 'x']);
+  publish(vm, [{ id: recs[1].id, kind: 'x', status: 'working' }]);
+  vm.advance(5);
+  assert.equal(vm.decodeStrip(), null, 'hello and request both taken down');
+  vm.receiveChat('WHISPER', 'two', 'Bob');
+  vm.advance(0.6);
+  assert.deepEqual(vm.decodeStrip().records.map(r => r.kind), ['x'], 'no second hello');
+});

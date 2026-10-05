@@ -282,3 +282,13 @@ test('a SAY target fills the box without /s, keeping the channel the box is on',
   vm.run('WCH.UI.FillChat("omw", { channel = "SAY" })');
   assert.equal(vm.openChatCalls().at(-1).chatType, 'PARTY');
 });
+
+test('a reply never goes into the box as a slash command or with escape codes', () => {
+  const vm = boot();
+  vm.run('WCH.UI.FillChat("/gquit", { channel = "SAY" })');
+  assert.equal(vm.openChatCalls().at(-1).line, 'gquit');
+  vm.run('WCH.UI.FillChat("  //run DoSomething()", { channel = "CHANNEL:Trade" })');
+  assert.equal(vm.openChatCalls().at(-1).line, 'run DoSomething()');
+  vm.run('WCH.UI.FillChat("hi |cffff0000red|r", { channel = "PARTY" })');
+  assert.equal(vm.openChatCalls().at(-1).line, '/p hi cffff0000redr');
+});

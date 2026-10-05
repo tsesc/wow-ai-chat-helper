@@ -174,7 +174,7 @@ test('records -> ack, working, AI, slot files with results, ready signals, state
       assert.strictEqual(data.v, 1);
       assert.strictEqual(typeof data.now, 'number');
       const [x, t] = data.results;
-      assert.deepStrictEqual(x, { id: 2, kind: 'x', status: 'done', tr: '譯：LF1M tank HC DM, inv',
+      assert.deepStrictEqual(x, { id: 2, kind: 'x', status: 'done', lang: 'zhTW', tr: '譯：LF1M tank HC DM, inv',
         terms: [{ term: 'LF1M', expansion: 'Looking For 1 More', tr: '還缺一人' }],
         replies: [{ en: 'inv pls', tr: '請邀我', tone: 'casual' }, { en: 'Hi, could I get an invite?', tr: '嗨，可以邀我嗎？', tone: 'polite' }] });
       assert.strictEqual(t.status, 'done');
@@ -249,7 +249,7 @@ test('errors are published as status=error with err', async () => {
     bridge.handleRecords([rec(1, 'x', 'nope #invalid'), rec(2, 'x', 'login #autherr')]);
     await bridge.idle();
     const results = loadSlot(slotSrc(w, 1)).results;
-    assert.deepStrictEqual(results.find(r => r.id === 1), { id: 1, kind: 'x', status: 'error', err: 'invalid reply' });
+    assert.deepStrictEqual(results.find(r => r.id === 1), { id: 1, kind: 'x', status: 'error', err: 'invalid reply', lang: 'zhTW' });
     assert.match(results.find(r => r.id === 2).err, /claude not logged in/);
     assert.ok(raised(w, 'ready', 1) && raised(w, 'ready', 2));
   } finally { bridge.stop(); }
@@ -457,10 +457,13 @@ test('hello lang=<code> sets the language of every request; client locale is the
     const turns = w.events().filter(e => e.event === 'turn');
     assert.deepStrictEqual(turns.map(t => [t.ids.join(), t.lang]), [['2', 'deDE'], ['4', 'frFR'], ['6', 'zhTW'], ['8', 'esES']]);
     assert.match(turns[0].prompt, /Known WoW terms in this message:\n#2 "ah": AH = Auction House \| Auktionshaus/);
-    // The language is not stored in the published result.
-    const x = loadSlot(slotSrc(w, 1)).results.find(r => r.id === 2);
+    // Each published result names the language it was written in (the addon files
+    // learned terms under it even if the player switched language meanwhile).
+    const results = loadSlot(slotSrc(w, 1)).results;
+    const x = results.find(r => r.id === 2);
     assert.strictEqual(x.status, 'done');
-    assert.strictEqual(x.lang, undefined);
+    assert.strictEqual(x.lang, 'deDE');
+    assert.strictEqual(results.find(r => r.id === 4).lang, 'frFR');
     assert.match(bridge.banner(), /language : esES/);
     assert.match(bridge.banner(), /glossary : 9 terms from .*terms\.json/);
   } finally { bridge.stop(); }

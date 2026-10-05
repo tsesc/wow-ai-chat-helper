@@ -153,21 +153,34 @@ local function Builtin()
 	return builtinIndex
 end
 
+-- Where a learned term lives in WCH_DB.learned: one entry per term and language.
+-- Traditional Chinese keeps the plain key (entries from before the language setting);
+-- every other language gets "<term>\31<lang>".
+local function LearnKey(k, lang)
+	if lang == "zhTW" then return k end
+	return k .. "\31" .. lang
+end
+UI.LearnKey = LearnKey
+
 -- Store AI-explained terms that aren't built in, with their first-seen time and the
--- language of their translation. A term learned in another language takes this
--- one's translation (keeping its first-seen time).
-function UI.Learn(terms)
+-- language of their translation. `lang` is the language the result was written in
+-- (the bridge names it; the request's language otherwise), not the current setting:
+-- the player may have switched language while the request ran. A term already learned
+-- in that language is kept; other languages' entries are never touched.
+function UI.Learn(terms, lang)
 	if type(terms) ~= "table" or not ns.db then return 0 end
+	lang = ns.ValidLang and ns.ValidLang(lang) or ns.lang
 	local idx, learned, n = Builtin(), ns.db.learned, 0
 	for _, t in ipairs(terms) do
 		if type(t) == "table" and type(t.term) == "string" and ns.Trim(t.term) ~= "" then
 			local k = ns.Trim(t.term):lower()
-			local old = learned[k]
-			if not idx[k] and (not old or (type(old) == "table" and LearnedLang(old) ~= ns.lang)) then
-				learned[k] = {
+			local key = LearnKey(k, lang)
+			local old = learned[key]
+			if type(old) == "table" and LearnedLang(old) ~= lang then old = nil end
+			if not idx[k] and not old then
+				learned[key] = {
 					term = ns.Trim(t.term), expansion = t.expansion and tostring(t.expansion) or "",
-					tr = t.tr and tostring(t.tr) or "", locale = ns.lang,
-					t = type(old) == "table" and tonumber(old.t) or time(),
+					tr = t.tr and tostring(t.tr) or "", locale = lang, t = time(),
 				}
 				n = n + 1
 			end
@@ -248,7 +261,7 @@ end
 
 function UI.OnResult(rec, r)
 	if rec.kind == "x" then
-		UI.Learn(r.terms)
+		UI.Learn(r.terms, r.lang or rec.meta.lang)
 		PrintExplain(FramesFor(rec), L.TAG_X, r.tr or "", r.terms, rec.id)
 		if rec.meta.wantPicker then UI.OpenPicker(rec.id) end
 	elseif rec.kind == "t" then
@@ -281,6 +294,9 @@ local SLASH = {
 -- target = { channel (wire name), sender, chanIndex, frame }
 function UI.FillChat(text, target)
 	target = target or {}
+	-- Never a slash command or an escape sequence: a reply that starts with "/" would
+	-- run when the player presses Enter (the bridge drops these too).
+	text = tostring(text or ""):gsub("|", ""):gsub("^[%s/]+", "")
 	local ch = target.channel or "SAY"
 	local prefix = ""
 	if ch == "WHISPER" and target.sender and target.sender ~= "" then
@@ -676,6 +692,17 @@ function UI.OnLangChanged()
 	UI.StatusTexts()
 	UI.UpdateStatus()
 	UI.ApplyChatFont(ns.ChatFontOn())
+	UI.FontNotice()
+end
+
+-- Once per language and session: on a CJK client with another CJK language (chat font
+-- left automatic, so off), say how to get the bundled font and what it costs.
+function UI.FontNotice()
+	if not ns.CrossCJK or not ns.CrossCJK() or (ns.db and ns.db.chatFont ~= nil) then return end
+	run.fontNoticed = run.fontNoticed or {}
+	if run.fontNoticed[ns.lang] then return end
+	run.fontNoticed[ns.lang] = true
+	ns.Print(L.FONT_CROSS)
 end
 
 ---------------------------------------------------------------------------
@@ -700,4 +727,5 @@ ns.OnLogin(function()
 		end
 	end
 	if ns.ChatFontOn() then UI.ApplyChatFont(true) end
+	UI.FontNotice()
 end)

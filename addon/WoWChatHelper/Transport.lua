@@ -334,12 +334,15 @@ end
 -- fields: { kind = "x"|"t"|"d"|"h", channel, sender, model, ctx, text }; meta is kept
 -- with the record for the UI (never sent). Returns the new id.
 function T.Request(fields, meta)
+	-- A lost hello goes first (lower id: the bridge reads it before this request).
+	if fields.kind ~= "h" and run.helloLost then T.SayHello(true) end
 	local id = ns.NextId()
 	local rec = {
 		id = id, kind = fields.kind, channel = fields.channel or "", sender = fields.sender or "",
 		model = fields.model or "", ctx = fields.ctx or "", text = fields.text or "",
 		meta = meta or {}, createdAt = GetTime(), status = "queued", hello = fields.kind == "h",
 	}
+	rec.meta.lang = rec.meta.lang or ns.lang -- the language the bridge will answer in
 	rec.wire = BuildWire(rec)
 	run.req[id] = rec
 	if run.signalsOk then
@@ -366,12 +369,17 @@ local function Fail(rec, err)
 	if ns.UI and ns.UI.OnFailed then ns.UI.OnFailed(rec, err) end
 end
 
--- Hello: announces the session and carries the settings (spec 3.1, kind h).
+-- Hello: announces the session and carries the settings (spec 3.1, kind h), among
+-- them the player's language. A hello the bridge never read (it expired unacked, e.g.
+-- the bridge was not running yet at login or during /wch lang) is sent again before
+-- the next request and as soon as the bridge shows up, so the bridge never answers
+-- in a language the player left.
 function T.SayHello(force)
 	if not db() then return end
 	local now = GetTime()
 	if not force and run.lastHelloAt and now - run.lastHelloAt < 60 then return end
 	run.lastHelloAt = now
+	run.helloLost = nil
 	for id, r in pairs(run.req) do
 		if r.hello and not r.acked then run.req[id] = nil end
 	end
@@ -437,6 +445,11 @@ local function ApplySlotData(data)
 				if ns.UI and ns.UI.OnFailed then ns.UI.OnFailed(rec, r.err or "error") end
 			elseif r.status == "working" then
 				rec.status = "working"
+			end
+			-- Hellos shown before this record (oldest first, same or earlier frame)
+			-- were read too; without signals this is their only ack.
+			for hid, h in pairs(run.req) do
+				if h.hello and not h.acked and hid < rec.id and h.shownAt then MarkAcked(h) end
 			end
 		end
 	end
@@ -543,7 +556,10 @@ function T.Tick()
 			run.req[id] = nil
 		elseif not r.acked and not r.failed and r.shownAt then
 			if r.hello then
-				if now - r.shownAt >= HELLO_WAIT then run.req[id] = nil; changed = true end
+				if now - r.shownAt >= HELLO_WAIT then
+					run.req[id] = nil; changed = true
+					run.helloLost = now
+				end
 			elseif now - r.shownAt >= ACK_WAIT then
 				if r.tries <= MAX_RESHOWS then
 					r.tries = r.tries + 1
@@ -557,6 +573,10 @@ function T.Tick()
 		end
 	end
 	if changed then RefreshStrip() Changed() end
+	-- The bridge is back after a hello expired unread: say hello again.
+	-- (Only with signals: without them a hello is never acked on its own, so an expired
+	-- one is not proof it went unread; the next request carries a fresh one instead.)
+	if run.helloLost and run.signalsOk and run.bridgeSeen and run.bridgeSeen > run.helloLost then T.SayHello(true) end
 
 	if run.slotsExhausted or run.slotsMissing then return end
 	local want

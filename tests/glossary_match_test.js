@@ -119,3 +119,73 @@ test('the repo glossary loads and is fast (precompiled)', () => {
   const ms = Number(process.hrtime.bigint() - t0) / 1e6 / 500;
   assert.ok(ms < 5, `find() took ${ms.toFixed(2)} ms per line`);
 });
+
+// ---------------------------------------------------------------------------
+// Review fixes, on the real data/glossary/terms.json: ordinary English must not be
+// handed a WoW sense; real jargon still matches.
+// ---------------------------------------------------------------------------
+const real = G.loadGlossary(path.join(__dirname, '..', 'data', 'glossary', 'terms.json'));
+const hits = (text, loc = 'zhTW') => real.find(text, loc).map(h => `${h.match}=${h.term}`);
+
+test('real glossary: capitalized forms that are English words match only in their own spelling', () => {
+  for (const [line, word] of [['it was down earlier', 'was'], ['how r u', 'how'], ['How r u', 'How'], ['its hot today', 'hot'],
+    ['the patch notes', null], ['If you can', 'If'], ['i saw a cow', 'cow'], ['nice bow', 'bow'], ['my arm hurts', 'arm'],
+    ['grab the van', 'van'], ['ash and fire', 'ash'], ['fade away', 'fade'], ['id rather not', 'id']]) {
+    const h = hits(line);
+    if (word) assert.ok(!h.some(x => x.startsWith(word + '=')), `${line}: ${h}`);
+  }
+  assert.deepStrictEqual(hits('it was down earlier'), ['down=down']);
+  assert.ok(hits('pop HoW now').includes('HoW=HoW'));
+  assert.ok(hits('my WAs are broken').includes('WAs=WeakAuras'));
+  assert.ok(hits('IF is laggy').includes('IF=IF'));
+  assert.ok(hits('need more HoTs on tank').length >= 1);
+  // Lowercase jargon that is typed lowercase in chat still matches.
+  assert.ok(hits('cod me the mats').includes('cod=CoD'));
+  assert.ok(hits('dot him up').includes('dot=DoT'));
+  assert.ok(hits("ah isn't down for everyone").includes('ah=AH'));
+});
+
+test('real glossary: contractions and ordinals are not jargon; units after numbers are', () => {
+  for (const line of ["don't pull", 'i don’t know', "we've got it", "i've done it", '1st boss', '2nd pull', '3rd time']) {
+    const h = hits(line);
+    assert.ok(!h.some(x => /^(don|ve|st|nd|rd)=/i.test(x)), `${line}: ${h}`);
+  }
+  assert.ok(hits('80g').includes('g=g'));
+  assert.ok(hits('5k gold').includes('k=k'));
+  assert.ok(hits("ah's prices are nuts").includes('ah=AH'), 'possessive still matches');
+});
+
+test('real glossary: everyday words are not handed a WoW sense (at, go, need in a sentence)', () => {
+  assert.deepStrictEqual(hits('i need to go eat dinner brb').filter(x => /^(go|at)=/.test(x)), []);
+  assert.deepStrictEqual(hits('meet at the bank').filter(x => x.startsWith('at=')), []);
+  const need = real.find('i need to go eat dinner brb').find(h => h.term === 'need');
+  assert.ok(need && /ordinary English/.test(need.ambiguity), 'need keeps a note telling the model when it is plain English');
+  assert.ok(hits('gogo pull').includes('gogo=gogo'));
+});
+
+test('real glossary: trade prices: "5g ea" = gold + each, not "1 gold" / Expose Armor', () => {
+  const h = real.find('WTS [Major Healing Potion] 5g ea', 'koKR');
+  const by = Object.fromEntries(h.map(x => [x.match, x]));
+  assert.strictEqual(by.g.term, 'g');
+  assert.strictEqual(by.ea.term, 'ea');
+  assert.match(by.ea.expansion, /^each/);
+  assert.ok(!h.some(x => x.term === 'Expose Armor' || x.term === '1g' || /1 gold/.test(x.expansion)), JSON.stringify(h));
+  assert.ok(real.find('no EA, we have sunders').some(x => x.term === 'Expose Armor'));
+});
+
+test('real glossary: "123" means asking for a summon', () => {
+  const h = real.find('123', 'zhTW');
+  assert.strictEqual(h.length, 1);
+  assert.match(h[0].expansion, /summon me/);
+  assert.match(h[0].tr, /召喚/);
+});
+
+test('kind "t": the player\'s own words are not scanned as English jargon, only ctx', () => {
+  const fr = real.findForRequest({ kind: 't', text: "J'arrive dans 5 minutes, gardez-moi ma place", ctx: 'Bob: LF1M heals' }, 'frFR');
+  assert.ok(!fr.some(x => x.match === 'ma'), JSON.stringify(fr));
+  assert.ok(fr.every(x => x.inCtx));
+  assert.ok(fr.some(x => x.term === 'LF1M'));
+  assert.deepStrictEqual(real.findForRequest({ kind: 't', text: 'Chego em 5 minutos, me convida pro grupo', ctx: '' }, 'ptBR'), []);
+  assert.deepStrictEqual(real.findForRequest({ kind: 't', text: 'Bin in 5 Minuten da, lad mich ein', ctx: '' }, 'deDE'), []);
+  assert.ok(real.findForRequest({ kind: 'x', text: 'ah is down', ctx: '' }, 'deDE').some(x => x.term === 'AH'));
+});

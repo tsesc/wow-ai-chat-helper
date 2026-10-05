@@ -66,7 +66,7 @@ bridge 會從畫面角落讀取 addon 傳出的訊息，呼叫本機的 Claude C
    `/wch lang auto` 恢復跟著 client，`/wch lang` 列出目前語言和清單。
    解釋、詞彙說明和介面會改用該語言；英文回覆一律是美服玩家的寫法。
    繁中以外的翻譯是 AI 產生的，沒有母語者審過。
-9. 聊天框字型：`/wch font auto`（預設，依語言和 client 自動決定）、`/wch font on`、`/wch font off`。
+9. 聊天框字型：`/wch font auto`（預設，依語言和 client 自動決定：繁中／簡中／韓文 client 一律保留遊戲原本字型，避免 client 自己的文字變方塊；選了另一種 CJK 語言時會提示一次）、`/wch font on`、`/wch font off`。
 
 ## 疑難排解
 

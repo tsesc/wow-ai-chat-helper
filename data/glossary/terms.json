@@ -346,9 +346,9 @@
   "aliases": [
    "need roll"
   ],
-  "expansion": "we need more players",
+  "expansion": "need (LFG: the group is missing a role, 'need tank'; loot: roll Need)",
   "cat": "lfg",
-  "ambiguity": "'need X' in LFG = the group is missing X ('need tank'); alone in loot/roll context = I roll Need on this item",
+  "ambiguity": "'need <role>' in LFG = the group is missing that role ('need tank'); alone in loot/roll context = I roll Need on this item; in a normal sentence ('i need to go') it is ordinary English",
   "examples": [
    "need heals",
    "rolled need on it"
@@ -1062,7 +1062,7 @@
   "term": "XP",
   "aliases": [],
   "expansion": "experience points",
-  "cat": "lfg",
+  "cat": "misc",
   "ambiguity": "",
   "examples": [],
   "tr": {
@@ -8339,7 +8339,8 @@
   "ambiguity": "after a number = gold ('50g'); '/g' or 'in g' = guild chat",
   "examples": [
    "50g",
-   "5g each"
+   "5g ea",
+   "1g 20s"
   ],
   "tr": {
    "zhTW": "金／公會頻道",
@@ -11178,7 +11179,7 @@
    "frFR": "Owned",
    "esES": "Humillado",
    "ptBR": "Destruído",
-   "ruRU": "Зашкварен",
+   "ruRU": "Разнесли",
    "itIT": "Distrutto"
   }
  },
@@ -14853,8 +14854,7 @@
   "term": "gogo",
   "aliases": [
    "go go",
-   "gogogo",
-   "go"
+   "gogogo"
   ],
   "expansion": "let's go",
   "cat": "social",
@@ -17165,23 +17165,24 @@
  },
  {
   "term": "123",
-  "aliases": [
-   "click pls"
-  ],
-  "expansion": "click the summoning portal (warlock ritual helpers)",
+  "aliases": [],
+  "expansion": "summon me please (asking the warlock for a summon)",
   "cat": "lfg",
-  "ambiguity": "",
-  "examples": [],
+  "ambiguity": "'123' typed alone in raid/party = I need a summon; 'click pls' / 'need 2 to click' is the request to click the summoning portal",
+  "examples": [
+   "123",
+   "123 pls"
+  ],
   "tr": {
-   "zhTW": "幫忙點召喚門",
-   "zhCN": "帮忙点门",
-   "koKR": "소환 클릭",
-   "deDE": "Klicken (Portal)",
-   "frFR": "Cliquez le portail",
-   "esES": "Haced clic al portal",
-   "ptBR": "Cliquem no portal",
-   "ruRU": "Кликните портал",
-   "itIT": "Cliccate il portale"
+   "zhTW": "求召喚（請術士拉我）",
+   "zhCN": "求召唤（请术士拉我）",
+   "koKR": "소환 요청",
+   "deDE": "Bitte beschwören",
+   "frFR": "Invoque-moi stp",
+   "esES": "Invocadme, pls",
+   "ptBR": "Me sumona pls",
+   "ruRU": "Призовите меня",
+   "itIT": "Evocami pls"
   }
  },
  {
@@ -17252,12 +17253,10 @@
  },
  {
   "term": "@",
-  "aliases": [
-   "at"
-  ],
+  "aliases": [],
   "expansion": "at (location)",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "'@' before a place = at that location ('@ the bank')",
   "examples": [],
   "tr": {
    "zhTW": "在（地點）",
@@ -21285,7 +21284,7 @@
   "tr": {
    "zhTW": "控場目標",
    "zhCN": "控制目标",
-   "koKR": "군제 대상",
+   "koKR": "CC 대상",
    "deDE": "CC-Ziele",
    "frFR": "Cibles à contrôler",
    "esES": "Objetivos de control",
@@ -24069,7 +24068,7 @@
    "frFR": "Rapidité de la nature",
    "esES": "Presteza natural",
    "ptBR": "Rapidez da Natureza",
-   "ruRU": "Природная стремит.",
+   "ruRU": "Природ. стремительность",
    "itIT": "Rapidità Naturale"
   }
  },
@@ -26729,17 +26728,15 @@
   }
  },
  {
-  "term": "EA",
+  "term": "Expose Armor",
   "aliases": [
-   "expose armor",
-   "each"
+   "EA"
   ],
   "expansion": "Expose Armor",
   "cat": "class",
-  "ambiguity": "",
+  "ambiguity": "'EA' = rogue Expose Armor; lowercase 'ea' after a price ('5g ea') = each",
   "examples": [
-   "no EA, we have sunders",
-   "WTS 3g ea"
+   "no EA, we have sunders"
   ],
   "tr": {
    "zhTW": "破甲（盜賊）",
@@ -26751,6 +26748,28 @@
    "ptBR": "Expor Armadura",
    "ruRU": "Ослабление доспеха",
    "itIT": "Esporre Armatura"
+  }
+ },
+ {
+  "term": "ea",
+  "aliases": [],
+  "expansion": "each (per item, in a price)",
+  "cat": "trade",
+  "ambiguity": "after a price ('5g ea', '2s ea') = each; capital 'EA' = rogue Expose Armor",
+  "examples": [
+   "WTS [Runecloth] 5g ea",
+   "3g ea or 50g for all"
+  ],
+  "tr": {
+   "zhTW": "每個",
+   "zhCN": "每个",
+   "koKR": "개당",
+   "deDE": "pro Stück",
+   "frFR": "l'unité",
+   "esES": "c/u (cada uno)",
+   "ptBR": "cada",
+   "ruRU": "за штуку",
+   "itIT": "cadauno"
   }
  },
  {
@@ -27563,9 +27582,7 @@
  },
  {
   "term": "CoW",
-  "aliases": [
-   "tauren"
-  ],
+  "aliases": [],
   "expansion": "Curse of Weakness",
   "cat": "class",
   "ambiguity": "",
@@ -27891,9 +27908,7 @@
  },
  {
   "term": "howl",
-  "aliases": [
-   "HoT"
-  ],
+  "aliases": [],
   "expansion": "Howl of Terror",
   "cat": "class",
   "ambiguity": "\"HoT\" usually = heal over time",
@@ -29344,7 +29359,7 @@
   "tr": {
    "zhTW": "秘法附魔（頭腿）",
    "zhCN": "头腿附魔",
-   "koKR": "비전 마법물",
+   "koKR": "머리/다리 마법부여",
    "deDE": "Arkanum",
    "frFR": "Arcanum",
    "esES": "Arcano",
@@ -29393,29 +29408,6 @@
    "ptBR": "50 prata",
    "ruRU": "50 серебра",
    "itIT": "50 argento"
-  }
- },
- {
-  "term": "1g",
-  "aliases": [
-   "5g",
-   "10g",
-   "100g"
-  ],
-  "expansion": "1 gold",
-  "cat": "trade",
-  "ambiguity": "",
-  "examples": [],
-  "tr": {
-   "zhTW": "1金",
-   "zhCN": "1金",
-   "koKR": "1골드",
-   "deDE": "1 Gold",
-   "frFR": "1 po",
-   "esES": "1 de oro",
-   "ptBR": "1 ouro",
-   "ruRU": "1 золотой",
-   "itIT": "1 oro"
   }
  },
  {

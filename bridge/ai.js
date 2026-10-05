@@ -171,7 +171,7 @@ READING CHAT. The literal words are often not the meaning. Get the speaker's int
 - "<thing> inc" = that thing is coming now ("rez inc" = I am about to resurrect you, "heals inc", "adds inc"). "<spell> up" = ready/off cooldown ("brez up", "ss up"); "cd on <spell>" / "<spell> on cd" = not available.
 - "ss on <name>" = a Soulstone is on that player. "123" typed alone in raid/party = asking the warlock for a summon. "need N to click" = the summoning portal needs N more clickers.
 - "share tags" = group up so both get credit/loot from the same mobs. "ninja" = took loot they had no right to (an accusation).
-- "wb" in guild chat = world buff (e.g. the Onyxia/Nefarian head drop in a capital); "hr" = hard reserve (nobody else may roll), "sr" = soft reserve.
+- "wb" = welcome back (alone or with a name, e.g. after someone logs in); world buff only with buff context ("wb dropping", "need wbs", "ony wb in 5"); "hr" = hard reserve (nobody else may roll), "sr" = soft reserve.
 - Gold-seller ads and links are spam: say so; the replies are what a player would do (ignore/report) or say.
 - Only state what the line says: do not invent who the speaker is (raid leader, enemy) or details that are not there.
 
@@ -398,13 +398,19 @@ function extractJson(text) {
 
 const str = (v) => (typeof v === 'string' ? v.trim() : '');
 
+// A reply goes into the chat edit box: one that starts with "/" would run as a slash
+// command when the player presses Enter (/gquit, /run ...), and "|" starts WoW escape
+// sequences. Such a reply (e.g. talked into by a line in the chat) is dropped.
+const UNSAFE_REPLY = /^\s*\/|\||[\x00-\x1f\x7f]/;
+const MAX_REPLY = 200; // a WoW chat line is at most 255 bytes
+
 function validReplies(list) {
   if (!Array.isArray(list)) return null;
   const out = [];
   for (const r of list) {
     if (!r || typeof r !== 'object') continue;
     const en = str(r.en);
-    if (!en) continue;
+    if (!en || UNSAFE_REPLY.test(en) || en.length > MAX_REPLY) continue;
     let tone = str(r.tone).toLowerCase();
     if (!TONES.has(tone)) tone = 'casual';
     out.push({ en, tr: str(r.tr), tone });
@@ -412,6 +418,8 @@ function validReplies(list) {
   }
   return out.length >= 2 ? out : null;
 }
+
+const MAX_TERM = { count: 6, term: 40, expansion: 80, tr: 40 };
 
 // One reply object for request `req` -> a normalized "done" result, or null if invalid.
 // Lenient where it is safe: an unknown tone becomes "casual", a 4th reply is dropped,
@@ -424,12 +432,15 @@ function validateItem(item, req) {
     const tr = str(item.tr);
     const replies = validReplies(item.replies);
     if (!tr || !replies) return null;
+    // Terms are capped (count and length): every result is serialized into all 200
+    // slot files on each publish, and the UI shows a short gloss anyway.
     const terms = [];
     for (const t of Array.isArray(item.terms) ? item.terms : []) {
       if (!t || typeof t !== 'object') continue;
       const term = str(t.term), ttr = str(t.tr);
-      if (!term || !ttr) continue;
-      terms.push({ term, expansion: str(t.expansion), tr: ttr });
+      if (!term || !ttr || term.length > MAX_TERM.term) continue;
+      terms.push({ term, expansion: str(t.expansion).slice(0, MAX_TERM.expansion), tr: ttr.slice(0, MAX_TERM.tr) });
+      if (terms.length >= MAX_TERM.count) break;
     }
     return { id: req.id, kind: 'x', status: 'done', tr, terms, replies };
   }

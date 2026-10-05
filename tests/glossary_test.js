@@ -344,3 +344,21 @@ test('font KR: KS X 1001 Hangul (2350), compatibility jamo, koKR glossary and UI
   assert.deepEqual(missingFrom(cmap, glossaryChars('koKR')), [], 'koKR glossary glyphs missing from WCH-KR.ttf');
   assert.deepEqual(missingFrom(cmap, localeTableChars('koKR')), [], 'koKR UI glyphs missing (rebuild fonts)');
 });
+
+// Review fix: data lint against merged entries (EA "each", 1g "5g/10g/100g").
+test('terms.json lint: no numeric price aliases, no everyday-word aliases that change the meaning', () => {
+  const { ENGLISH_WORDS } = require('../bridge/glossary');
+  const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'glossary', 'terms.json'), 'utf8'));
+  for (const t of data) {
+    for (const a of t.aliases) {
+      assert.ok(!/^\d+\s*[gsc]$/i.test(a), `${t.term}: numeric price alias ${a}`);
+      assert.ok(!/^\d/.test(t.term) || !/^\d+[gsc]$/i.test(t.term), `${t.term}: a price is not a term`);
+    }
+    for (const bad of ['each', 'at', 'go']) assert.ok(!t.aliases.includes(bad), `${t.term}: alias ${bad}`);
+  }
+  assert.ok(ENGLISH_WORDS.has('was') && ENGLISH_WORDS.has('how'));
+  const by = (k) => data.find(t => t.term === k);
+  assert.ok(!by('1g'), '1g entry gone');
+  assert.deepStrictEqual(by('Expose Armor').aliases, ['EA']);
+  assert.match(by('123').expansion, /summon me/);
+});
