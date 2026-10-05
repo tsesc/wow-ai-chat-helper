@@ -36,3 +36,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Noto Sans TC / SC / KR (fonts)
+
+`addon/WoWChatHelper/Fonts/WCH-CJK.ttf`, `WCH-SC.ttf` and `WCH-KR.ttf` are subsets of
+Noto Sans TC, Noto Sans SC and Noto Sans KR (Copyright Google LLC / Adobe), licensed under
+the SIL Open Font License 1.1. The full license text is in
+`addon/WoWChatHelper/Fonts/OFL.txt`; the subsets are rebuilt by `tools/build-font.*`.
