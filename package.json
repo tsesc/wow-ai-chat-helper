@@ -1,0 +1,25 @@
+{
+  "name": "wow-ai-chat-helper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "In-game AI chat helper for World of Warcraft: Forever: explains English chat in Traditional Chinese, suggests native-sounding English replies, translates Chinese to English, searchable glossary. Pixel strip out, load-on-demand slots in.",
+  "license": "MIT",
+  "author": "tsesc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tsesc/wow-ai-chat-helper"
+  },
+  "engines": {
+    "node": ">=22.2"
+  },
+  "scripts": {
+    "test": "node --test \"tests/*_test.js\"",
+    "start": "node bridge/supervisor.js",
+    "setup": "node setup.js",
+    "test:live": "node tests/live/claude_live.js"
+  },
+  "devDependencies": {
+    "fengari": "^0.1.4",
+    "luaparse": "^0.3.1"
+  }
+}

@@ -1,0 +1,9 @@
+## Interface: 16001
+## Title: WoW Chat Helper
+## Notes: AI chat helper: explains English chat in Traditional Chinese, suggests English replies, translates Chinese to English, glossary. Needs the companion bridge (see README).
+## Author: tsesc
+## Version: 0.1.0
+## SavedVariables: WCH_DB
+
+Codec.lua
+Inbox.lua
