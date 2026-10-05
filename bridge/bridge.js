@@ -25,6 +25,7 @@ const readline = require('readline');
 const { spawn } = require('child_process');
 const P = require('./protocol');
 const ai = require('./ai');
+const { normalizeLocale, DEFAULT_LOCALE } = require('./glossary');
 const { SILENT_WAV } = require('./install-slots');
 
 const HERE = __dirname;
@@ -38,6 +39,7 @@ const CONFIG_DEFAULTS = {
   models: { explain: 'haiku', translate: 'haiku', detail: 'sonnet' },
   capture: { enabled: true, corner: 'TOPLEFT', intervalMs: 250, processName: 'WowB', cellPx: 4, cellsPerRow: 200, maxRows: 48 },
   timeoutMs: 60000, batchWindowMs: 400, persistent: true, persistentMaxTurns: 40, maxThinkingTokens: 0,
+  glossaryFile: '',
   slots: P.SLOT_COUNT, presenceMax: 2000, presenceIntervalMs: 30000, progressWriteMs: 2000, publishRetryMs: 1000,
 };
 
@@ -113,6 +115,13 @@ class Bridge {
   addonPath(...p) { return path.join(this.cfg.addonDir, ADDON, ...p); }
   addonInstalled() { return fs.existsSync(this.addonPath(ADDON + '.toc')); }
   slotsInstalled() { return fs.existsSync(path.join(this.cfg.addonDir, P.slotAddonName(1), 'Inbox.lua')); }
+
+  // The player's language for explanations (hello settings): lang=<code> (/wch lang),
+  // else the client's locale when it is one of the supported ones, else zhTW.
+  locale() {
+    const s = this.state.settings || {};
+    return normalizeLocale(s.lang) || normalizeLocale(s.locale) || DEFAULT_LOCALE;
+  }
 
   // -------------------------------------------------------------------------
   // State
@@ -322,7 +331,10 @@ class Bridge {
       if (rec.session !== this.state.session) { this.switchSession(rec.session); changed = true; }
       if (rec.kind === 'h') {
         this.state.settings = P.parseSettings(rec.text);
-        this.log(`hello ${rec.session} #${rec.id}` + (rec.text ? ` (${rec.text.slice(0, 120)})` : ''));
+        this.log(`hello ${rec.session} #${rec.id}` + (rec.text ? ` (${rec.text.slice(0, 120)})` : '') + `; language ${this.locale()}`);
+        if (this.state.settings.lang && !normalizeLocale(this.state.settings.lang)) {
+          this.log(`warning: unsupported lang=${this.state.settings.lang}; answering in ${this.locale()}`);
+        }
         const corner = this.state.settings.corner;
         if (corner && corner !== this.cfg.capture.corner) {
           this.log(`warning: addon strip corner is ${corner} but config capture.corner is ${this.cfg.capture.corner}; set them the same`);
@@ -343,8 +355,9 @@ class Bridge {
     if (changed) this.publish(urgent);
   }
 
+  // The record goes to the AI with the language in force when it is sent.
   dispatch(rec) {
-    const p = this.runner.request(rec).then((result) => {
+    const p = this.runner.request({ ...rec, lang: this.locale() }).then((result) => {
       if (this.stopped) return;
       if (rec.session !== this.state.session) return; // the session changed meanwhile
       delete this.state.pending[rec.id];
@@ -422,7 +435,10 @@ class Bridge {
       `  models   : explain ${this.cfg.models.explain}, translate ${this.cfg.models.translate}, detail ${this.cfg.models.detail}; ${this.cfg.persistent ? 'persistent' : 'one-shot'} mode, batch window ${this.cfg.batchWindowMs} ms`,
       `  capture  : ${this.cfg.capture.enabled ? `${this.cfg.capture.processName}, ${this.cfg.capture.corner}, every ${this.cfg.capture.intervalMs} ms` : 'off'}`,
       `  session  : ${this.state.session || '(waiting for the addon hello)'}`,
+      `  language : ${this.locale()} (from the addon hello: lang=, else the client locale)`,
     ];
+    const g = this.runner.glossary;
+    if (g) lines.push(`  glossary : ${g.size ? g.size + ' terms from ' + g.file : 'NONE - prompts go without known terms (data/glossary/terms.json missing?)'}`);
     if (!cmd.found) lines.push('  !! Claude Code CLI not found: every request will come back as an error until it is installed and logged in.');
     return lines.join('\n');
   }

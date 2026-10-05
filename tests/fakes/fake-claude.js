@@ -21,6 +21,9 @@
 //   #autherr       result with is_error: true, "Invalid API key · Please run /login"
 //   #tone          replies carry an unknown tone ("friendly") and 4 entries
 //
+// Replies use the field names of spec 3.2 (tr, terms[].tr, replies[].tr). The turn log
+// carries the "Player language" of the prompt (lang) and the prompt itself.
+//
 // Env: FAKE_CLAUDE_LOG  append one JSON line per process start and per turn
 //      FAKE_CLAUDE_STATE a folder for "seen" counters (#invalid-once)
 'use strict';
@@ -48,6 +51,7 @@ function log(obj) {
 log({
   event: 'start', mode: persistent ? 'persistent' : 'oneshot', model, args: argv, cwd: process.cwd(),
   thinking: process.env.MAX_THINKING_TOKENS ?? null,
+  promptHead: (val('--system-prompt') || '').slice(0, 400),
   flags: { tools: val('--tools'), settingSources: val('--setting-sources'), strictMcp: has('--strict-mcp-config'), noSession: has('--no-session-persistence'), verbose: has('--verbose'), systemPrompt: (val('--system-prompt') || '').length },
 });
 
@@ -61,29 +65,31 @@ function seen(id) {
   return n;
 }
 
+// The requests array follows the "Requests" line (a known-terms block may come first).
 function requestsOf(prompt) {
-  const i = prompt.indexOf('[');
+  const r = prompt.lastIndexOf('Requests');
+  const i = prompt.indexOf('[', r < 0 ? 0 : r);
   try { return JSON.parse(prompt.slice(i)); } catch { return []; }
 }
 
 function answer(req, alone) {
   const t = String(req.text || '');
   if (t.includes('#omit') && !alone) return null;
-  if (t.includes('#invalid') && !t.includes('#invalid-once')) return { id: req.id, kind: req.kind, zh: '壞掉' };
-  if (t.includes('#invalid-once') && seen(req.id) === 0) return { id: req.id, kind: req.kind, zh: '壞掉' };
+  if (t.includes('#invalid') && !t.includes('#invalid-once')) return { id: req.id, kind: req.kind, tr: '壞掉' };
+  if (t.includes('#invalid-once') && seen(req.id) === 0) return { id: req.id, kind: req.kind, tr: '壞掉' };
   const replies = [
-    { en: 'inv pls', zh: '請邀我', tone: 'casual' },
-    { en: 'Hi, could I get an invite?', zh: '嗨，可以邀我嗎？', tone: 'polite' },
+    { en: 'inv pls', tr: '請邀我', tone: 'casual' },
+    { en: 'Hi, could I get an invite?', tr: '嗨，可以邀我嗎？', tone: 'polite' },
   ];
   if (t.includes('#tone')) {
     replies[0].tone = 'friendly';
-    replies.push({ en: 'inv', zh: '邀', tone: 'short' }, { en: 'extra', zh: '多的', tone: 'short' });
+    replies.push({ en: 'inv', tr: '邀', tone: 'short' }, { en: 'extra', tr: '多的', tone: 'short' });
   }
   if (req.kind === 'x') {
-    const terms = /LF1M/.test(t) ? [{ term: 'LF1M', expansion: 'Looking For 1 More', zh: '還缺一人' }] : [];
-    return { id: req.id, kind: 'x', zh: '譯：' + t, terms, replies };
+    const terms = /LF1M/.test(t) ? [{ term: 'LF1M', expansion: 'Looking For 1 More', tr: '還缺一人' }] : [];
+    return { id: req.id, kind: 'x', tr: '譯：' + t, terms, replies };
   }
-  if (req.kind === 't') return { id: req.id, kind: 't', replies: [{ en: 'omw, 5 min', zh: '我在路上，5 分鐘', tone: 'short' }, ...replies] };
+  if (req.kind === 't') return { id: req.id, kind: 't', replies: [{ en: 'omw, 5 min', tr: '我在路上，5 分鐘', tone: 'short' }, ...replies] };
   if (req.kind === 'd') return { id: req.id, kind: 'd', detail: '語氣：輕鬆\n情境：' + t + '\n建議：回 ty' };
   return null;
 }
@@ -96,7 +102,8 @@ function usage(out) {
 async function respond(prompt) {
   const reqs = requestsOf(prompt);
   const all = reqs.map(r => String(r.text || '')).join(' ');
-  log({ event: 'turn', ids: reqs.map(r => r.id), kinds: reqs.map(r => r.kind), prompt });
+  const lang = (/^Player language: (\w+)/m.exec(prompt) || [])[1] || null;
+  log({ event: 'turn', ids: reqs.map(r => r.id), kinds: reqs.map(r => r.kind), lang, prompt });
   const slow = /#slow:(\d+)/.exec(all);
   if (slow) await new Promise(r => setTimeout(r, Number(slow[1])));
   if (all.includes('#hang')) {

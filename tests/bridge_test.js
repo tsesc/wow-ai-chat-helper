@@ -10,13 +10,14 @@ const { spawn, spawnSync } = require('child_process');
 const P = require('../bridge/protocol');
 const B = require('../bridge/bridge');
 const { installSlots, SILENT_WAV } = require('../bridge/install-slots');
-const { setup } = require('../setup');
+const { setup, copyGlossaryAddons, removeStaleGlossary } = require('../setup');
 const { createVM } = require('./helpers/lua');
 
 const ROOT = path.join(__dirname, '..');
 const FAKE = path.join(__dirname, 'fakes', 'fake-claude.js');
 const FAKE_CAPTURE = path.join(__dirname, 'fakes', 'fake-capture.js');
 const INJECT = path.join(__dirname, 'fixtures', 'inject.jsonl');
+const TERMS = path.join(__dirname, 'fixtures', 'terms.json');
 
 function tmpdir(prefix = 'wch-bridge-') { return fs.mkdtempSync(path.join(os.tmpdir(), prefix)); }
 
@@ -43,7 +44,7 @@ function installed() {
 }
 
 function makeBridge(w, cfgOver = {}) {
-  const cfg = { ...JSON.parse(fs.readFileSync(w.configFile, 'utf8')), batchWindowMs: 50, timeoutMs: 10000, ...cfgOver };
+  const cfg = { ...JSON.parse(fs.readFileSync(w.configFile, 'utf8')), batchWindowMs: 50, timeoutMs: 10000, glossaryFile: TERMS, ...cfgOver };
   const logs = [];
   const bridge = B.createBridge(cfg, { stateFile: w.stateFile, workDir: w.workDir, log: (...a) => logs.push(a.join(' ')) });
   return { bridge, logs };
@@ -173,9 +174,9 @@ test('records -> ack, working, AI, slot files with results, ready signals, state
       assert.strictEqual(data.v, 1);
       assert.strictEqual(typeof data.now, 'number');
       const [x, t] = data.results;
-      assert.deepStrictEqual(x, { id: 2, kind: 'x', status: 'done', zh: '譯：LF1M tank HC DM, inv',
-        terms: [{ term: 'LF1M', expansion: 'Looking For 1 More', zh: '還缺一人' }],
-        replies: [{ en: 'inv pls', zh: '請邀我', tone: 'casual' }, { en: 'Hi, could I get an invite?', zh: '嗨，可以邀我嗎？', tone: 'polite' }] });
+      assert.deepStrictEqual(x, { id: 2, kind: 'x', status: 'done', tr: '譯：LF1M tank HC DM, inv',
+        terms: [{ term: 'LF1M', expansion: 'Looking For 1 More', tr: '還缺一人' }],
+        replies: [{ en: 'inv pls', tr: '請邀我', tone: 'casual' }, { en: 'Hi, could I get an invite?', tr: '嗨，可以邀我嗎？', tone: 'polite' }] });
       assert.strictEqual(t.status, 'done');
       assert.strictEqual(t.replies[0].en, 'omw, 5 min');
     }
@@ -429,4 +430,78 @@ test('checkClaude: a logged-out CLI is named in the bridge window at startup', a
     await bridge.checkClaude();
     assert.ok(logs.some(l => /!! Claude Code CLI is not logged in/.test(l)), logs.join('\n'));
   } finally { bridge.stop(); }
+});
+
+// ---------------------------------------------------------------------------
+// Language and glossary addons
+// ---------------------------------------------------------------------------
+
+test('hello lang=<code> sets the language of every request; client locale is the fallback; zhTW last', async () => {
+  const w = installed();
+  const { bridge, logs } = makeBridge(w);
+  try {
+    assert.strictEqual(bridge.locale(), 'zhTW', 'no hello yet');
+    bridge.handleRecords([rec(1, 'h', 'addon=0.1;locale=zhTW;lang=deDE'), rec(2, 'x', "ah isn't down for everyone", { channel: 'YELL' })]);
+    assert.strictEqual(bridge.locale(), 'deDE');
+    await bridge.idle();
+    bridge.handleRecords([rec(3, 'h', 'locale=frFR'), rec(4, 'x', 'inv pls')]);
+    assert.strictEqual(bridge.locale(), 'frFR', 'client locale when no lang');
+    await bridge.idle();
+    bridge.handleRecords([rec(5, 'h', 'locale=enUS;lang=xxXX'), rec(6, 'x', 'ty')]);
+    assert.strictEqual(bridge.locale(), 'zhTW', 'unsupported -> zhTW');
+    assert.ok(logs.some(l => /unsupported lang=xxXX/.test(l)));
+    await bridge.idle();
+    bridge.handleRecords([rec(7, 'h', 'locale=esMX'), rec(8, 'x', 'ty')]);
+    assert.strictEqual(bridge.locale(), 'esES', 'esMX answered in esES');
+    await bridge.idle();
+    const turns = w.events().filter(e => e.event === 'turn');
+    assert.deepStrictEqual(turns.map(t => [t.ids.join(), t.lang]), [['2', 'deDE'], ['4', 'frFR'], ['6', 'zhTW'], ['8', 'esES']]);
+    assert.match(turns[0].prompt, /Known WoW terms in this message:\n#2 "ah": AH = Auction House \| Auktionshaus/);
+    // The language is not stored in the published result.
+    const x = loadSlot(slotSrc(w, 1)).results.find(r => r.id === 2);
+    assert.strictEqual(x.status, 'done');
+    assert.strictEqual(x.lang, undefined);
+    assert.match(bridge.banner(), /language : esES/);
+    assert.match(bridge.banner(), /glossary : 9 terms from .*terms\.json/);
+  } finally { bridge.stop(); }
+});
+
+test('setup: copies every WoWChatHelper_Glossary_<locale> addon and removes the old Glossary.lua', () => {
+  const w = fakeClient();
+  const src = tmpdir('wch-addon-src-');
+  for (const loc of ['zhTW', 'deDE']) {
+    const d = path.join(src, 'WoWChatHelper_Glossary_' + loc);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, `WoWChatHelper_Glossary_${loc}.toc`), '## Interface: 16001\n## LoadOnDemand: 1\nGlossary.lua\n');
+    fs.writeFileSync(path.join(d, 'Glossary.lua'), `WCH_Glossary = { locale = "${loc}", terms = {}, phrases = {} }\n`);
+  }
+  fs.mkdirSync(path.join(src, 'WoWChatHelper'));
+  fs.mkdirSync(path.join(src, 'SomethingElse'));
+  const r = copyGlossaryAddons(w.client, src);
+  assert.deepStrictEqual(r, { names: ['WoWChatHelper_Glossary_deDE', 'WoWChatHelper_Glossary_zhTW'], copied: 4 });
+  assert.strictEqual(fs.readFileSync(path.join(w.addons, 'WoWChatHelper_Glossary_deDE', 'Glossary.lua'), 'utf8'), 'WCH_Glossary = { locale = "deDE", terms = {}, phrases = {} }\n');
+  assert.ok(!fs.existsSync(path.join(w.addons, 'SomethingElse')));
+  // Re-running overwrites with the new build.
+  fs.writeFileSync(path.join(src, 'WoWChatHelper_Glossary_zhTW', 'Glossary.lua'), 'WCH_Glossary = { locale = "zhTW", v = 2 }\n');
+  copyGlossaryAddons(w.client, src);
+  assert.match(fs.readFileSync(path.join(w.addons, 'WoWChatHelper_Glossary_zhTW', 'Glossary.lua'), 'utf8'), /v = 2/);
+  // An installed Glossary.lua of an older build goes once the source has none; kept while it does.
+  const main = path.join(w.addons, 'WoWChatHelper');
+  fs.mkdirSync(main, { recursive: true });
+  fs.writeFileSync(path.join(main, 'Glossary.lua'), 'old');
+  fs.writeFileSync(path.join(src, 'WoWChatHelper', 'Glossary.lua'), 'still here');
+  assert.strictEqual(removeStaleGlossary(w.client, path.join(src, 'WoWChatHelper')), false);
+  fs.unlinkSync(path.join(src, 'WoWChatHelper', 'Glossary.lua'));
+  assert.strictEqual(removeStaleGlossary(w.client, path.join(src, 'WoWChatHelper')), true);
+  assert.ok(!fs.existsSync(path.join(main, 'Glossary.lua')));
+  // A source with no glossary addons copies nothing.
+  assert.deepStrictEqual(copyGlossaryAddons(w.client, tmpdir('wch-empty-')), { names: [], copied: 0 });
+});
+
+test('setup: installs the repo glossary addons that exist and reports them', () => {
+  const w = installed();
+  const names = fs.readdirSync(path.join(ROOT, 'addon')).filter(n => n.startsWith('WoWChatHelper_Glossary_')).sort();
+  assert.deepStrictEqual(w.res.glossary.names, names);
+  for (const n of names) assert.ok(fs.existsSync(path.join(w.addons, n, n + '.toc')), 'installed ' + n);
+  assert.ok(w.lines.some(l => /^glossary : /.test(l)));
 });

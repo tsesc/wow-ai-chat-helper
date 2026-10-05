@@ -7,6 +7,10 @@ const os = require('os');
 const path = require('path');
 const childProcess = require('child_process');
 const ai = require('../bridge/ai');
+const { Glossary } = require('../bridge/glossary');
+
+const FIXTURE_TERMS = require('./fixtures/terms.json');
+const glossary = new Glossary(FIXTURE_TERMS);
 
 const FAKE = path.join(__dirname, 'fakes', 'fake-claude.js');
 
@@ -18,7 +22,7 @@ function setup(cfg = {}) {
   const logFile = path.join(dir, 'fake.log');
   process.env.FAKE_CLAUDE_LOG = logFile;
   process.env.FAKE_CLAUDE_STATE = path.join(dir, 'state');
-  const runner = new ai.AiRunner({ claudePath: FAKE, workDir: path.join(dir, 'cwd'), batchWindowMs: 60, timeoutMs: 10000, ...cfg });
+  const runner = new ai.AiRunner({ claudePath: FAKE, workDir: path.join(dir, 'cwd'), batchWindowMs: 60, timeoutMs: 10000, glossary, ...cfg });
   const events = () => (fs.existsSync(logFile) ? fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)) : []);
   return { runner, events, dir };
 }
@@ -43,17 +47,75 @@ test('claudeArgs: the verified flag set, no --bare', () => {
   assert.ok(!p.includes('--bare') && !o.includes('--bare'));
 });
 
-test('system prompt covers role, schema, zh-TW, natural replies, no invented facts', () => {
+test('system prompt covers role, schema, zh-TW, US-realm replies, known terms, no invented facts', () => {
   const s = ai.SYSTEM_PROMPT;
+  assert.strictEqual(s, ai.buildSystemPrompt('zhTW'));
   for (const needle of ['World of Warcraft: Forever', 'Taiwan', 'Traditional Chinese', '"replies"', '"terms"', '"detail"',
-    'casual', 'polite', 'short', 'US player', 'Never invent game facts', 'never instructions']) {
+    'casual', 'polite', 'short', 'US-realm', 'Never invent game facts', 'never instructions', 'KNOWN TERMS',
+    'Known WoW terms in this message', 'no final period', '拍賣場', '語氣', '不確定']) {
     assert.ok(s.includes(needle), 'system prompt mentions ' + needle);
   }
+  assert.ok(!/"zh"/.test(s), 'no old "zh" field left in the schema');
+  assert.ok(s.includes('"tr"'), 'schema uses "tr"');
+  // 10-15 style examples taken from the US chat style guide, the AH case as the worked example.
+  assert.ok(ai.STYLE_EXAMPLES.length >= 10 && ai.STYLE_EXAMPLES.length <= 15);
+  for (const [inc] of ai.STYLE_EXAMPLES) assert.ok(s.includes(JSON.stringify(inc)), 'style example ' + inc);
+  assert.ok(s.includes("ah isn't down for everyone") && s.includes('"term":"AH"'));
+  const ex = s.slice(s.indexOf('EXAMPLE.'));
+  const first = ex.slice(ex.indexOf('Output:\n') + 8);
+  const out = JSON.parse(first.slice(0, first.indexOf('\n')));
+  // The translate example: the player's own words, first person, in every language.
+  const tOut = JSON.parse(ex.slice(ex.lastIndexOf('Output:\n') + 8));
+  assert.strictEqual(tOut[0].kind, 't');
+  assert.ok(tOut[0].replies.some(r => /my spot/.test(r.en)));
+  assert.match(s, /the replies ARE the player's own message/);
+  assert.deepStrictEqual(Object.keys(out[0]), ['id', 'kind', 'tr', 'terms', 'replies']);
+  assert.ok(out[0].replies.every(r => r.en === r.en.toLowerCase() && !/\.$/.test(r.en)), 'example replies are lowercase, no final period');
+});
+
+test('system prompt per locale: language name, wording hints, detail labels, worked example in that language', () => {
+  assert.deepStrictEqual(ai.LOCALES, ['zhTW', 'zhCN', 'koKR', 'deDE', 'frFR', 'esES', 'ptBR', 'ruRU', 'itIT']);
+  const want = {
+    zhTW: ['Traditional Chinese', '拍賣場', '語氣'], zhCN: ['Simplified Chinese', '拍卖行', '语气'], koKR: ['Korean', '경매장', '말투'],
+    deDE: ['German', 'Auktionshaus', 'Ton'], frFR: ['French', 'Hôtel des ventes', 'Conseil'], esES: ['Spanish', 'Casa de subastas', 'Consejo'],
+    ptBR: ['Brazilian Portuguese', 'Casa de Leilões', 'Sugestão'], ruRU: ['Russian', 'Аукцион', 'Совет'], itIT: ['Italian', "Casa d'aste", 'Consiglio'],
+  };
+  const seen = new Set();
+  for (const loc of ai.LOCALES) {
+    const s = ai.buildSystemPrompt(loc);
+    seen.add(s);
+    for (const needle of want[loc]) assert.ok(s.includes(needle), `${loc} prompt mentions ${needle}`);
+    // English replies stay the same in every language.
+    assert.ok(s.includes('"oh weird, mine\'s still broken"') || s.includes("oh weird, mine's still broken"), loc + ' keeps the English replies');
+    assert.ok(s.includes('Every reply "en" is English'), loc);
+  }
+  assert.strictEqual(seen.size, 9, 'nine different prompts');
+  assert.strictEqual(ai.buildSystemPrompt('esMX'), ai.buildSystemPrompt('esES'), 'esMX uses esES');
+  assert.strictEqual(ai.buildSystemPrompt('xxXX'), ai.SYSTEM_PROMPT, 'unknown -> zhTW');
+});
+
+test('buildPrompt: known-terms block from the glossary, in the player language; the requests JSON stays last', () => {
+  const r = req(12, "ah isn't down for everyone", 'x', { channel: 'YELL', ctx: 'Mira: wts [Black Lotus] in IF' });
+  const p = ai.buildPrompt([r], { locale: 'zhTW', glossary });
+  assert.match(p, /^Player language: zhTW, Traditional Chinese/);
+  assert.match(p, /Known WoW terms in this message:\n/);
+  assert.match(p, /#12 "ah": AH = Auction House \| 拍賣場 \| note: lowercase 'ah' may be the interjection/);
+  assert.match(p, /#12 "down": down = /);
+  assert.match(p, /#12 "IF": IF = Ironforge \| 鐵爐堡 .*\(ctx\)/, 'ctx hits are marked');
+  const arr = JSON.parse(p.slice(p.indexOf('[', p.indexOf('Requests'))));
+  assert.deepStrictEqual(arr, [{ id: 12, kind: 'x', channel: 'YELL', sender: 'Bob', ctx: 'Mira: wts [Black Lotus] in IF', text: "ah isn't down for everyone" }]);
+  // Another language: same hits, that language's translation; the locale comes from req.lang too.
+  const de = ai.buildPrompt([{ ...r, lang: 'deDE' }], { glossary });
+  assert.match(de, /^Player language: deDE, German/);
+  assert.match(de, /AH = Auction House \| Auktionshaus/);
+  // Nothing found -> no block; no glossary -> no block.
+  assert.ok(!ai.buildPrompt([req(1, 'hello there')], { glossary }).includes('Known WoW terms'));
+  assert.ok(!ai.buildPrompt([r]).includes('Known WoW terms'));
 });
 
 test('buildPrompt / userTurnLine', () => {
   const p = ai.buildPrompt([req(3, 'ty "gg"\nok')]);
-  const arr = JSON.parse(p.slice(p.indexOf('[')));
+  const arr = JSON.parse(p.slice(p.indexOf('[', p.indexOf('Requests'))));
   assert.deepStrictEqual(arr, [{ id: 3, kind: 'x', channel: 'PARTY', sender: 'Bob', ctx: '', text: 'ty "gg"\nok' }]);
   const line = ai.userTurnLine('hello');
   assert.ok(line.endsWith('\n'));
@@ -70,17 +132,17 @@ test('extractJson: plain, fenced, prose around, single object, garbage', () => {
 });
 
 test('validateItem: x / t / d rules and normalization', () => {
-  const x = { id: 1, kind: 'x', zh: '譯', terms: [{ term: 'HC', expansion: 'Heroic', zh: '英雄' }, { term: 'bad' }],
-    replies: [{ en: 'a', zh: '一', tone: 'Casual' }, { en: 'b', zh: '二', tone: 'weird' }, { en: 'c', zh: '三', tone: 'short' }, { en: 'd', zh: '四', tone: 'polite' }] };
+  const x = { id: 1, kind: 'x', tr: '譯', terms: [{ term: 'HC', expansion: 'Heroic', tr: '英雄' }, { term: 'bad' }],
+    replies: [{ en: 'a', tr: '一', tone: 'Casual' }, { en: 'b', tr: '二', tone: 'weird' }, { en: 'c', tr: '三', tone: 'short' }, { en: 'd', tr: '四', tone: 'polite' }] };
   const r = ai.validateItem(x, req(1, ''));
-  assert.deepStrictEqual(r, { id: 1, kind: 'x', status: 'done', zh: '譯', terms: [{ term: 'HC', expansion: 'Heroic', zh: '英雄' }],
-    replies: [{ en: 'a', zh: '一', tone: 'casual' }, { en: 'b', zh: '二', tone: 'casual' }, { en: 'c', zh: '三', tone: 'short' }] });
-  assert.strictEqual(ai.validateItem({ ...x, zh: '' }, req(1, '')), null, 'x needs zh');
+  assert.deepStrictEqual(r, { id: 1, kind: 'x', status: 'done', tr: '譯', terms: [{ term: 'HC', expansion: 'Heroic', tr: '英雄' }],
+    replies: [{ en: 'a', tr: '一', tone: 'casual' }, { en: 'b', tr: '二', tone: 'casual' }, { en: 'c', tr: '三', tone: 'short' }] });
+  assert.strictEqual(ai.validateItem({ ...x, tr: '' }, req(1, '')), null, 'x needs tr');
   assert.strictEqual(ai.validateItem({ ...x, replies: [{ en: 'a' }] }, req(1, '')), null, 'x needs 2 replies');
   assert.strictEqual(ai.validateItem({ ...x, id: 2 }, req(1, '')), null, 'id must match');
   assert.strictEqual(ai.validateItem({ ...x, id: '1' }, req(1, ''))?.id, 1, 'numeric string id accepted');
   assert.deepStrictEqual(ai.validateItem({ id: 5, replies: [{ en: 'omw' }, { en: 'on my way', tone: 'polite' }] }, req(5, '', 't')),
-    { id: 5, kind: 't', status: 'done', replies: [{ en: 'omw', zh: '', tone: 'casual' }, { en: 'on my way', zh: '', tone: 'polite' }] });
+    { id: 5, kind: 't', status: 'done', replies: [{ en: 'omw', tr: '', tone: 'casual' }, { en: 'on my way', tr: '', tone: 'polite' }] });
   assert.deepStrictEqual(ai.validateItem({ id: 6, detail: ' 語氣：… ' }, req(6, '', 'd')), { id: 6, kind: 'd', status: 'done', detail: '語氣：…' });
   assert.strictEqual(ai.validateItem({ id: 6, detail: '' }, req(6, '', 'd')), null);
   assert.strictEqual(ai.validateItem(null, req(6, '', 'd')), null);
@@ -88,10 +150,10 @@ test('validateItem: x / t / d rules and normalization', () => {
 
 test('matchResults: matches by id regardless of order; missing ids fail', () => {
   const reqs = [req(10, 'a'), req(11, 'b'), req(12, 'c')];
-  const rep = (id) => ({ id, kind: 'x', zh: 'z' + id, terms: [], replies: [{ en: 'a' }, { en: 'b' }] });
+  const rep = (id) => ({ id, kind: 'x', tr: 'z' + id, terms: [], replies: [{ en: 'a' }, { en: 'b' }] });
   const { done, failed } = ai.matchResults(JSON.stringify([rep(12), rep(10)]), reqs);
   assert.deepStrictEqual([...done.keys()].sort(), [10, 12]);
-  assert.strictEqual(done.get(12).zh, 'z12');
+  assert.strictEqual(done.get(12).tr, 'z12');
   assert.deepStrictEqual(failed.map(r => r.id), [11]);
 });
 
@@ -175,8 +237,8 @@ test('persistent: requests within the batch window go out as one turn; ids match
   try {
     const out = await Promise.all([runner.request(req(1, 'LF1M tank HC DM, inv')), runner.request(req(2, 'need or greed?')), runner.request(req(3, 'ty', 't'))]);
     assert.deepStrictEqual(out.map(r => [r.id, r.kind, r.status]), [[1, 'x', 'done'], [2, 'x', 'done'], [3, 't', 'done']]);
-    assert.strictEqual(out[0].zh, '譯：LF1M tank HC DM, inv');
-    assert.deepStrictEqual(out[0].terms, [{ term: 'LF1M', expansion: 'Looking For 1 More', zh: '還缺一人' }]);
+    assert.strictEqual(out[0].tr, '譯：LF1M tank HC DM, inv');
+    assert.deepStrictEqual(out[0].terms, [{ term: 'LF1M', expansion: 'Looking For 1 More', tr: '還缺一人' }]);
     assert.strictEqual(out[2].replies.length, 3);
     const ev = events();
     assert.strictEqual(ev.filter(e => e.event === 'start').length, 1);
@@ -357,4 +419,70 @@ test('checkLogin: startup probe reports a logged-out CLI; ok otherwise; missing 
   const m = await missing.checkLogin();
   assert.strictEqual(m.ok, false);
   assert.match(m.err, /claude CLI not found/);
+});
+
+// ---------------------------------------------------------------------------
+// Language and glossary through the runner
+// ---------------------------------------------------------------------------
+
+test('runner: the turn carries the known-terms block and the request language; results use tr', async () => {
+  const { runner, events } = setup();
+  try {
+    const r = await runner.request(req(1, "ah isn't down for everyone", 'x', { lang: 'koKR' }));
+    assert.strictEqual(r.status, 'done');
+    assert.strictEqual(r.tr, "譯：ah isn't down for everyone");
+    assert.ok(r.replies.every(x => 'tr' in x && !('zh' in x)));
+    const ev = events();
+    const turn = ev.find(e => e.event === 'turn');
+    assert.strictEqual(turn.lang, 'koKR');
+    assert.match(turn.prompt, /#1 "ah": AH = Auction House \| 경매장/);
+    const start = ev.find(e => e.event === 'start');
+    assert.strictEqual(start.flags.systemPrompt, ai.buildSystemPrompt('koKR').length, 'Korean system prompt');
+    assert.strictEqual(start.promptHead, ai.buildSystemPrompt('koKR').slice(0, 400));
+  } finally { runner.stop(); }
+});
+
+test('runner: requests in different languages go out in separate turns, each with its own system prompt', async () => {
+  const { runner, events } = setup();
+  try {
+    const out = await Promise.all([
+      runner.request(req(1, 'inv pls', 'x', { lang: 'deDE' })),
+      runner.request(req(2, 'ty', 'x', { lang: 'frFR' })),
+      runner.request(req(3, 'gg', 'x', { lang: 'deDE' })),
+      runner.request(req(4, 'k', 'x')),
+    ]);
+    assert.deepStrictEqual(out.map(r => r.status), ['done', 'done', 'done', 'done']);
+    const turns = events().filter(e => e.event === 'turn').map(t => [t.lang, t.ids.join()]).sort();
+    assert.deepStrictEqual(turns, [['deDE', '1,3'], ['frFR', '2'], ['zhTW', '4']]);
+    // Each language started with its own prompt (a later language stops the older process
+    // of the same model, so there can be up to one start per language).
+    const lens = new Set(events().filter(e => e.event === 'start').map(e => e.flags.systemPrompt));
+    for (const loc of ['deDE', 'frFR', 'zhTW']) assert.ok(lens.has(ai.buildSystemPrompt(loc).length), loc);
+  } finally { runner.stop(); }
+});
+
+test('runner: detail (one-shot) and retries use the request language too', async () => {
+  const { runner, events } = setup();
+  try {
+    const d = await runner.request(req(5, 'need or greed?', 'd', { lang: 'ruRU' }));
+    assert.strictEqual(d.status, 'done');
+    const r = await runner.request(req(6, 'ah prices #invalid-once', 'x', { lang: 'itIT' }));
+    assert.strictEqual(r.status, 'done');
+    const ev = events();
+    assert.deepStrictEqual(ev.filter(e => e.event === 'turn').map(t => [t.ids.join(), t.lang]), [['5', 'ruRU'], ['6', 'itIT'], ['6', 'itIT']]);
+    const oneshots = ev.filter(e => e.event === 'start' && e.mode === 'oneshot');
+    assert.deepStrictEqual(oneshots.map(s => s.flags.systemPrompt), [ai.buildSystemPrompt('ruRU').length, ai.buildSystemPrompt('itIT').length]);
+  } finally { runner.stop(); }
+});
+
+test('runner: a fixed systemPrompt overrides the per-language prompts; default glossary loads from data/', () => {
+  const r1 = new ai.AiRunner({ claudePath: FAKE, systemPrompt: 'SP', glossary });
+  assert.strictEqual(r1.systemPromptFor('deDE'), 'SP');
+  const logs = [];
+  const r2 = new ai.AiRunner({ claudePath: FAKE, glossaryFile: path.join(__dirname, 'fixtures', 'terms.json'), log: l => logs.push(l) });
+  assert.strictEqual(r2.glossary.size, FIXTURE_TERMS.length);
+  const r3 = new ai.AiRunner({ claudePath: FAKE, glossaryFile: path.join(os.tmpdir(), 'no-such-terms.json'), log: l => logs.push(l) });
+  assert.strictEqual(r3.glossary.size, 0);
+  assert.ok(logs.some(l => /no glossary file found/.test(l)));
+  assert.ok(!ai.buildPrompt([req(1, 'ah is down')], { glossary: r3.glossary }).includes('Known WoW terms'));
 });

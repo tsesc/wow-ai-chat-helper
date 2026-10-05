@@ -1,0 +1,83 @@
+[
+  {
+    "term": "AH",
+    "aliases": ["auction house", "the ah"],
+    "expansion": "Auction House",
+    "cat": "trade",
+    "ambiguity": "lowercase 'ah' may be the interjection; in trade/ah/price/down context it means Auction House",
+    "examples": ["ah is down", "check the ah", "ah isn't down for everyone"],
+    "tr": { "zhTW": "拍賣場", "zhCN": "拍卖行", "koKR": "경매장", "deDE": "Auktionshaus", "frFR": "Hôtel des ventes", "esES": "Casa de subastas", "ptBR": "Casa de Leilões", "ruRU": "Аукцион", "itIT": "Casa d'aste" }
+  },
+  {
+    "term": "down",
+    "aliases": [],
+    "expansion": "not working (a service) / killed (a boss)",
+    "cat": "misc",
+    "ambiguity": "'X is down (for everyone)' = a service is broken; 'Rag down' = the boss is dead",
+    "examples": ["ah is down", "rag down"],
+    "tr": { "zhTW": "掛了／壞了；（王）倒了", "zhCN": "挂了；（BOSS）倒了", "koKR": "먹통; (보스) 잡힘", "deDE": "ausgefallen; (Boss) liegt", "frFR": "en panne ; (boss) tombé", "esES": "caído; (jefe) muerto", "ptBR": "fora do ar; (chefe) morto", "ruRU": "лежит; (босс) убит", "itIT": "fuori uso; (boss) giù" }
+  },
+  {
+    "term": "LF1M",
+    "aliases": ["lf 1m"],
+    "expansion": "Looking For 1 More",
+    "cat": "lfg",
+    "ambiguity": "",
+    "examples": ["LF1M tank strat live"],
+    "tr": { "zhTW": "還缺一人", "zhCN": "还差一人", "koKR": "1명 구함", "deDE": "suchen noch 1", "frFR": "cherche 1 joueur", "esES": "falta 1", "ptBR": "falta 1", "ruRU": "нужен ещё 1", "itIT": "cerchiamo 1" }
+  },
+  {
+    "term": "inv",
+    "aliases": ["invite"],
+    "expansion": "invite",
+    "cat": "lfg",
+    "ambiguity": "",
+    "examples": ["inv pls"],
+    "tr": { "zhTW": "邀請（組隊）", "zhCN": "邀请（组队）", "koKR": "초대", "deDE": "einladen", "frFR": "inviter", "esES": "invitar", "ptBR": "convidar", "ruRU": "инвайт", "itIT": "invitare" }
+  },
+  {
+    "term": "IF",
+    "aliases": ["Ironforge"],
+    "expansion": "Ironforge",
+    "cat": "zone",
+    "ambiguity": "lowercase 'if' is the English word",
+    "examples": ["IF bank"],
+    "tr": { "zhTW": "鐵爐堡", "zhCN": "铁炉堡", "koKR": "아이언포지", "deDE": "Eisenschmiede", "frFR": "Forgefer", "esES": "Forjaz", "ptBR": "Altaforja", "ruRU": "Стальгорн", "itIT": "Forgiardente" }
+  },
+  {
+    "term": "SM Cath",
+    "aliases": ["sm cathedral", "cath"],
+    "expansion": "Scarlet Monastery: Cathedral",
+    "cat": "zone",
+    "ambiguity": "",
+    "examples": ["who wants to run sm cath?"],
+    "tr": { "zhTW": "血色修道院：大教堂", "zhCN": "血色修道院：大教堂", "koKR": "붉은십자군 수도원: 대성당", "deDE": "Scharlachrotes Kloster: Kathedrale", "frFR": "Monastère écarlate : Cathédrale", "esES": "Monasterio Escarlata: Catedral", "ptBR": "Monastério Escarlate: Catedral", "ruRU": "Монастырь Алого ордена: Собор", "itIT": "Monastero Scarlatto: Cattedrale" }
+  },
+  {
+    "term": "ty",
+    "aliases": ["thx"],
+    "expansion": "thank you",
+    "cat": "social",
+    "ambiguity": "",
+    "examples": ["ty for group"],
+    "tr": { "zhTW": "謝謝", "zhCN": "谢谢", "koKR": "고마워요", "deDE": "danke", "frFR": "merci", "esES": "gracias", "ptBR": "valeu", "ruRU": "спасибо", "itIT": "grazie" }
+  },
+  {
+    "term": "g",
+    "aliases": [],
+    "expansion": "gold",
+    "cat": "trade",
+    "ambiguity": "after a number (80g) it means gold",
+    "examples": ["80g"],
+    "tr": { "zhTW": "金", "zhCN": "金", "koKR": "골드", "deDE": "Gold", "frFR": "po", "esES": "oro", "ptBR": "ouro", "ruRU": "з.", "itIT": "oro" }
+  },
+  {
+    "term": "<3",
+    "aliases": [],
+    "expansion": "heart (love)",
+    "cat": "social",
+    "ambiguity": "",
+    "examples": ["ty <3"],
+    "tr": { "zhTW": "愛心", "zhCN": "爱心", "koKR": "하트", "deDE": "Herz", "frFR": "cœur", "esES": "corazón", "ptBR": "coração", "ruRU": "сердечко", "itIT": "cuore" }
+  }
+]
