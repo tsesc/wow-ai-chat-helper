@@ -1,100 +1,224 @@
 'use strict';
-// Tests for addon/WoWChatHelper/Glossary.lua and Fonts/WCH-CJK.ttf (glossary + font track).
+// Glossary data pipeline + bundled fonts (glossary/font track):
+//   data/glossary/terms.json, phrases.json (master data)
+//   tools/build-glossary.js -> addon/WoWChatHelper_Glossary_<locale>/ (generated, committed)
+//   addon/WoWChatHelper/Fonts/WCH-CJK.ttf (TC), WCH-SC.ttf, WCH-KR.ttf (tools/build-font.py)
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const luaparse = require('luaparse');
-const { createVM } = require('./helpers/lua');
+const { createVM, parseToc } = require('./helpers/lua');
+const build = require('../tools/build-glossary');
 
-const ADDON = path.join(__dirname, '..', 'addon', 'WoWChatHelper');
-const GLOSSARY = path.join(ADDON, 'Glossary.lua');
-const FONT = path.join(ADDON, 'Fonts', 'WCH-CJK.ttf');
+const ROOT = path.join(__dirname, '..');
+const DATA = path.join(ROOT, 'data', 'glossary');
+const FONTS = path.join(ROOT, 'addon', 'WoWChatHelper', 'Fonts');
+const LOCALES = ['zhTW', 'zhCN', 'koKR', 'deDE', 'frFR', 'esES', 'ptBR', 'ruRU', 'itIT'];
 const CATS = new Set(['lfg', 'raid', 'loot', 'role', 'class', 'combat', 'trade', 'social', 'zone', 'misc']);
+const TERM_KEYS = ['term', 'aliases', 'expansion', 'cat', 'ambiguity', 'examples', 'tr'];
+const MAX_TR = 24;
 
-function load() {
-  const vm = createVM({ files: [GLOSSARY], addonName: 'WoWChatHelper' });
-  return vm.eval('WCH_Glossary');
-}
-const G = load();
+const terms = JSON.parse(fs.readFileSync(path.join(DATA, 'terms.json'), 'utf8'));
+const phrases = JSON.parse(fs.readFileSync(path.join(DATA, 'phrases.json'), 'utf8'));
+const byTerm = new Map(terms.map((t) => [t.term.toLowerCase(), t]));
 const chars = (s) => Array.from(s);
+const normKey = (k) => k.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[.!?,;:]+$/, '');
 
-test('Glossary.lua is valid Lua 5.1 and loads in fengari', () => {
-  luaparse.parse(fs.readFileSync(GLOSSARY, 'utf8'), { luaVersion: '5.1' });
-  assert.equal(typeof G, 'object');
-  assert.ok(Array.isArray(G.terms));
-  assert.equal(typeof G.phrases, 'object');
+// ---------------------------------------------------------------- master data
+
+test('build-glossary uses the fixed locale list', () => {
+  assert.deepEqual(build.LOCALES, LOCALES);
 });
 
-test('terms: count and schema', () => {
-  assert.ok(G.terms.length >= 300, `terms: ${G.terms.length}`);
-  for (const t of G.terms) {
-    for (const k of ['term', 'expansion', 'zh', 'cat']) {
-      assert.equal(typeof t[k], 'string', `${JSON.stringify(t)} missing ${k}`);
-      assert.ok(t[k].length > 0, `${JSON.stringify(t)} empty ${k}`);
+test('terms.json: count, schema, key order, categories', () => {
+  assert.ok(terms.length >= 900, `terms: ${terms.length}`);
+  for (const t of terms) {
+    const id = JSON.stringify(t.term);
+    assert.deepEqual(Object.keys(t), TERM_KEYS, `key order of ${id}`);
+    assert.equal(typeof t.term, 'string'); assert.ok(t.term.trim() === t.term && t.term.length > 0, id);
+    assert.equal(typeof t.expansion, 'string'); assert.ok(t.expansion.length > 0, `${id} expansion`);
+    assert.ok(CATS.has(t.cat), `${id} bad cat ${t.cat}`);
+    assert.equal(typeof t.ambiguity, 'string', `${id} ambiguity`);
+    assert.ok(Array.isArray(t.aliases) && t.aliases.every((a) => typeof a === 'string' && a.trim()), `${id} aliases`);
+    assert.ok(Array.isArray(t.examples) && t.examples.every((a) => typeof a === 'string' && a.trim()), `${id} examples`);
+    // English data (it goes to the AI as-is)
+    assert.match(t.term + t.expansion + t.ambiguity + t.aliases.join('') + t.examples.join(''), /^[\x20-\x7e]*$/, `${id} non-ASCII English field`);
+    assert.deepEqual(Object.keys(t.tr).sort(), [...LOCALES].sort(), `${id} tr locales`);
+  }
+  const used = new Set(terms.map((t) => t.cat));
+  for (const c of CATS) assert.ok(used.has(c), `category unused: ${c}`);
+});
+
+test('terms.json: every locale filled, each translation <= 24 characters', () => {
+  for (const t of terms) {
+    for (const l of LOCALES) {
+      const v = t.tr[l];
+      assert.equal(typeof v, 'string', `${t.term}.${l}`);
+      assert.ok(v.trim().length > 0 && v === v.trim(), `${t.term}.${l} empty or untrimmed`);
+      assert.ok(chars(v).length <= MAX_TR, `${t.term}.${l} too long: ${v}`);
     }
-    assert.ok(CATS.has(t.cat), `bad cat in ${JSON.stringify(t)}`);
-    assert.ok(chars(t.zh).length <= 20, `zh too long: ${t.term} ${t.zh}`);
-    assert.deepEqual(Object.keys(t).sort(), ['cat', 'expansion', 'term', 'zh']);
   }
 });
 
-test('terms: no case-insensitive duplicates, every category used', () => {
-  const seen = new Map();
-  for (const t of G.terms) {
+test('terms.json: no case-insensitive duplicate terms, no alias repeating its own term', () => {
+  const seen = new Set();
+  for (const t of terms) {
     const k = t.term.toLowerCase();
     assert.ok(!seen.has(k), `duplicate term: ${t.term}`);
-    seen.set(k, t);
-  }
-  const used = new Set(G.terms.map((t) => t.cat));
-  for (const c of CATS) assert.ok(used.has(c), `category unused: ${c}`);
-  for (const must of ['LFM', 'LF1M', 'HC', 'inv', 'ninja', 'OOM', 'CC', 'sheep', 'MT', 'OT', 'DPS',
-    'aggro', 'pull', 'wipe', 'rez', 'buff', 'summ', 'port', 'AH', 'WTS', 'WTB', 'WTT', 'CoD', 'mats',
-    'BoE', 'BoP', 'SR', 'MS', 'OS', 'need', 'greed', 'pug', 'afk', 'brb', 'omw', 'ty', 'np', 'gg',
-    'gz', 'grats', 'lol', 'kek', 'ofc', 'idk', 'DM', 'SM', 'BRD', 'UBRS', 'MC', 'Onyxia', 'ZG', 'BWL']) {
-    assert.ok(seen.has(must.toLowerCase()), `missing required term: ${must}`);
-  }
-  assert.equal(seen.get('lfm').zh, '徵人');
-  assert.equal(seen.get('lfm').expansion, 'Looking For More');
-});
-
-test('phrases: count, normalized keys, schema', () => {
-  const keys = Object.keys(G.phrases);
-  assert.ok(keys.length >= 80, `phrases: ${keys.length}`);
-  for (const k of keys) {
-    assert.equal(k, k.toLowerCase(), `not lowercase: ${k}`);
-    assert.equal(k, k.trim(), `not trimmed: ${k}`);
-    assert.ok(!/\s{2,}/.test(k), `multiple spaces: ${k}`);
-    assert.ok(!/[.!,;:]+$/.test(k), `trailing punctuation: ${k}`);
-    assert.ok(k.length > 0);
-    const p = G.phrases[k];
-    assert.equal(typeof p.zh, 'string', k);
-    assert.ok(p.zh.length > 0 && chars(p.zh).length <= 20, `phrase zh: ${k}`);
-    // an empty Lua table comes back as {}; accept both it and an array
-    const terms = Array.isArray(p.terms) ? p.terms : [];
-    if (!Array.isArray(p.terms)) assert.deepEqual(p.terms, {}, `terms of ${k}`);
-    for (const t of terms) {
-      for (const f of ['term', 'expansion', 'zh']) assert.equal(typeof t[f], 'string', `${k}.${f}`);
-      assert.ok(chars(t.zh).length <= 20, `${k} term zh too long`);
+    seen.add(k);
+    const own = new Set([k]);
+    for (const a of t.aliases) {
+      assert.ok(!own.has(a.toLowerCase()), `${t.term}: alias ${a} repeated`);
+      own.add(a.toLowerCase());
     }
   }
-  for (const must of ['ty', 'ty all', 'gg', 'omw', 'inv pls', 'inv', 'brb', 'lf tank', 'ready?', 'rdy', 'grats', 'np']) {
-    assert.ok(G.phrases[must], `missing phrase: ${must}`);
+});
+
+test('terms.json: core jargon present (incl. Classic-era and the AH bug)', () => {
+  for (const must of ['LFM', 'LF1M', 'HC', 'inv', 'ninja', 'OOM', 'CC', 'sheep', 'MT', 'OT', 'DPS',
+    'aggro', 'pull', 'wipe', 'rez', 'buff', 'summ', 'port', 'AH', 'WTS', 'WTB', 'WTT', 'CoD', 'mats',
+    'BoE', 'BoP', 'SR', 'HR', 'MS', 'OS', 'need', 'greed', 'pug', 'afk', 'brb', 'omw', 'ty', 'np', 'gg',
+    'gz', 'grats', 'lol', 'kek', 'ofc', 'idk', 'DM', 'SM', 'BRD', 'UBRS', 'MC', 'Onyxia', 'ZG', 'BWL',
+    'down', 'up', 'DMT', 'WB', 'Ony buff', 'Rend buff', 'salv', 'GDKP', 'ding', 'bio', 'Skyborne']) {
+    assert.ok(byTerm.has(must.toLowerCase()), `missing required term: ${must}`);
+  }
+  // ordinary English words the audit says must not be terms (they flood the AI block)
+  for (const no of ['all', 'ok', 'sure', 'ready', 'heal', 'run', 'group', 'party', 'wait', 'hi', '60']) {
+    assert.ok(!byTerm.has(no), `ordinary word kept as a term: ${no}`);
   }
 });
 
-test('phrases: no duplicate keys in the Lua source (a table constructor would silently override)', () => {
-  const ast = luaparse.parse(fs.readFileSync(GLOSSARY, 'utf8'), { luaVersion: '5.1' });
-  const ctor = ast.body[0].init[0];
-  const phrasesField = ctor.fields.find((f) => f.key && f.key.name === 'phrases');
-  const keys = phrasesField.value.fields.map((f) => f.key.value || f.key.raw.slice(1, -1));
-  assert.equal(new Set(keys).size, keys.length, 'duplicate phrase keys');
-  assert.equal(keys.length, Object.keys(G.phrases).length);
-  const termsField = ctor.fields.find((f) => f.key && f.key.name === 'terms');
-  assert.equal(termsField.value.fields.length, G.terms.length);
+test('terms.json: the triggering bug - AH and down carry what the AI needs', () => {
+  const ah = byTerm.get('ah');
+  assert.equal(ah.term, 'AH');
+  assert.equal(ah.expansion, 'Auction House');
+  assert.equal(ah.cat, 'trade');
+  assert.match(ah.ambiguity, /interjection/);
+  assert.ok(ah.examples.includes("ah isn't down for everyone"));
+  assert.equal(ah.tr.zhTW, '拍賣場');
+  assert.equal(ah.tr.zhCN, '拍卖行');
+  assert.equal(ah.tr.koKR, '경매장');
+  assert.equal(ah.tr.deDE, 'Auktionshaus');
+  assert.equal(ah.tr.frFR, 'Hôtel des ventes');
+  const down = byTerm.get('down');
+  assert.match(down.ambiguity, /broken or offline/);
+  assert.match(down.ambiguity, /killed/);
+  // audit fixes
+  assert.match(byTerm.get('hc').ambiguity, /Hardcore/);
+  assert.equal(byTerm.get('pl').expansion, 'Power Leveling');
+  assert.equal(byTerm.get('st').tr.zhTW, '阿塔哈卡神廟');
+  assert.equal(byTerm.get('lfm').tr.zhTW, '徵人');
+  assert.equal(byTerm.get('tank').tr.zhTW, '坦');
+  assert.equal(byTerm.get('healer').tr.zhTW, '補');
+  assert.equal(byTerm.get('boss').tr.zhTW, '王');
+  assert.equal(byTerm.get('trash').tr.zhTW, '小怪');
+  assert.equal(byTerm.get('wipe').tr.zhTW, '滅團');
 });
 
-// ---- TrueType cmap parsing (no dependencies) ----
+// Cheap script check: a handful of very common characters that exist only in one of
+// Traditional / Simplified Chinese.
+const SIMPLIFIED_ONLY = '们这说为对时会来么个国过还没发样问门开关见长队补装级战术师头钱买卖场';
+const TRADITIONAL_ONLY = '們這說為對時會來麼個國過還沒發樣問門開關見長隊補裝級戰術師頭錢買賣場';
+test('zhTW strings are Traditional, zhCN strings are Simplified (spot check)', () => {
+  const all = (l) => terms.map((t) => [t.term, t.tr[l]]).concat(phrases.map((p) => [p.key, p.tr[l]]));
+  for (const [k, v] of all('zhTW')) {
+    const bad = chars(v).filter((c) => SIMPLIFIED_ONLY.includes(c) && !TRADITIONAL_ONLY.includes(c));
+    assert.deepEqual(bad, [], `zhTW ${k}: ${v}`);
+  }
+  for (const [k, v] of all('zhCN')) {
+    const bad = chars(v).filter((c) => TRADITIONAL_ONLY.includes(c) && !SIMPLIFIED_ONLY.includes(c));
+    assert.deepEqual(bad, [], `zhCN ${k}: ${v}`);
+  }
+});
+
+test('phrases.json: count, normalized unique keys, schema, terms exist', () => {
+  assert.ok(phrases.length >= 120, `phrases: ${phrases.length}`);
+  const keys = new Set();
+  for (const p of phrases) {
+    assert.deepEqual(Object.keys(p), ['key', 'terms', 'tr'], `keys of ${p.key}`);
+    assert.equal(p.key, normKey(p.key), `not normalized: ${JSON.stringify(p.key)}`);
+    assert.ok(p.key.length > 0);
+    assert.ok(!keys.has(p.key), `duplicate phrase key: ${p.key}`);
+    keys.add(p.key);
+    assert.ok(Array.isArray(p.terms));
+    for (const n of p.terms) assert.ok(byTerm.has(String(n).toLowerCase()), `${p.key}: unknown term ${n}`);
+    assert.deepEqual(Object.keys(p.tr).sort(), [...LOCALES].sort(), `${p.key} tr locales`);
+    for (const l of LOCALES) {
+      assert.ok(typeof p.tr[l] === 'string' && p.tr[l].trim().length > 0, `${p.key}.${l}`);
+      assert.ok(chars(p.tr[l]).length <= MAX_TR, `${p.key}.${l} too long: ${p.tr[l]}`);
+    }
+  }
+  for (const must of ['ty', 'ty all', 'gg', 'omw', 'inv pls', 'inv', 'brb', 'lf tank', 'rdy', 'grats', 'np',
+    "don't pull", 'dont pull', "let's go", 'lets go', 'tyty', 'ding', 'ah is down']) {
+    assert.ok(keys.has(must), `missing phrase: ${must}`);
+  }
+});
+
+// ---------------------------------------------------------------- generated addons
+
+test('generated glossary addons are up to date with the JSON (rebuilt in memory)', () => {
+  const fresh = build.outputs(build.loadData(ROOT));
+  assert.equal(Object.keys(fresh).length, LOCALES.length * 2);
+  const stale = [];
+  for (const [rel, content] of Object.entries(fresh)) {
+    let cur = null;
+    try { cur = fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch {}
+    if (cur !== content) stale.push(rel);
+  }
+  assert.deepEqual(stale, [], 'stale: run `node tools/build-glossary.js`');
+  // no extra (e.g. renamed-locale) glossary addons lying around
+  const dirs = fs.readdirSync(path.join(ROOT, 'addon')).filter((d) => d.startsWith(build.PREFIX)).sort();
+  assert.deepEqual(dirs, LOCALES.map((l) => build.PREFIX + l).sort());
+});
+
+test('luaStr escapes quotes, backslashes and newlines for Lua 5.1', () => {
+  assert.equal(build.luaStr('a"b\\c\nd'), '"a\\"b\\\\c\\nd"');
+  const vm = createVM({ files: [], addonName: 'X' });
+  assert.equal(vm.eval(build.luaStr('it\'s "x" \\ é 拍賣場\n')), 'it\'s "x" \\ é 拍賣場\n');
+});
+
+for (const loc of LOCALES) {
+  test(`${loc}: TOC is load-on-demand and the Lua loads in fengari with the right data`, () => {
+    const dir = path.join(ROOT, 'addon', build.PREFIX + loc);
+    const toc = path.join(dir, build.PREFIX + loc + '.toc');
+    const parsed = parseToc(toc);
+    assert.equal(parsed.metadata.Interface, '16001');
+    assert.equal(parsed.metadata.LoadOnDemand, '1');
+    assert.equal(parsed.metadata.Dependencies, 'WoWChatHelper');
+    assert.deepEqual(parsed.files.map((f) => path.basename(f)), ['Glossary.lua']);
+
+    const src = fs.readFileSync(path.join(dir, 'Glossary.lua'), 'utf8');
+    const ast = luaparse.parse(src, { luaVersion: '5.1' });
+    const ctor = ast.body[0].init[0];
+    const phrasesField = ctor.fields.find((f) => f.key && f.key.name === 'phrases');
+    const keys = phrasesField.value.fields.map((f) => f.key.value || f.key.raw.slice(1, -1));
+    assert.equal(new Set(keys).size, keys.length, 'duplicate phrase keys in the Lua table');
+
+    const vm = createVM({ toc, addonName: build.PREFIX + loc });
+    const G = vm.eval('WCH_Glossary');
+    assert.equal(G.locale, loc);
+    assert.equal(G.terms.length, terms.length);
+    assert.equal(Object.keys(G.phrases).length, phrases.length);
+    for (let i = 0; i < terms.length; i++) {
+      const g = G.terms[i], t = terms[i];
+      assert.deepEqual(Object.keys(g).sort(), ['ambiguity', 'cat', 'expansion', 'term', 'tr']);
+      assert.equal(g.term, t.term); assert.equal(g.tr, t.tr[loc]); assert.equal(g.ambiguity, t.ambiguity);
+    }
+    const ah = G.terms.find((t) => t.term === 'AH');
+    assert.equal(ah.tr, byTerm.get('ah').tr[loc]);
+    const p = G.phrases['inv pls'];
+    assert.equal(p.tr, phrases.find((x) => x.key === 'inv pls').tr[loc]);
+    assert.deepEqual(p.terms.map((t) => t.term), ['inv', 'pls']);
+    assert.equal(p.terms[0].tr, byTerm.get('inv').tr[loc]);
+    // a phrase without terms still has a (possibly empty) terms table
+    assert.ok(G.phrases.hello && typeof G.phrases.hello.terms === 'object');
+  });
+}
+
+// ---------------------------------------------------------------- fonts
+
+// TrueType cmap parsing (no dependencies): formats 4 and 12 of the Windows Unicode cmaps.
 function readCmap(buf) {
   const numTables = buf.readUInt16BE(4);
   let cmapOff = -1;
@@ -141,39 +265,82 @@ function readCmap(buf) {
   return set;
 }
 
-test('font: WCH-CJK.ttf exists, is a TrueType font, <= 4 MB, ships OFL.txt', () => {
-  const st = fs.statSync(FONT);
-  assert.ok(st.size > 100000 && st.size <= 4 * 1024 * 1024, `size ${st.size}`);
-  const buf = fs.readFileSync(FONT);
-  assert.equal(buf.readUInt32BE(0), 0x00010000, 'not TrueType-outline sfnt');
-  const tables = [];
-  for (let i = 0; i < buf.readUInt16BE(4); i++) tables.push(buf.toString('latin1', 12 + i * 16, 16 + i * 16));
-  assert.ok(tables.includes('glyf') && !tables.includes('CFF '), 'expected glyf outlines');
-  assert.match(fs.readFileSync(path.join(ADDON, 'Fonts', 'OFL.txt'), 'utf8'), /SIL OPEN FONT LICENSE Version 1\.1/i);
-});
+const FONT_FILES = { tc: 'WCH-CJK.ttf', sc: 'WCH-SC.ttf', kr: 'WCH-KR.ttf' };
+const cmaps = {};
+const cmapOf = (k) => (cmaps[k] ||= readCmap(fs.readFileSync(path.join(FONTS, FONT_FILES[k]))));
 
-test('font: cmap covers ASCII, punctuation and the MOE 4808 common characters', () => {
-  const cmap = readCmap(fs.readFileSync(FONT));
-  for (let c = 0x21; c <= 0x7e; c++) assert.ok(cmap.has(c), `ASCII ${String.fromCharCode(c)}`);
-  for (const c of '，。、：；？！「」『』（）…—·％～') assert.ok(cmap.has(c.codePointAt(0)), `punct ${c}`);
-  const moe = fs.readFileSync(path.join(__dirname, '..', 'tools', 'data', 'moe-4808.txt'), 'utf8');
-  const common = chars(moe).filter((c) => c.codePointAt(0) > 0x2e80);
-  assert.equal(new Set(common).size, 4808);
-  const missing = common.filter((c) => !cmap.has(c.codePointAt(0)));
-  assert.deepEqual(missing, [], `missing common chars: ${missing.join('')}`);
-});
+// Every character of a locale's glossary strings (terms + phrases).
+function glossaryChars(loc) {
+  const s = new Set();
+  for (const t of terms) for (const c of chars(t.tr[loc])) s.add(c);
+  for (const p of phrases) for (const c of chars(p.tr[loc])) s.add(c);
+  return s;
+}
+// Non-ASCII characters of one `Locales.<loc> = { ... }` table in Locales.lua ('' if absent).
+function localeTableChars(loc) {
+  const file = path.join(ROOT, 'addon', 'WoWChatHelper', 'Locales.lua');
+  if (!fs.existsSync(file)) return new Set();
+  const m = fs.readFileSync(file, 'utf8').match(new RegExp(`^Locales\\.${loc}\\s*=\\s*\\{\\n([\\s\\S]*?)^\\}`, 'm'));
+  return new Set(m ? chars(m[1]).filter((c) => c.codePointAt(0) > 0x7f) : []);
+}
+const missingFrom = (cmap, set) => [...set].filter((c) => c.codePointAt(0) >= 0x20 && !cmap.has(c.codePointAt(0)));
 
-test('font: every non-ASCII char used in Glossary.lua (zh fields and expansions) is in the font', () => {
-  const cmap = readCmap(fs.readFileSync(FONT));
-  const used = new Set();
-  const add = (s) => { for (const c of chars(s)) used.add(c); };
-  for (const t of G.terms) { add(t.term); add(t.expansion); add(t.zh); }
-  for (const [k, p] of Object.entries(G.phrases)) {
-    add(k); add(p.zh);
-    if (Array.isArray(p.terms)) for (const t of p.terms) { add(t.term); add(t.expansion); add(t.zh); }
+test('fonts: three TrueType (glyf) subsets, each <= 3 MB, OFL license shipped', () => {
+  for (const [k, f] of Object.entries(FONT_FILES)) {
+    const file = path.join(FONTS, f);
+    const st = fs.statSync(file);
+    assert.ok(st.size > 100000 && st.size <= 3 * 1024 * 1024, `${f} size ${st.size}`);
+    const buf = fs.readFileSync(file);
+    assert.equal(buf.readUInt32BE(0), 0x00010000, `${f} not TrueType-outline sfnt`);
+    const tables = [];
+    for (let i = 0; i < buf.readUInt16BE(4); i++) tables.push(buf.toString('latin1', 12 + i * 16, 16 + i * 16));
+    assert.ok(tables.includes('glyf') && !tables.includes('CFF '), `${k}: expected glyf outlines`);
   }
-  const zhChars = [...used].filter((c) => c.codePointAt(0) > 0x7f);
-  assert.ok(zhChars.length > 300, 'sanity: expected many CJK chars in the glossary');
-  const missing = [...used].filter((c) => c.codePointAt(0) >= 0x20 && !cmap.has(c.codePointAt(0)));
-  assert.deepEqual(missing, [], `glyphs missing from font: ${missing.join('')}`);
+  const ofl = fs.readFileSync(path.join(FONTS, 'OFL.txt'), 'utf8');
+  assert.match(ofl, /SIL OPEN FONT LICENSE Version 1\.1/i);
+  for (const f of Object.values(FONT_FILES)) assert.ok(ofl.includes(f), `OFL.txt does not name ${f}`);
+});
+
+test('fonts: all three cover ASCII, Latin-1 letters and basic Cyrillic (player names, English chat)', () => {
+  for (const k of Object.keys(FONT_FILES)) {
+    const cmap = cmapOf(k);
+    for (let c = 0x21; c <= 0x7e; c++) assert.ok(cmap.has(c), `${k}: ASCII ${String.fromCharCode(c)}`);
+    for (const c of 'äöüßéèêçñàùâîôûëïœ¿¡«»АБВабвёЁжщ') assert.ok(cmap.has(c.codePointAt(0)), `${k}: ${c}`);
+  }
+});
+
+test('font TC: punctuation, MOE 4808, zhTW glossary/UI and the Latin/Cyrillic languages', () => {
+  const cmap = cmapOf('tc');
+  for (const c of '，。、：；？！「」『』（）…—·％～') assert.ok(cmap.has(c.codePointAt(0)), `punct ${c}`);
+  const moe = chars(fs.readFileSync(path.join(ROOT, 'tools', 'data', 'moe-4808.txt'), 'utf8')).filter((c) => c.codePointAt(0) > 0x2e80);
+  assert.equal(new Set(moe).size, 4808);
+  assert.deepEqual(moe.filter((c) => !cmap.has(c.codePointAt(0))), [], 'MOE chars missing');
+  const zh = glossaryChars('zhTW');
+  assert.ok([...zh].filter((c) => c.codePointAt(0) > 0x2e80).length > 500, 'sanity: many CJK chars');
+  assert.deepEqual(missingFrom(cmap, zh), [], 'zhTW glossary glyphs missing from WCH-CJK.ttf');
+  assert.deepEqual(missingFrom(cmap, localeTableChars('zhTW')), [], 'zhTW UI glyphs missing (rebuild fonts)');
+  for (const l of ['deDE', 'frFR', 'esES', 'ptBR', 'ruRU', 'itIT']) {
+    assert.deepEqual(missingFrom(cmap, glossaryChars(l)), [], `${l} glossary glyphs missing from WCH-CJK.ttf`);
+    assert.deepEqual(missingFrom(cmap, localeTableChars(l)), [], `${l} UI glyphs missing from WCH-CJK.ttf`);
+  }
+});
+
+test('font SC: GB2312 (6763 hanzi), zhCN glossary and UI strings', () => {
+  const cmap = cmapOf('sc');
+  for (const c of '，。、：；？！“”‘’（）…—·％～') assert.ok(cmap.has(c.codePointAt(0)), `punct ${c}`);
+  const gb = chars(fs.readFileSync(path.join(ROOT, 'tools', 'data', 'gb2312-6763.txt'), 'utf8')).filter((c) => c.codePointAt(0) > 0x2e80);
+  assert.equal(new Set(gb).size, 6763);
+  assert.deepEqual(gb.filter((c) => !cmap.has(c.codePointAt(0))), [], 'GB2312 chars missing');
+  assert.deepEqual(missingFrom(cmap, glossaryChars('zhCN')), [], 'zhCN glossary glyphs missing from WCH-SC.ttf');
+  assert.deepEqual(missingFrom(cmap, localeTableChars('zhCN')), [], 'zhCN UI glyphs missing (rebuild fonts)');
+});
+
+test('font KR: KS X 1001 Hangul (2350), compatibility jamo, koKR glossary and UI strings', () => {
+  const cmap = cmapOf('kr');
+  const ks = chars(fs.readFileSync(path.join(ROOT, 'tools', 'data', 'ksx1001-hangul-2350.txt'), 'utf8')).filter((c) => c.codePointAt(0) >= 0xac00);
+  assert.equal(new Set(ks).size, 2350);
+  assert.deepEqual(ks.filter((c) => !cmap.has(c.codePointAt(0))), [], 'KS X 1001 syllables missing');
+  for (const c of 'ㄱㄴㄷㅋㅎㅏㅠㅜ') assert.ok(cmap.has(c.codePointAt(0)), `jamo ${c}`);
+  assert.deepEqual(missingFrom(cmap, glossaryChars('koKR')), [], 'koKR glossary glyphs missing from WCH-KR.ttf');
+  assert.deepEqual(missingFrom(cmap, localeTableChars('koKR')), [], 'koKR UI glyphs missing (rebuild fonts)');
 });

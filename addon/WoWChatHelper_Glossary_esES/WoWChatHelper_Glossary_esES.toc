@@ -1,0 +1,9 @@
+## Interface: 16001
+## Title: WoW Chat Helper Glossary (esES)
+## Notes: Offline WoW jargon glossary for WoW Chat Helper, language esES. Loaded on demand by WoWChatHelper.
+## Author: tsesc
+## Version: 0.1.0
+## LoadOnDemand: 1
+## Dependencies: WoWChatHelper
+
+Glossary.lua

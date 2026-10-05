@@ -1,3 +1,9 @@
+Bundled fonts (subsets built by tools/build-font.py, unmodified glyph outlines):
+  WCH-CJK.ttf  subset of Noto Sans TC (Traditional Chinese)
+  WCH-SC.ttf   subset of Noto Sans SC (Simplified Chinese)
+  WCH-KR.ttf   subset of Noto Sans KR (Korean)
+All three are distributed under the license below.
+
 Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.

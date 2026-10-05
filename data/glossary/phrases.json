@@ -1,0 +1,4552 @@
+[
+ {
+  "key": "add me",
+  "terms": [],
+  "tr": {
+   "zhTW": "加我好友",
+   "zhCN": "加我好友",
+   "koKR": "친추해줘",
+   "deDE": "Füg mich hinzu",
+   "frFR": "Ajoute-moi",
+   "esES": "Agrégame",
+   "ptBR": "Me adiciona",
+   "ruRU": "Добавь меня",
+   "itIT": "Aggiungimi"
+  }
+ },
+ {
+  "key": "afk",
+  "terms": [
+   "afk"
+  ],
+  "tr": {
+   "zhTW": "暫時離開",
+   "zhCN": "暂离",
+   "koKR": "자리 비움",
+   "deDE": "Bin AFK",
+   "frFR": "Je suis AFK",
+   "esES": "Ausente",
+   "ptBR": "Ausente",
+   "ruRU": "Я АФК",
+   "itIT": "Sono AFK"
+  }
+ },
+ {
+  "key": "afk 1 min",
+  "terms": [
+   "afk"
+  ],
+  "tr": {
+   "zhTW": "離開一分鐘",
+   "zhCN": "离开一分钟",
+   "koKR": "1분 자리 비움",
+   "deDE": "1 Min AFK",
+   "frFR": "AFK 1 min",
+   "esES": "Ausente 1 min",
+   "ptBR": "Ausente 1 min",
+   "ruRU": "АФК 1 мин",
+   "itIT": "AFK 1 min"
+  }
+ },
+ {
+  "key": "afk 5 min",
+  "terms": [
+   "afk"
+  ],
+  "tr": {
+   "zhTW": "離開五分鐘",
+   "zhCN": "离开五分钟",
+   "koKR": "5분 자리 비움",
+   "deDE": "5 Min AFK",
+   "frFR": "AFK 5 min",
+   "esES": "Ausente 5 min",
+   "ptBR": "Ausente 5 min",
+   "ruRU": "АФК 5 мин",
+   "itIT": "AFK 5 min"
+  }
+ },
+ {
+  "key": "all good",
+  "terms": [],
+  "tr": {
+   "zhTW": "沒事",
+   "zhCN": "没事",
+   "koKR": "괜찮아",
+   "deDE": "Alles gut",
+   "frFR": "Tout va bien",
+   "esES": "Todo bien",
+   "ptBR": "Tudo certo",
+   "ruRU": "Все нормально",
+   "itIT": "Tutto ok"
+  }
+ },
+ {
+  "key": "all ready",
+  "terms": [],
+  "tr": {
+   "zhTW": "大家都準備好了",
+   "zhCN": "大家都准备好了",
+   "koKR": "다 준비됨",
+   "deDE": "Alle bereit",
+   "frFR": "Tout le monde est prêt",
+   "esES": "Todos listos",
+   "ptBR": "Todos prontos",
+   "ruRU": "Все готовы",
+   "itIT": "Tutti pronti"
+  }
+ },
+ {
+  "key": "at stone",
+  "terms": [
+   "stone"
+  ],
+  "tr": {
+   "zhTW": "在集合石這邊",
+   "zhCN": "在集合石这",
+   "koKR": "돌 앞이야",
+   "deDE": "Am Stein",
+   "frFR": "À la pierre",
+   "esES": "En la piedra",
+   "ptBR": "Na pedra",
+   "ruRU": "У камня",
+   "itIT": "Alla pietra"
+  }
+ },
+ {
+  "key": "at the stone",
+  "terms": [
+   "stone"
+  ],
+  "tr": {
+   "zhTW": "在集合石這邊",
+   "zhCN": "在集合石这",
+   "koKR": "돌 앞이야",
+   "deDE": "Am Stein",
+   "frFR": "À la pierre",
+   "esES": "En la piedra",
+   "ptBR": "Na pedra",
+   "ruRU": "У камня",
+   "itIT": "Alla pietra"
+  }
+ },
+ {
+  "key": "back",
+  "terms": [],
+  "tr": {
+   "zhTW": "我回來了",
+   "zhCN": "我回来了",
+   "koKR": "왔어",
+   "deDE": "Bin wieder da",
+   "frFR": "Je suis de retour",
+   "esES": "Ya volví",
+   "ptBR": "Voltei",
+   "ruRU": "Я вернулся",
+   "itIT": "Sono tornato"
+  }
+ },
+ {
+  "key": "bb",
+  "terms": [
+   "BB"
+  ],
+  "tr": {
+   "zhTW": "掰掰",
+   "zhCN": "拜拜",
+   "koKR": "바이바이",
+   "deDE": "Tschüss",
+   "frFR": "Bye",
+   "esES": "Adiós",
+   "ptBR": "Tchau",
+   "ruRU": "Пока",
+   "itIT": "Ciao"
+  }
+ },
+ {
+  "key": "bbl",
+  "terms": [
+   "bbl"
+  ],
+  "tr": {
+   "zhTW": "晚點回來",
+   "zhCN": "晚点回来",
+   "koKR": "나중에 올게",
+   "deDE": "Bin später zurück",
+   "frFR": "Je reviens plus tard",
+   "esES": "Vuelvo luego",
+   "ptBR": "Volto depois",
+   "ruRU": "Вернусь позже",
+   "itIT": "Torno più tardi"
+  }
+ },
+ {
+  "key": "be right there",
+  "terms": [],
+  "tr": {
+   "zhTW": "馬上到",
+   "zhCN": "马上到",
+   "koKR": "곧 갈게",
+   "deDE": "Bin gleich da",
+   "frFR": "J'arrive",
+   "esES": "Ya voy",
+   "ptBR": "Já chego",
+   "ruRU": "Сейчас буду",
+   "itIT": "Arrivo subito"
+  }
+ },
+ {
+  "key": "boe",
+  "terms": [
+   "BoE"
+  ],
+  "tr": {
+   "zhTW": "裝備後綁定",
+   "zhCN": "装备后绑定",
+   "koKR": "착귀",
+   "deDE": "Beim Anlegen gebunden",
+   "frFR": "Lié quand équipé",
+   "esES": "Se liga al equipar",
+   "ptBR": "Vinculado ao equipar",
+   "ruRU": "Перс. при надевании",
+   "itIT": "Vincolato equip."
+  }
+ },
+ {
+  "key": "bop",
+  "terms": [
+   "BoP"
+  ],
+  "tr": {
+   "zhTW": "拾取後綁定",
+   "zhCN": "拾取后绑定",
+   "koKR": "획귀",
+   "deDE": "Beim Aufheben gebunden",
+   "frFR": "Lié quand ramassé",
+   "esES": "Se liga al recoger",
+   "ptBR": "Vinculado ao pegar",
+   "ruRU": "Перс. при поднятии",
+   "itIT": "Vincolato raccolta"
+  }
+ },
+ {
+  "key": "brb",
+  "terms": [
+   "brb"
+  ],
+  "tr": {
+   "zhTW": "馬上回來",
+   "zhCN": "马上回来",
+   "koKR": "금방 올게",
+   "deDE": "Bin gleich zurück",
+   "frFR": "Je reviens",
+   "esES": "Ahora vuelvo",
+   "ptBR": "Já volto",
+   "ruRU": "Сейчас вернусь",
+   "itIT": "Torno subito"
+  }
+ },
+ {
+  "key": "bye",
+  "terms": [],
+  "tr": {
+   "zhTW": "再見",
+   "zhCN": "再见",
+   "koKR": "안녕",
+   "deDE": "Tschüss",
+   "frFR": "Salut",
+   "esES": "Adiós",
+   "ptBR": "Tchau",
+   "ruRU": "Пока",
+   "itIT": "Ciao"
+  }
+ },
+ {
+  "key": "can i get a port",
+  "terms": [
+   "port"
+  ],
+  "tr": {
+   "zhTW": "可以傳送我嗎",
+   "zhCN": "能给我开个门吗",
+   "koKR": "차원문 열어줄래?",
+   "deDE": "Portal für mich?",
+   "frFR": "Un portail stp ?",
+   "esES": "¿Me abres portal?",
+   "ptBR": "Pode abrir um portal?",
+   "ruRU": "Можно портал?",
+   "itIT": "Mi apri un portale?"
+  }
+ },
+ {
+  "key": "can i get a summon",
+  "terms": [
+   "summon"
+  ],
+  "tr": {
+   "zhTW": "可以召喚我嗎",
+   "zhCN": "能拉我一下吗",
+   "koKR": "소환해줄래?",
+   "deDE": "Kann mich wer porten?",
+   "frFR": "Je peux être invoqué ?",
+   "esES": "¿Me invocas?",
+   "ptBR": "Pode me sumonar?",
+   "ruRU": "Можно призыв?",
+   "itIT": "Mi evochi?"
+  }
+ },
+ {
+  "key": "can i get an inv",
+  "terms": [
+   "inv"
+  ],
+  "tr": {
+   "zhTW": "可以邀請我嗎",
+   "zhCN": "能邀请我吗",
+   "koKR": "초대해줄래?",
+   "deDE": "Kann ich einen Invite?",
+   "frFR": "Une invit stp ?",
+   "esES": "¿Me invitas?",
+   "ptBR": "Pode me convidar?",
+   "ruRU": "Можно инвайт?",
+   "itIT": "Mi inviti?"
+  }
+ },
+ {
+  "key": "can i get inv",
+  "terms": [
+   "inv"
+  ],
+  "tr": {
+   "zhTW": "可以邀請我嗎",
+   "zhCN": "能邀请我吗",
+   "koKR": "초대해줄래?",
+   "deDE": "Kann ich einen Invite?",
+   "frFR": "Une invit stp ?",
+   "esES": "¿Me invitas?",
+   "ptBR": "Pode me convidar?",
+   "ruRU": "Можно инвайт?",
+   "itIT": "Mi inviti?"
+  }
+ },
+ {
+  "key": "can i join",
+  "terms": [],
+  "tr": {
+   "zhTW": "我可以加入嗎",
+   "zhCN": "我能加入吗",
+   "koKR": "나도 껴도 돼?",
+   "deDE": "Kann ich mit?",
+   "frFR": "Je peux venir ?",
+   "esES": "¿Puedo unirme?",
+   "ptBR": "Posso entrar?",
+   "ruRU": "Можно к вам?",
+   "itIT": "Posso unirmi?"
+  }
+ },
+ {
+  "key": "congrats",
+  "terms": [
+   "congrats"
+  ],
+  "tr": {
+   "zhTW": "恭喜",
+   "zhCN": "恭喜",
+   "koKR": "축하해",
+   "deDE": "Glückwunsch",
+   "frFR": "Félicitations",
+   "esES": "Enhorabuena",
+   "ptBR": "Parabéns",
+   "ruRU": "Поздравляю",
+   "itIT": "Congratulazioni"
+  }
+ },
+ {
+  "key": "cya",
+  "terms": [
+   "cya"
+  ],
+  "tr": {
+   "zhTW": "再見",
+   "zhCN": "再见",
+   "koKR": "잘 가",
+   "deDE": "Bis dann",
+   "frFR": "À plus",
+   "esES": "Nos vemos",
+   "ptBR": "Até mais",
+   "ruRU": "Увидимся",
+   "itIT": "Ci vediamo"
+  }
+ },
+ {
+  "key": "dc",
+  "terms": [
+   "DC"
+  ],
+  "tr": {
+   "zhTW": "斷線了",
+   "zhCN": "掉线了",
+   "koKR": "튕겼어",
+   "deDE": "DC gehabt",
+   "frFR": "J'ai déco",
+   "esES": "Me desconecté",
+   "ptBR": "Caí",
+   "ruRU": "Вылетел",
+   "itIT": "Disconnesso"
+  }
+ },
+ {
+  "key": "dced",
+  "terms": [
+   "DC"
+  ],
+  "tr": {
+   "zhTW": "我斷線了",
+   "zhCN": "我掉线了",
+   "koKR": "나 튕겼어",
+   "deDE": "Hatte DC",
+   "frFR": "J'ai été déco",
+   "esES": "Me desconecté",
+   "ptBR": "Caiu minha conexão",
+   "ruRU": "Меня выкинуло",
+   "itIT": "Mi sono disconnesso"
+  }
+ },
+ {
+  "key": "dont pull",
+  "terms": [
+   "pull"
+  ],
+  "tr": {
+   "zhTW": "先別拉怪",
+   "zhCN": "先别拉怪",
+   "koKR": "풀링하지 마",
+   "deDE": "Nicht pullen",
+   "frFR": "Pull pas",
+   "esES": "No pulles",
+   "ptBR": "Não puxa",
+   "ruRU": "Не пулль",
+   "itIT": "Non pullare"
+  }
+ },
+ {
+  "key": "don't pull",
+  "terms": [
+   "pull"
+  ],
+  "tr": {
+   "zhTW": "先別拉怪",
+   "zhCN": "先别拉怪",
+   "koKR": "풀링하지 마",
+   "deDE": "Nicht pullen",
+   "frFR": "Pull pas",
+   "esES": "No pulles",
+   "ptBR": "Não puxa",
+   "ruRU": "Не пулль",
+   "itIT": "Non pullare"
+  }
+ },
+ {
+  "key": "drink",
+  "terms": [
+   "drink"
+  ],
+  "tr": {
+   "zhTW": "喝水回魔",
+   "zhCN": "喝水",
+   "koKR": "물 마셔야 해",
+   "deDE": "Muss trinken",
+   "frFR": "Je bois",
+   "esES": "Bebiendo",
+   "ptBR": "Bebendo",
+   "ruRU": "Пью",
+   "itIT": "Bevo"
+  }
+ },
+ {
+  "key": "ez",
+  "terms": [
+   "ez"
+  ],
+  "tr": {
+   "zhTW": "很簡單",
+   "zhCN": "简单",
+   "koKR": "쉽네",
+   "deDE": "Easy",
+   "frFR": "Facile",
+   "esES": "Fácil",
+   "ptBR": "Fácil",
+   "ruRU": "Изи",
+   "itIT": "Facile"
+  }
+ },
+ {
+  "key": "f",
+  "terms": [
+   "F"
+  ],
+  "tr": {
+   "zhTW": "致哀",
+   "zhCN": "致敬",
+   "koKR": "F",
+   "deDE": "F",
+   "frFR": "F",
+   "esES": "F",
+   "ptBR": "F",
+   "ruRU": "F",
+   "itIT": "F"
+  }
+ },
+ {
+  "key": "facts",
+  "terms": [],
+  "tr": {
+   "zhTW": "說得對",
+   "zhCN": "说得对",
+   "koKR": "인정",
+   "deDE": "Stimmt",
+   "frFR": "Vrai",
+   "esES": "Cierto",
+   "ptBR": "Fato",
+   "ruRU": "Факт",
+   "itIT": "Vero"
+  }
+ },
+ {
+  "key": "free",
+  "terms": [],
+  "tr": {
+   "zhTW": "免費",
+   "zhCN": "免费",
+   "koKR": "무료",
+   "deDE": "Kostenlos",
+   "frFR": "Gratuit",
+   "esES": "Gratis",
+   "ptBR": "Grátis",
+   "ruRU": "Бесплатно",
+   "itIT": "Gratis"
+  }
+ },
+ {
+  "key": "free port",
+  "terms": [
+   "port"
+  ],
+  "tr": {
+   "zhTW": "免費傳送",
+   "zhCN": "免费开门",
+   "koKR": "무료 차원문",
+   "deDE": "Gratis-Portal",
+   "frFR": "Portail gratuit",
+   "esES": "Portal gratis",
+   "ptBR": "Portal grátis",
+   "ruRU": "Бесплатный портал",
+   "itIT": "Portale gratis"
+  }
+ },
+ {
+  "key": "full",
+  "terms": [],
+  "tr": {
+   "zhTW": "滿了",
+   "zhCN": "满了",
+   "koKR": "꽉 찼어",
+   "deDE": "Voll",
+   "frFR": "Complet",
+   "esES": "Lleno",
+   "ptBR": "Cheio",
+   "ruRU": "Полная",
+   "itIT": "Pieno"
+  }
+ },
+ {
+  "key": "g2g",
+  "terms": [
+   "g2g"
+  ],
+  "tr": {
+   "zhTW": "我得走了",
+   "zhCN": "我得走了",
+   "koKR": "가봐야 해",
+   "deDE": "Muss los",
+   "frFR": "Je dois y aller",
+   "esES": "Me tengo que ir",
+   "ptBR": "Tenho que ir",
+   "ruRU": "Мне пора",
+   "itIT": "Devo andare"
+  }
+ },
+ {
+  "key": "gg",
+  "terms": [
+   "gg"
+  ],
+  "tr": {
+   "zhTW": "打得好",
+   "zhCN": "GG",
+   "koKR": "ㅈㅈ",
+   "deDE": "GG",
+   "frFR": "GG",
+   "esES": "GG",
+   "ptBR": "GG",
+   "ruRU": "ГГ",
+   "itIT": "GG"
+  }
+ },
+ {
+  "key": "gg all",
+  "terms": [
+   "gg"
+  ],
+  "tr": {
+   "zhTW": "大家打得好",
+   "zhCN": "大家GG",
+   "koKR": "다들 ㅈㅈ",
+   "deDE": "GG an alle",
+   "frFR": "GG à tous",
+   "esES": "GG a todos",
+   "ptBR": "GG a todos",
+   "ruRU": "ГГ всем",
+   "itIT": "GG a tutti"
+  }
+ },
+ {
+  "key": "gg wp",
+  "terms": [
+   "gg",
+   "wp"
+  ],
+  "tr": {
+   "zhTW": "打得漂亮",
+   "zhCN": "GG打得好",
+   "koKR": "ㅈㅈ 잘했어",
+   "deDE": "GG gut gespielt",
+   "frFR": "GG bien joué",
+   "esES": "GG bien jugado",
+   "ptBR": "GG bem jogado",
+   "ruRU": "ГГ ВП",
+   "itIT": "GG ben giocato"
+  }
+ },
+ {
+  "key": "ggwp",
+  "terms": [
+   "ggwp"
+  ],
+  "tr": {
+   "zhTW": "打得漂亮",
+   "zhCN": "GG打得好",
+   "koKR": "ㅈㅈ 잘했어",
+   "deDE": "GG gut gespielt",
+   "frFR": "GG bien joué",
+   "esES": "GG bien jugado",
+   "ptBR": "GG bem jogado",
+   "ruRU": "ГГ ВП",
+   "itIT": "GG ben giocato"
+  }
+ },
+ {
+  "key": "gj",
+  "terms": [
+   "gj"
+  ],
+  "tr": {
+   "zhTW": "幹得好",
+   "zhCN": "干得好",
+   "koKR": "잘했어",
+   "deDE": "Gut gemacht",
+   "frFR": "Bon boulot",
+   "esES": "Buen trabajo",
+   "ptBR": "Bom trabalho",
+   "ruRU": "Молодец",
+   "itIT": "Bel lavoro"
+  }
+ },
+ {
+  "key": "gj all",
+  "terms": [
+   "gj"
+  ],
+  "tr": {
+   "zhTW": "大家幹得好",
+   "zhCN": "大家干得好",
+   "koKR": "다들 잘했어",
+   "deDE": "Gut gemacht alle",
+   "frFR": "Bien joué tous",
+   "esES": "Buen trabajo todos",
+   "ptBR": "Bom trabalho a todos",
+   "ruRU": "Все молодцы",
+   "itIT": "Bravi tutti"
+  }
+ },
+ {
+  "key": "gl",
+  "terms": [
+   "GL"
+  ],
+  "tr": {
+   "zhTW": "祝好運",
+   "zhCN": "祝好运",
+   "koKR": "행운을",
+   "deDE": "Viel Glück",
+   "frFR": "Bonne chance",
+   "esES": "Suerte",
+   "ptBR": "Boa sorte",
+   "ruRU": "Удачи",
+   "itIT": "Buona fortuna"
+  }
+ },
+ {
+  "key": "glhf",
+  "terms": [
+   "glhf"
+  ],
+  "tr": {
+   "zhTW": "祝好運玩得開心",
+   "zhCN": "祝好运玩得开心",
+   "koKR": "즐겜 행운을",
+   "deDE": "Viel Glück und Spaß",
+   "frFR": "Bonne chance, amuse-toi",
+   "esES": "Suerte y diviértete",
+   "ptBR": "Boa sorte e divirta-se",
+   "ruRU": "Удачи и веселья",
+   "itIT": "Buona fortuna, divertiti"
+  }
+ },
+ {
+  "key": "gm",
+  "terms": [
+   "GM"
+  ],
+  "tr": {
+   "zhTW": "早安",
+   "zhCN": "早上好",
+   "koKR": "좋은 아침",
+   "deDE": "Guten Morgen",
+   "frFR": "Bonjour",
+   "esES": "Buenos días",
+   "ptBR": "Bom dia",
+   "ruRU": "Доброе утро",
+   "itIT": "Buongiorno"
+  }
+ },
+ {
+  "key": "gn",
+  "terms": [
+   "gn"
+  ],
+  "tr": {
+   "zhTW": "晚安",
+   "zhCN": "晚安",
+   "koKR": "잘 자",
+   "deDE": "Gute Nacht",
+   "frFR": "Bonne nuit",
+   "esES": "Buenas noches",
+   "ptBR": "Boa noite",
+   "ruRU": "Спокойной ночи",
+   "itIT": "Buonanotte"
+  }
+ },
+ {
+  "key": "go",
+  "terms": [],
+  "tr": {
+   "zhTW": "開始",
+   "zhCN": "开始",
+   "koKR": "가자",
+   "deDE": "Los",
+   "frFR": "Go",
+   "esES": "Vamos",
+   "ptBR": "Vai",
+   "ruRU": "Го",
+   "itIT": "Via"
+  }
+ },
+ {
+  "key": "go go go",
+  "terms": [],
+  "tr": {
+   "zhTW": "衝衝衝",
+   "zhCN": "冲冲冲",
+   "koKR": "ㄱㄱㄱ",
+   "deDE": "Los los los",
+   "frFR": "Go go go",
+   "esES": "Vamos vamos",
+   "ptBR": "Bora bora",
+   "ruRU": "Го-го-го",
+   "itIT": "Forza forza"
+  }
+ },
+ {
+  "key": "good job",
+  "terms": [],
+  "tr": {
+   "zhTW": "幹得好",
+   "zhCN": "干得好",
+   "koKR": "잘했어",
+   "deDE": "Gut gemacht",
+   "frFR": "Bon boulot",
+   "esES": "Buen trabajo",
+   "ptBR": "Bom trabalho",
+   "ruRU": "Молодец",
+   "itIT": "Bel lavoro"
+  }
+ },
+ {
+  "key": "good luck",
+  "terms": [],
+  "tr": {
+   "zhTW": "祝好運",
+   "zhCN": "祝好运",
+   "koKR": "행운을 빌어",
+   "deDE": "Viel Glück",
+   "frFR": "Bonne chance",
+   "esES": "Buena suerte",
+   "ptBR": "Boa sorte",
+   "ruRU": "Удачи",
+   "itIT": "Buona fortuna"
+  }
+ },
+ {
+  "key": "good morning",
+  "terms": [],
+  "tr": {
+   "zhTW": "早安",
+   "zhCN": "早上好",
+   "koKR": "좋은 아침",
+   "deDE": "Guten Morgen",
+   "frFR": "Bonjour",
+   "esES": "Buenos días",
+   "ptBR": "Bom dia",
+   "ruRU": "Доброе утро",
+   "itIT": "Buongiorno"
+  }
+ },
+ {
+  "key": "good night",
+  "terms": [],
+  "tr": {
+   "zhTW": "晚安",
+   "zhCN": "晚安",
+   "koKR": "잘 자",
+   "deDE": "Gute Nacht",
+   "frFR": "Bonne nuit",
+   "esES": "Buenas noches",
+   "ptBR": "Boa noite",
+   "ruRU": "Спокойной ночи",
+   "itIT": "Buonanotte"
+  }
+ },
+ {
+  "key": "grats",
+  "terms": [
+   "grats"
+  ],
+  "tr": {
+   "zhTW": "恭喜",
+   "zhCN": "恭喜",
+   "koKR": "축하해",
+   "deDE": "Gratuliere",
+   "frFR": "Bravo",
+   "esES": "Felicidades",
+   "ptBR": "Parabéns",
+   "ruRU": "Поздравляю",
+   "itIT": "Complimenti"
+  }
+ },
+ {
+  "key": "greed",
+  "terms": [
+   "greed"
+  ],
+  "tr": {
+   "zhTW": "貪婪",
+   "zhCN": "贪婪",
+   "koKR": "차비",
+   "deDE": "Gier",
+   "frFR": "Cupidité",
+   "esES": "Codicia",
+   "ptBR": "Ganância",
+   "ruRU": "Не откажусь",
+   "itIT": "Avidità"
+  }
+ },
+ {
+  "key": "group full",
+  "terms": [],
+  "tr": {
+   "zhTW": "隊伍滿了",
+   "zhCN": "队伍满了",
+   "koKR": "파티 꽉 참",
+   "deDE": "Gruppe voll",
+   "frFR": "Groupe complet",
+   "esES": "Grupo lleno",
+   "ptBR": "Grupo cheio",
+   "ruRU": "Группа полная",
+   "itIT": "Gruppo pieno"
+  }
+ },
+ {
+  "key": "gtg",
+  "terms": [
+   "gtg"
+  ],
+  "tr": {
+   "zhTW": "我得走了",
+   "zhCN": "我得走了",
+   "koKR": "가봐야 해",
+   "deDE": "Muss los",
+   "frFR": "Je dois y aller",
+   "esES": "Me tengo que ir",
+   "ptBR": "Tenho que ir",
+   "ruRU": "Мне пора",
+   "itIT": "Devo andare"
+  }
+ },
+ {
+  "key": "gz",
+  "terms": [
+   "gz"
+  ],
+  "tr": {
+   "zhTW": "恭喜",
+   "zhCN": "恭喜",
+   "koKR": "ㅊㅋ",
+   "deDE": "Glückwunsch",
+   "frFR": "Félicitations",
+   "esES": "Felicidades",
+   "ptBR": "Parabéns",
+   "ruRU": "Поздравляю",
+   "itIT": "Congratulazioni"
+  }
+ },
+ {
+  "key": "haha",
+  "terms": [],
+  "tr": {
+   "zhTW": "哈哈",
+   "zhCN": "哈哈",
+   "koKR": "ㅋㅋ",
+   "deDE": "Haha",
+   "frFR": "Haha",
+   "esES": "Jaja",
+   "ptBR": "Haha",
+   "ruRU": "Хаха",
+   "itIT": "Ahah"
+  }
+ },
+ {
+  "key": "hello",
+  "terms": [],
+  "tr": {
+   "zhTW": "哈囉",
+   "zhCN": "你好",
+   "koKR": "안녕하세요",
+   "deDE": "Hallo",
+   "frFR": "Bonjour",
+   "esES": "Hola",
+   "ptBR": "Olá",
+   "ruRU": "Привет",
+   "itIT": "Ciao"
+  }
+ },
+ {
+  "key": "hey",
+  "terms": [],
+  "tr": {
+   "zhTW": "嘿",
+   "zhCN": "嘿",
+   "koKR": "야",
+   "deDE": "Hey",
+   "frFR": "Salut",
+   "esES": "Hola",
+   "ptBR": "Opa",
+   "ruRU": "Хей",
+   "itIT": "Ehi"
+  }
+ },
+ {
+  "key": "hf",
+  "terms": [
+   "HF"
+  ],
+  "tr": {
+   "zhTW": "玩得開心",
+   "zhCN": "玩得开心",
+   "koKR": "즐겜",
+   "deDE": "Viel Spaß",
+   "frFR": "Amuse-toi",
+   "esES": "Diviértete",
+   "ptBR": "Divirta-se",
+   "ruRU": "Веселись",
+   "itIT": "Divertiti"
+  }
+ },
+ {
+  "key": "hi",
+  "terms": [],
+  "tr": {
+   "zhTW": "嗨",
+   "zhCN": "嗨",
+   "koKR": "안녕",
+   "deDE": "Hi",
+   "frFR": "Salut",
+   "esES": "Hola",
+   "ptBR": "Oi",
+   "ruRU": "Привет",
+   "itIT": "Ciao"
+  }
+ },
+ {
+  "key": "hi all",
+  "terms": [],
+  "tr": {
+   "zhTW": "大家好",
+   "zhCN": "大家好",
+   "koKR": "다들 안녕",
+   "deDE": "Hallo zusammen",
+   "frFR": "Salut tout le monde",
+   "esES": "Hola a todos",
+   "ptBR": "Oi pessoal",
+   "ruRU": "Всем привет",
+   "itIT": "Ciao a tutti"
+  }
+ },
+ {
+  "key": "hi guys",
+  "terms": [],
+  "tr": {
+   "zhTW": "各位好",
+   "zhCN": "大家好",
+   "koKR": "안녕 여러분",
+   "deDE": "Hi Leute",
+   "frFR": "Salut les gars",
+   "esES": "Hola chicos",
+   "ptBR": "Oi galera",
+   "ruRU": "Привет всем",
+   "itIT": "Ciao ragazzi"
+  }
+ },
+ {
+  "key": "hold on",
+  "terms": [],
+  "tr": {
+   "zhTW": "等一下",
+   "zhCN": "等一下",
+   "koKR": "잠깐만",
+   "deDE": "Moment",
+   "frFR": "Attends",
+   "esES": "Espera",
+   "ptBR": "Espera",
+   "ruRU": "Подожди",
+   "itIT": "Aspetta"
+  }
+ },
+ {
+  "key": "i dont know",
+  "terms": [
+   "idk"
+  ],
+  "tr": {
+   "zhTW": "我不知道",
+   "zhCN": "我不知道",
+   "koKR": "몰라",
+   "deDE": "Keine Ahnung",
+   "frFR": "Je sais pas",
+   "esES": "No sé",
+   "ptBR": "Não sei",
+   "ruRU": "Не знаю",
+   "itIT": "Non lo so"
+  }
+ },
+ {
+  "key": "i don't know",
+  "terms": [
+   "idk"
+  ],
+  "tr": {
+   "zhTW": "我不知道",
+   "zhCN": "我不知道",
+   "koKR": "몰라",
+   "deDE": "Keine Ahnung",
+   "frFR": "Je sais pas",
+   "esES": "No sé",
+   "ptBR": "Não sei",
+   "ruRU": "Не знаю",
+   "itIT": "Non lo so"
+  }
+ },
+ {
+  "key": "idk",
+  "terms": [
+   "idk"
+  ],
+  "tr": {
+   "zhTW": "我不知道",
+   "zhCN": "我不知道",
+   "koKR": "몰라",
+   "deDE": "Keine Ahnung",
+   "frFR": "Je sais pas",
+   "esES": "No sé",
+   "ptBR": "Não sei",
+   "ruRU": "Не знаю",
+   "itIT": "Non so"
+  }
+ },
+ {
+  "key": "imo",
+  "terms": [
+   "imo"
+  ],
+  "tr": {
+   "zhTW": "我覺得",
+   "zhCN": "我觉得",
+   "koKR": "내 생각엔",
+   "deDE": "Meiner Meinung nach",
+   "frFR": "À mon avis",
+   "esES": "En mi opinión",
+   "ptBR": "Na minha opinião",
+   "ruRU": "Имхо",
+   "itIT": "Secondo me"
+  }
+ },
+ {
+  "key": "inv",
+  "terms": [
+   "inv"
+  ],
+  "tr": {
+   "zhTW": "邀請我",
+   "zhCN": "邀我",
+   "koKR": "초대해줘",
+   "deDE": "Invite bitte",
+   "frFR": "Invit",
+   "esES": "Invita",
+   "ptBR": "Convida",
+   "ruRU": "Инвайт",
+   "itIT": "Invito"
+  }
+ },
+ {
+  "key": "inv me",
+  "terms": [
+   "inv"
+  ],
+  "tr": {
+   "zhTW": "邀請我",
+   "zhCN": "邀我",
+   "koKR": "초대해줘",
+   "deDE": "Lad mich ein",
+   "frFR": "Invite-moi",
+   "esES": "Invítame",
+   "ptBR": "Me convida",
+   "ruRU": "Пригласи меня",
+   "itIT": "Invitami"
+  }
+ },
+ {
+  "key": "inv please",
+  "terms": [
+   "inv"
+  ],
+  "tr": {
+   "zhTW": "請邀請我",
+   "zhCN": "请邀请我",
+   "koKR": "초대 부탁해",
+   "deDE": "Bitte einladen",
+   "frFR": "Invite-moi stp",
+   "esES": "Invítame por favor",
+   "ptBR": "Me convida por favor",
+   "ruRU": "Пригласи, пожалуйста",
+   "itIT": "Invitami per favore"
+  }
+ },
+ {
+  "key": "inv pls",
+  "terms": [
+   "inv",
+   "pls"
+  ],
+  "tr": {
+   "zhTW": "請邀請我",
+   "zhCN": "求组",
+   "koKR": "초대 부탁",
+   "deDE": "Inv bitte",
+   "frFR": "Invit stp",
+   "esES": "Invita porfa",
+   "ptBR": "Convida pfv",
+   "ruRU": "Инвайт плз",
+   "itIT": "Invito per favore"
+  }
+ },
+ {
+  "key": "inv plz",
+  "terms": [
+   "inv",
+   "plz"
+  ],
+  "tr": {
+   "zhTW": "請邀請我",
+   "zhCN": "求组",
+   "koKR": "초대 부탁",
+   "deDE": "Inv bitte",
+   "frFR": "Invit stp",
+   "esES": "Invita porfa",
+   "ptBR": "Convida pfv",
+   "ruRU": "Инвайт плз",
+   "itIT": "Invito per favore"
+  }
+ },
+ {
+  "key": "invite",
+  "terms": [
+   "invite"
+  ],
+  "tr": {
+   "zhTW": "邀請我",
+   "zhCN": "邀请我",
+   "koKR": "초대해줘",
+   "deDE": "Einladen",
+   "frFR": "Invite",
+   "esES": "Invita",
+   "ptBR": "Convida",
+   "ruRU": "Пригласи",
+   "itIT": "Invita"
+  }
+ },
+ {
+  "key": "invite pls",
+  "terms": [
+   "invite",
+   "pls"
+  ],
+  "tr": {
+   "zhTW": "請邀請我",
+   "zhCN": "请邀请我",
+   "koKR": "초대 부탁",
+   "deDE": "Einladen bitte",
+   "frFR": "Invite stp",
+   "esES": "Invita porfa",
+   "ptBR": "Convida pfv",
+   "ruRU": "Пригласи плз",
+   "itIT": "Invita per favore"
+  }
+ },
+ {
+  "key": "its ok",
+  "terms": [],
+  "tr": {
+   "zhTW": "沒關係",
+   "zhCN": "没关系",
+   "koKR": "괜찮아",
+   "deDE": "Schon okay",
+   "frFR": "C'est pas grave",
+   "esES": "No pasa nada",
+   "ptBR": "Tudo bem",
+   "ruRU": "Ничего страшного",
+   "itIT": "Va bene"
+  }
+ },
+ {
+  "key": "it's ok",
+  "terms": [],
+  "tr": {
+   "zhTW": "沒關係",
+   "zhCN": "没关系",
+   "koKR": "괜찮아",
+   "deDE": "Schon okay",
+   "frFR": "C'est pas grave",
+   "esES": "No pasa nada",
+   "ptBR": "Tudo bem",
+   "ruRU": "Ничего страшного",
+   "itIT": "Va bene"
+  }
+ },
+ {
+  "key": "jk",
+  "terms": [
+   "jk"
+  ],
+  "tr": {
+   "zhTW": "開玩笑的",
+   "zhCN": "开玩笑的",
+   "koKR": "농담이야",
+   "deDE": "War nur Spaß",
+   "frFR": "Je rigole",
+   "esES": "Es broma",
+   "ptBR": "Brincadeira",
+   "ruRU": "Шучу",
+   "itIT": "Scherzo"
+  }
+ },
+ {
+  "key": "k",
+  "terms": [
+   "k"
+  ],
+  "tr": {
+   "zhTW": "好",
+   "zhCN": "好",
+   "koKR": "ㅇㅋ",
+   "deDE": "Ok",
+   "frFR": "Ok",
+   "esES": "Vale",
+   "ptBR": "Ok",
+   "ruRU": "Ок",
+   "itIT": "Ok"
+  }
+ },
+ {
+  "key": "kek",
+  "terms": [
+   "kek"
+  ],
+  "tr": {
+   "zhTW": "哈哈笑",
+   "zhCN": "哈哈",
+   "koKR": "ㅋㅋ",
+   "deDE": "Kek",
+   "frFR": "Kek",
+   "esES": "Kek",
+   "ptBR": "Kek",
+   "ruRU": "Кек",
+   "itIT": "Kek"
+  }
+ },
+ {
+  "key": "kk",
+  "terms": [
+   "kk"
+  ],
+  "tr": {
+   "zhTW": "好的",
+   "zhCN": "好的",
+   "koKR": "ㅇㅋㅇㅋ",
+   "deDE": "Okay",
+   "frFR": "Ok ok",
+   "esES": "Vale vale",
+   "ptBR": "Ok ok",
+   "ruRU": "Ок-ок",
+   "itIT": "Ok ok"
+  }
+ },
+ {
+  "key": "lag",
+  "terms": [
+   "lag"
+  ],
+  "tr": {
+   "zhTW": "我卡了",
+   "zhCN": "卡了",
+   "koKR": "렉 걸려",
+   "deDE": "Lag",
+   "frFR": "Je lag",
+   "esES": "Tengo lag",
+   "ptBR": "Tô com lag",
+   "ruRU": "Лагает",
+   "itIT": "Laggo"
+  }
+ },
+ {
+  "key": "lagging",
+  "terms": [
+   "lag"
+  ],
+  "tr": {
+   "zhTW": "我很卡",
+   "zhCN": "好卡",
+   "koKR": "렉 심해",
+   "deDE": "Hab Lag",
+   "frFR": "Je lag beaucoup",
+   "esES": "Voy con lag",
+   "ptBR": "Tô lagando",
+   "ruRU": "Сильно лагает",
+   "itIT": "Sto laggando"
+  }
+ },
+ {
+  "key": "last boss",
+  "terms": [
+   "boss"
+  ],
+  "tr": {
+   "zhTW": "最後一隻王",
+   "zhCN": "最后一个BOSS",
+   "koKR": "막보",
+   "deDE": "Letzter Boss",
+   "frFR": "Dernier boss",
+   "esES": "Último jefe",
+   "ptBR": "Último chefe",
+   "ruRU": "Последний босс",
+   "itIT": "Ultimo boss"
+  }
+ },
+ {
+  "key": "last pull",
+  "terms": [
+   "pull"
+  ],
+  "tr": {
+   "zhTW": "最後一波",
+   "zhCN": "最后一波",
+   "koKR": "마지막 풀",
+   "deDE": "Letzter Pull",
+   "frFR": "Dernier pull",
+   "esES": "Último pull",
+   "ptBR": "Último pull",
+   "ruRU": "Последний пулл",
+   "itIT": "Ultimo pull"
+  }
+ },
+ {
+  "key": "lets do it",
+  "terms": [],
+  "tr": {
+   "zhTW": "就這麼辦",
+   "zhCN": "就这么办",
+   "koKR": "하자",
+   "deDE": "Machen wir",
+   "frFR": "Allons-y",
+   "esES": "Hagámoslo",
+   "ptBR": "Vamos nessa",
+   "ruRU": "Давай сделаем",
+   "itIT": "Facciamolo"
+  }
+ },
+ {
+  "key": "let's do it",
+  "terms": [],
+  "tr": {
+   "zhTW": "就這麼辦",
+   "zhCN": "就这么办",
+   "koKR": "하자",
+   "deDE": "Machen wir",
+   "frFR": "Allons-y",
+   "esES": "Hagámoslo",
+   "ptBR": "Vamos nessa",
+   "ruRU": "Давай сделаем",
+   "itIT": "Facciamolo"
+  }
+ },
+ {
+  "key": "lets go",
+  "terms": [],
+  "tr": {
+   "zhTW": "走吧",
+   "zhCN": "走吧",
+   "koKR": "가자",
+   "deDE": "Los geht's",
+   "frFR": "C'est parti",
+   "esES": "Vamos",
+   "ptBR": "Bora",
+   "ruRU": "Погнали",
+   "itIT": "Andiamo"
+  }
+ },
+ {
+  "key": "let's go",
+  "terms": [],
+  "tr": {
+   "zhTW": "走吧",
+   "zhCN": "走吧",
+   "koKR": "가자",
+   "deDE": "Los geht's",
+   "frFR": "C'est parti",
+   "esES": "Vamos",
+   "ptBR": "Bora",
+   "ruRU": "Погнали",
+   "itIT": "Andiamo"
+  }
+ },
+ {
+  "key": "lf dps",
+  "terms": [
+   "LF",
+   "DPS"
+  ],
+  "tr": {
+   "zhTW": "找輸出",
+   "zhCN": "找输出",
+   "koKR": "딜러 구함",
+   "deDE": "Suche DD",
+   "frFR": "Cherche DPS",
+   "esES": "Busco DPS",
+   "ptBR": "Procuro DPS",
+   "ruRU": "Ищем ДПС",
+   "itIT": "Cerco DPS"
+  }
+ },
+ {
+  "key": "lf healer",
+  "terms": [
+   "LF",
+   "healer"
+  ],
+  "tr": {
+   "zhTW": "找補",
+   "zhCN": "找治疗",
+   "koKR": "힐러 구함",
+   "deDE": "Suche Heiler",
+   "frFR": "Cherche heal",
+   "esES": "Busco sanador",
+   "ptBR": "Procuro healer",
+   "ruRU": "Ищем хила",
+   "itIT": "Cerco healer"
+  }
+ },
+ {
+  "key": "lf heals",
+  "terms": [
+   "LF heals"
+  ],
+  "tr": {
+   "zhTW": "找補",
+   "zhCN": "找治疗",
+   "koKR": "힐러 구함",
+   "deDE": "Suche Heiler",
+   "frFR": "Cherche heal",
+   "esES": "Busco sanador",
+   "ptBR": "Procuro healer",
+   "ruRU": "Ищем хила",
+   "itIT": "Cerco healer"
+  }
+ },
+ {
+  "key": "lf tank",
+  "terms": [
+   "LF tank"
+  ],
+  "tr": {
+   "zhTW": "找坦",
+   "zhCN": "找坦克",
+   "koKR": "탱 구함",
+   "deDE": "Suche Tank",
+   "frFR": "Cherche tank",
+   "esES": "Busco tanque",
+   "ptBR": "Procuro tanque",
+   "ruRU": "Ищем танка",
+   "itIT": "Cerco tank"
+  }
+ },
+ {
+  "key": "lf1m",
+  "terms": [
+   "LF1M"
+  ],
+  "tr": {
+   "zhTW": "還缺一人",
+   "zhCN": "还缺一人",
+   "koKR": "1명 구함",
+   "deDE": "Suchen noch 1",
+   "frFR": "Cherche encore 1",
+   "esES": "Falta 1",
+   "ptBR": "Falta 1",
+   "ruRU": "Нужен ещё 1",
+   "itIT": "Manca 1"
+  }
+ },
+ {
+  "key": "lf2m",
+  "terms": [
+   "LF2M"
+  ],
+  "tr": {
+   "zhTW": "還缺兩人",
+   "zhCN": "还缺两人",
+   "koKR": "2명 구함",
+   "deDE": "Suchen noch 2",
+   "frFR": "Cherche encore 2",
+   "esES": "Faltan 2",
+   "ptBR": "Faltam 2",
+   "ruRU": "Нужно ещё 2",
+   "itIT": "Mancano 2"
+  }
+ },
+ {
+  "key": "lfg",
+  "terms": [
+   "LFG"
+  ],
+  "tr": {
+   "zhTW": "找隊伍",
+   "zhCN": "找队伍",
+   "koKR": "파티 구함",
+   "deDE": "Suche Gruppe",
+   "frFR": "Cherche groupe",
+   "esES": "Busco grupo",
+   "ptBR": "Procurando grupo",
+   "ruRU": "Ищу группу",
+   "itIT": "Cerco gruppo"
+  }
+ },
+ {
+  "key": "lfm",
+  "terms": [
+   "LFM"
+  ],
+  "tr": {
+   "zhTW": "徵人",
+   "zhCN": "招人",
+   "koKR": "파티원 구함",
+   "deDE": "Suchen Mitspieler",
+   "frFR": "Cherche joueurs",
+   "esES": "Buscamos más",
+   "ptBR": "Procurando mais",
+   "ruRU": "Ищем ещё",
+   "itIT": "Cerchiamo altri"
+  }
+ },
+ {
+  "key": "lmao",
+  "terms": [
+   "lmao"
+  ],
+  "tr": {
+   "zhTW": "笑死",
+   "zhCN": "笑死",
+   "koKR": "ㅋㅋㅋㅋ",
+   "deDE": "Lmao",
+   "frFR": "Mdr",
+   "esES": "Jajaja",
+   "ptBR": "Kkkkkk",
+   "ruRU": "Ржу",
+   "itIT": "Ahahah"
+  }
+ },
+ {
+  "key": "lol",
+  "terms": [
+   "lol"
+  ],
+  "tr": {
+   "zhTW": "哈哈",
+   "zhCN": "哈哈",
+   "koKR": "ㅋㅋ",
+   "deDE": "Lol",
+   "frFR": "Mdr",
+   "esES": "Jaja",
+   "ptBR": "Kkkk",
+   "ruRU": "Лол",
+   "itIT": "Lol"
+  }
+ },
+ {
+  "key": "lvl 60",
+  "terms": [
+   "lvl"
+  ],
+  "tr": {
+   "zhTW": "六十級（滿等）",
+   "zhCN": "60级（满级）",
+   "koKR": "60렙 (만렙)",
+   "deDE": "Level 60",
+   "frFR": "Niveau 60",
+   "esES": "Nivel 60",
+   "ptBR": "Nível 60",
+   "ruRU": "60 уровень",
+   "itIT": "Livello 60"
+  }
+ },
+ {
+  "key": "main spec",
+  "terms": [
+   "MS"
+  ],
+  "tr": {
+   "zhTW": "主天賦",
+   "zhCN": "主天赋",
+   "koKR": "주특성",
+   "deDE": "Hauptskillung",
+   "frFR": "Spé principale",
+   "esES": "Spec principal",
+   "ptBR": "Spec principal",
+   "ruRU": "Мейн-спек",
+   "itIT": "Spec principale"
+  }
+ },
+ {
+  "key": "mb",
+  "terms": [
+   "mb"
+  ],
+  "tr": {
+   "zhTW": "我的錯",
+   "zhCN": "我的锅",
+   "koKR": "내 탓",
+   "deDE": "Mein Fehler",
+   "frFR": "Ma faute",
+   "esES": "Culpa mía",
+   "ptBR": "Foi mal",
+   "ruRU": "Моя вина",
+   "itIT": "Colpa mia"
+  }
+ },
+ {
+  "key": "me too",
+  "terms": [],
+  "tr": {
+   "zhTW": "我也是",
+   "zhCN": "我也是",
+   "koKR": "나도",
+   "deDE": "Ich auch",
+   "frFR": "Moi aussi",
+   "esES": "Yo también",
+   "ptBR": "Eu também",
+   "ruRU": "Я тоже",
+   "itIT": "Anche io"
+  }
+ },
+ {
+  "key": "meet at stone",
+  "terms": [
+   "stone"
+  ],
+  "tr": {
+   "zhTW": "在集合石集合",
+   "zhCN": "在集合石集合",
+   "koKR": "돌에서 모여",
+   "deDE": "Treffen am Stein",
+   "frFR": "Rendez-vous à la pierre",
+   "esES": "Nos vemos en la piedra",
+   "ptBR": "Encontro na pedra",
+   "ruRU": "Встречаемся у камня",
+   "itIT": "Ci vediamo alla pietra"
+  }
+ },
+ {
+  "key": "ms",
+  "terms": [
+   "MS"
+  ],
+  "tr": {
+   "zhTW": "主天賦",
+   "zhCN": "主天赋",
+   "koKR": "주특성",
+   "deDE": "Hauptskillung",
+   "frFR": "Spé principale",
+   "esES": "Spec principal",
+   "ptBR": "Spec principal",
+   "ruRU": "Мейн-спек",
+   "itIT": "Spec principale"
+  }
+ },
+ {
+  "key": "my bad",
+  "terms": [
+   "my bad"
+  ],
+  "tr": {
+   "zhTW": "我的錯",
+   "zhCN": "我的锅",
+   "koKR": "내 실수",
+   "deDE": "Mein Fehler",
+   "frFR": "Ma faute",
+   "esES": "Culpa mía",
+   "ptBR": "Foi mal",
+   "ruRU": "Моя ошибка",
+   "itIT": "Colpa mia"
+  }
+ },
+ {
+  "key": "need",
+  "terms": [
+   "need"
+  ],
+  "tr": {
+   "zhTW": "需求（骰）",
+   "zhCN": "需求",
+   "koKR": "입찰",
+   "deDE": "Bedarf",
+   "frFR": "Besoin",
+   "esES": "Necesidad",
+   "ptBR": "Necessidade",
+   "ruRU": "Нужно",
+   "itIT": "Necessità"
+  }
+ },
+ {
+  "key": "need a summon",
+  "terms": [
+   "summon"
+  ],
+  "tr": {
+   "zhTW": "需要召喚",
+   "zhCN": "需要拉人",
+   "koKR": "소환 필요해",
+   "deDE": "Brauche Beschwörung",
+   "frFR": "Besoin d'une invoc",
+   "esES": "Necesito invocación",
+   "ptBR": "Preciso de sumonar",
+   "ruRU": "Нужен призыв",
+   "itIT": "Mi serve un'evocazione"
+  }
+ },
+ {
+  "key": "need dps",
+  "terms": [
+   "need dps"
+  ],
+  "tr": {
+   "zhTW": "缺輸出",
+   "zhCN": "缺输出",
+   "koKR": "딜러 필요",
+   "deDE": "Brauche DD",
+   "frFR": "Besoin DPS",
+   "esES": "Falta DPS",
+   "ptBR": "Precisa DPS",
+   "ruRU": "Нужен ДПС",
+   "itIT": "Serve DPS"
+  }
+ },
+ {
+  "key": "need drink",
+  "terms": [
+   "drink"
+  ],
+  "tr": {
+   "zhTW": "需要喝水",
+   "zhCN": "要喝水",
+   "koKR": "물 마셔야 해",
+   "deDE": "Muss trinken",
+   "frFR": "Besoin de boire",
+   "esES": "Necesito beber",
+   "ptBR": "Preciso beber",
+   "ruRU": "Нужно попить",
+   "itIT": "Devo bere"
+  }
+ },
+ {
+  "key": "need food",
+  "terms": [],
+  "tr": {
+   "zhTW": "需要吃東西",
+   "zhCN": "要吃东西",
+   "koKR": "밥 먹어야 해",
+   "deDE": "Brauche Essen",
+   "frFR": "Besoin de manger",
+   "esES": "Necesito comer",
+   "ptBR": "Preciso comer",
+   "ruRU": "Нужно поесть",
+   "itIT": "Devo mangiare"
+  }
+ },
+ {
+  "key": "need healer",
+  "terms": [
+   "healer"
+  ],
+  "tr": {
+   "zhTW": "缺補",
+   "zhCN": "缺治疗",
+   "koKR": "힐러 필요",
+   "deDE": "Brauche Heiler",
+   "frFR": "Besoin d'un heal",
+   "esES": "Falta sanador",
+   "ptBR": "Precisa de healer",
+   "ruRU": "Нужен хил",
+   "itIT": "Serve un healer"
+  }
+ },
+ {
+  "key": "need heals",
+  "terms": [
+   "need"
+  ],
+  "tr": {
+   "zhTW": "缺補／需要補血",
+   "zhCN": "缺治疗/要奶",
+   "koKR": "힐 필요",
+   "deDE": "Brauche Heilung",
+   "frFR": "Besoin de soins",
+   "esES": "Necesito curas",
+   "ptBR": "Preciso de cura",
+   "ruRU": "Нужен хил",
+   "itIT": "Servono cure"
+  }
+ },
+ {
+  "key": "need mana",
+  "terms": [
+   "mana"
+  ],
+  "tr": {
+   "zhTW": "需要回魔",
+   "zhCN": "要回蓝",
+   "koKR": "마나 필요",
+   "deDE": "Brauche Mana",
+   "frFR": "Besoin de mana",
+   "esES": "Necesito maná",
+   "ptBR": "Preciso de mana",
+   "ruRU": "Нужна мана",
+   "itIT": "Serve mana"
+  }
+ },
+ {
+  "key": "need rez",
+  "terms": [
+   "rez"
+  ],
+  "tr": {
+   "zhTW": "需要復活",
+   "zhCN": "求复活",
+   "koKR": "부활 필요",
+   "deDE": "Brauche Rez",
+   "frFR": "Besoin d'un rez",
+   "esES": "Necesito resurrección",
+   "ptBR": "Preciso de revive",
+   "ruRU": "Нужен рес",
+   "itIT": "Mi serve un rez"
+  }
+ },
+ {
+  "key": "need roll",
+  "terms": [
+   "need"
+  ],
+  "tr": {
+   "zhTW": "要骰需求",
+   "zhCN": "需求ROLL",
+   "koKR": "입찰할게",
+   "deDE": "Bedarf würfeln",
+   "frFR": "Je fais besoin",
+   "esES": "Tiro necesidad",
+   "ptBR": "Rolo necessidade",
+   "ruRU": "Кидаю нужно",
+   "itIT": "Tiro necessità"
+  }
+ },
+ {
+  "key": "need tank",
+  "terms": [
+   "tank"
+  ],
+  "tr": {
+   "zhTW": "缺坦",
+   "zhCN": "缺坦克",
+   "koKR": "탱 필요",
+   "deDE": "Brauche Tank",
+   "frFR": "Besoin d'un tank",
+   "esES": "Falta tanque",
+   "ptBR": "Precisa de tanque",
+   "ruRU": "Нужен танк",
+   "itIT": "Serve un tank"
+  }
+ },
+ {
+  "key": "need to drink",
+  "terms": [
+   "drink"
+  ],
+  "tr": {
+   "zhTW": "得喝水",
+   "zhCN": "得喝水",
+   "koKR": "물 마셔야 해",
+   "deDE": "Muss kurz trinken",
+   "frFR": "Je dois boire",
+   "esES": "Tengo que beber",
+   "ptBR": "Tenho que beber",
+   "ruRU": "Надо попить",
+   "itIT": "Devo bere"
+  }
+ },
+ {
+  "key": "never mind",
+  "terms": [],
+  "tr": {
+   "zhTW": "算了",
+   "zhCN": "算了",
+   "koKR": "됐어",
+   "deDE": "Egal",
+   "frFR": "Laisse tomber",
+   "esES": "Olvídalo",
+   "ptBR": "Deixa pra lá",
+   "ruRU": "Неважно",
+   "itIT": "Lascia stare"
+  }
+ },
+ {
+  "key": "next boss",
+  "terms": [
+   "boss"
+  ],
+  "tr": {
+   "zhTW": "下一隻王",
+   "zhCN": "下一个BOSS",
+   "koKR": "다음 보스",
+   "deDE": "Nächster Boss",
+   "frFR": "Boss suivant",
+   "esES": "Siguiente jefe",
+   "ptBR": "Próximo chefe",
+   "ruRU": "Следующий босс",
+   "itIT": "Prossimo boss"
+  }
+ },
+ {
+  "key": "nice",
+  "terms": [],
+  "tr": {
+   "zhTW": "不錯",
+   "zhCN": "不错",
+   "koKR": "좋아",
+   "deDE": "Nice",
+   "frFR": "Sympa",
+   "esES": "Genial",
+   "ptBR": "Boa",
+   "ruRU": "Круто",
+   "itIT": "Bello"
+  }
+ },
+ {
+  "key": "nice one",
+  "terms": [
+   "nice one"
+  ],
+  "tr": {
+   "zhTW": "漂亮",
+   "zhCN": "漂亮",
+   "koKR": "나이스",
+   "deDE": "Schön",
+   "frFR": "Bien joué",
+   "esES": "Buena",
+   "ptBR": "Boa",
+   "ruRU": "Красава",
+   "itIT": "Bella"
+  }
+ },
+ {
+  "key": "no",
+  "terms": [],
+  "tr": {
+   "zhTW": "不",
+   "zhCN": "不",
+   "koKR": "아니",
+   "deDE": "Nein",
+   "frFR": "Non",
+   "esES": "No",
+   "ptBR": "Não",
+   "ruRU": "Нет",
+   "itIT": "No"
+  }
+ },
+ {
+  "key": "no problem",
+  "terms": [],
+  "tr": {
+   "zhTW": "沒問題",
+   "zhCN": "没问题",
+   "koKR": "문제없어",
+   "deDE": "Kein Problem",
+   "frFR": "Pas de problème",
+   "esES": "No hay problema",
+   "ptBR": "Sem problema",
+   "ruRU": "Без проблем",
+   "itIT": "Nessun problema"
+  }
+ },
+ {
+  "key": "no worries",
+  "terms": [],
+  "tr": {
+   "zhTW": "別擔心",
+   "zhCN": "别担心",
+   "koKR": "걱정 마",
+   "deDE": "Keine Sorge",
+   "frFR": "Pas de souci",
+   "esES": "No te preocupes",
+   "ptBR": "Sem problemas",
+   "ruRU": "Не переживай",
+   "itIT": "Non preoccuparti"
+  }
+ },
+ {
+  "key": "nope",
+  "terms": [
+   "nope"
+  ],
+  "tr": {
+   "zhTW": "不要",
+   "zhCN": "不",
+   "koKR": "아니",
+   "deDE": "Nö",
+   "frFR": "Nan",
+   "esES": "No",
+   "ptBR": "Não",
+   "ruRU": "Неа",
+   "itIT": "No"
+  }
+ },
+ {
+  "key": "not ready",
+  "terms": [],
+  "tr": {
+   "zhTW": "還沒好",
+   "zhCN": "还没好",
+   "koKR": "준비 안 됨",
+   "deDE": "Nicht bereit",
+   "frFR": "Pas prêt",
+   "esES": "No estoy listo",
+   "ptBR": "Não estou pronto",
+   "ruRU": "Не готов",
+   "itIT": "Non pronto"
+  }
+ },
+ {
+  "key": "not yet",
+  "terms": [],
+  "tr": {
+   "zhTW": "還沒",
+   "zhCN": "还没",
+   "koKR": "아직",
+   "deDE": "Noch nicht",
+   "frFR": "Pas encore",
+   "esES": "Todavía no",
+   "ptBR": "Ainda não",
+   "ruRU": "Еще нет",
+   "itIT": "Non ancora"
+  }
+ },
+ {
+  "key": "np",
+  "terms": [
+   "np"
+  ],
+  "tr": {
+   "zhTW": "沒問題",
+   "zhCN": "没事",
+   "koKR": "별말씀을",
+   "deDE": "Kein Problem",
+   "frFR": "Pas de souci",
+   "esES": "De nada",
+   "ptBR": "De nada",
+   "ruRU": "Не за что",
+   "itIT": "Figurati"
+  }
+ },
+ {
+  "key": "np at all",
+  "terms": [
+   "np"
+  ],
+  "tr": {
+   "zhTW": "完全沒問題",
+   "zhCN": "完全没问题",
+   "koKR": "전혀 문제없어",
+   "deDE": "Überhaupt kein Problem",
+   "frFR": "Aucun souci",
+   "esES": "Para nada",
+   "ptBR": "De nada mesmo",
+   "ruRU": "Совсем не за что",
+   "itIT": "Figurati proprio"
+  }
+ },
+ {
+  "key": "nt",
+  "terms": [
+   "nt"
+  ],
+  "tr": {
+   "zhTW": "可惜，好嘗試",
+   "zhCN": "可惜，不错的尝试",
+   "koKR": "아쉽다",
+   "deDE": "Netter Versuch",
+   "frFR": "Bien tenté",
+   "esES": "Buen intento",
+   "ptBR": "Boa tentativa",
+   "ruRU": "Хорошая попытка",
+   "itIT": "Bel tentativo"
+  }
+ },
+ {
+  "key": "nvm",
+  "terms": [
+   "nvm"
+  ],
+  "tr": {
+   "zhTW": "算了",
+   "zhCN": "算了",
+   "koKR": "됐어",
+   "deDE": "Egal",
+   "frFR": "Laisse tomber",
+   "esES": "Olvídalo",
+   "ptBR": "Deixa pra lá",
+   "ruRU": "Неважно",
+   "itIT": "Lascia stare"
+  }
+ },
+ {
+  "key": "of course",
+  "terms": [],
+  "tr": {
+   "zhTW": "當然",
+   "zhCN": "当然",
+   "koKR": "당연하지",
+   "deDE": "Natürlich",
+   "frFR": "Bien sûr",
+   "esES": "Por supuesto",
+   "ptBR": "Claro",
+   "ruRU": "Конечно",
+   "itIT": "Certo"
+  }
+ },
+ {
+  "key": "ofc",
+  "terms": [
+   "ofc"
+  ],
+  "tr": {
+   "zhTW": "當然",
+   "zhCN": "当然",
+   "koKR": "당연하지",
+   "deDE": "Natürlich",
+   "frFR": "Bien sûr",
+   "esES": "Claro",
+   "ptBR": "Claro",
+   "ruRU": "Конечно",
+   "itIT": "Certo"
+  }
+ },
+ {
+  "key": "ok",
+  "terms": [],
+  "tr": {
+   "zhTW": "好",
+   "zhCN": "好",
+   "koKR": "ㅇㅋ",
+   "deDE": "Ok",
+   "frFR": "Ok",
+   "esES": "Vale",
+   "ptBR": "Ok",
+   "ruRU": "Ок",
+   "itIT": "Ok"
+  }
+ },
+ {
+  "key": "okay",
+  "terms": [],
+  "tr": {
+   "zhTW": "好",
+   "zhCN": "好",
+   "koKR": "알았어",
+   "deDE": "Okay",
+   "frFR": "D'accord",
+   "esES": "Vale",
+   "ptBR": "Beleza",
+   "ruRU": "Хорошо",
+   "itIT": "Va bene"
+  }
+ },
+ {
+  "key": "omg",
+  "terms": [
+   "omg"
+  ],
+  "tr": {
+   "zhTW": "天啊",
+   "zhCN": "天啊",
+   "koKR": "헐",
+   "deDE": "OMG",
+   "frFR": "OMG",
+   "esES": "Dios mío",
+   "ptBR": "Meu Deus",
+   "ruRU": "Боже",
+   "itIT": "Oddio"
+  }
+ },
+ {
+  "key": "omw",
+  "terms": [
+   "omw"
+  ],
+  "tr": {
+   "zhTW": "我在路上",
+   "zhCN": "在路上了",
+   "koKR": "가는 중",
+   "deDE": "Bin unterwegs",
+   "frFR": "J'arrive",
+   "esES": "Voy de camino",
+   "ptBR": "Tô indo",
+   "ruRU": "Уже иду",
+   "itIT": "Sto arrivando"
+  }
+ },
+ {
+  "key": "omw now",
+  "terms": [
+   "omw"
+  ],
+  "tr": {
+   "zhTW": "我現在就過去",
+   "zhCN": "马上过去",
+   "koKR": "지금 가는 중",
+   "deDE": "Komme jetzt",
+   "frFR": "J'arrive tout de suite",
+   "esES": "Voy ahora",
+   "ptBR": "Indo agora",
+   "ruRU": "Иду прямо сейчас",
+   "itIT": "Arrivo ora"
+  }
+ },
+ {
+  "key": "on my way",
+  "terms": [],
+  "tr": {
+   "zhTW": "我在路上",
+   "zhCN": "在路上",
+   "koKR": "가는 중",
+   "deDE": "Bin unterwegs",
+   "frFR": "J'arrive",
+   "esES": "Voy en camino",
+   "ptBR": "Tô a caminho",
+   "ruRU": "Иду",
+   "itIT": "Sto arrivando"
+  }
+ },
+ {
+  "key": "one more",
+  "terms": [],
+  "tr": {
+   "zhTW": "再一個",
+   "zhCN": "再来一个",
+   "koKR": "한 명 더",
+   "deDE": "Noch einer",
+   "frFR": "Encore un",
+   "esES": "Uno más",
+   "ptBR": "Mais um",
+   "ruRU": "Еще один",
+   "itIT": "Ancora uno"
+  }
+ },
+ {
+  "key": "one sec",
+  "terms": [
+   "one sec"
+  ],
+  "tr": {
+   "zhTW": "等一下",
+   "zhCN": "等一下",
+   "koKR": "잠깐만",
+   "deDE": "Einen Moment",
+   "frFR": "Une seconde",
+   "esES": "Un segundo",
+   "ptBR": "Só um segundo",
+   "ruRU": "Одну секунду",
+   "itIT": "Un secondo"
+  }
+ },
+ {
+  "key": "oom",
+  "terms": [
+   "OOM"
+  ],
+  "tr": {
+   "zhTW": "沒魔了",
+   "zhCN": "没蓝了",
+   "koKR": "마나 없어",
+   "deDE": "Kein Mana",
+   "frFR": "Plus de mana",
+   "esES": "Sin maná",
+   "ptBR": "Sem mana",
+   "ruRU": "Нет маны",
+   "itIT": "Senza mana"
+  }
+ },
+ {
+  "key": "oops",
+  "terms": [
+   "oops"
+  ],
+  "tr": {
+   "zhTW": "糟糕",
+   "zhCN": "哎呀",
+   "koKR": "앗",
+   "deDE": "Ups",
+   "frFR": "Oups",
+   "esES": "Ups",
+   "ptBR": "Opa",
+   "ruRU": "Упс",
+   "itIT": "Ops"
+  }
+ },
+ {
+  "key": "os",
+  "terms": [
+   "OS"
+  ],
+  "tr": {
+   "zhTW": "副天賦",
+   "zhCN": "副天赋",
+   "koKR": "보조특성",
+   "deDE": "Zweitskillung",
+   "frFR": "Spé secondaire",
+   "esES": "Spec secundario",
+   "ptBR": "Spec secundária",
+   "ruRU": "Офф-спек",
+   "itIT": "Spec secondaria"
+  }
+ },
+ {
+  "key": "otw",
+  "terms": [
+   "otw"
+  ],
+  "tr": {
+   "zhTW": "在路上",
+   "zhCN": "在路上",
+   "koKR": "가는 중",
+   "deDE": "Unterwegs",
+   "frFR": "En route",
+   "esES": "De camino",
+   "ptBR": "A caminho",
+   "ruRU": "В пути",
+   "itIT": "In arrivo"
+  }
+ },
+ {
+  "key": "pass",
+  "terms": [
+   "pass"
+  ],
+  "tr": {
+   "zhTW": "放棄",
+   "zhCN": "放弃",
+   "koKR": "포기",
+   "deDE": "Passe",
+   "frFR": "Je passe",
+   "esES": "Paso",
+   "ptBR": "Passo",
+   "ruRU": "Пас",
+   "itIT": "Passo"
+  }
+ },
+ {
+  "key": "please",
+  "terms": [],
+  "tr": {
+   "zhTW": "拜託",
+   "zhCN": "拜托",
+   "koKR": "제발",
+   "deDE": "Bitte",
+   "frFR": "S'il te plaît",
+   "esES": "Por favor",
+   "ptBR": "Por favor",
+   "ruRU": "Пожалуйста",
+   "itIT": "Per favore"
+  }
+ },
+ {
+  "key": "pls",
+  "terms": [
+   "pls"
+  ],
+  "tr": {
+   "zhTW": "拜託",
+   "zhCN": "拜托",
+   "koKR": "제발",
+   "deDE": "Bitte",
+   "frFR": "Stp",
+   "esES": "Porfa",
+   "ptBR": "Pfv",
+   "ruRU": "Плз",
+   "itIT": "Per favore"
+  }
+ },
+ {
+  "key": "pls inv",
+  "terms": [
+   "pls inv"
+  ],
+  "tr": {
+   "zhTW": "請邀請我",
+   "zhCN": "求组",
+   "koKR": "초대 부탁",
+   "deDE": "Bitte einladen",
+   "frFR": "Invit stp",
+   "esES": "Invita porfa",
+   "ptBR": "Convida pfv",
+   "ruRU": "Пригласи плз",
+   "itIT": "Invita per favore"
+  }
+ },
+ {
+  "key": "pm me",
+  "terms": [
+   "pm"
+  ],
+  "tr": {
+   "zhTW": "私訊我",
+   "zhCN": "私聊我",
+   "koKR": "귓말 줘",
+   "deDE": "Schreib mir privat",
+   "frFR": "MP-moi",
+   "esES": "Mándame privado",
+   "ptBR": "Me chama no privado",
+   "ruRU": "Пиши в личку",
+   "itIT": "Scrivimi in privato"
+  }
+ },
+ {
+  "key": "port pls",
+  "terms": [
+   "port",
+   "pls"
+  ],
+  "tr": {
+   "zhTW": "請傳送我",
+   "zhCN": "求开门",
+   "koKR": "차원문 부탁",
+   "deDE": "Portal bitte",
+   "frFR": "Portail stp",
+   "esES": "Portal porfa",
+   "ptBR": "Portal pfv",
+   "ruRU": "Портал плз",
+   "itIT": "Portale per favore"
+  }
+ },
+ {
+  "key": "pst",
+  "terms": [
+   "pst"
+  ],
+  "tr": {
+   "zhTW": "請密我",
+   "zhCN": "请密我",
+   "koKR": "귓말 주세요",
+   "deDE": "Schreib mir",
+   "frFR": "MP moi",
+   "esES": "Susúrrame",
+   "ptBR": "Me chama no PV",
+   "ruRU": "Пиши в личку",
+   "itIT": "Scrivimi in privato"
+  }
+ },
+ {
+  "key": "pull",
+  "terms": [
+   "pull"
+  ],
+  "tr": {
+   "zhTW": "拉怪",
+   "zhCN": "拉怪",
+   "koKR": "풀링",
+   "deDE": "Pull",
+   "frFR": "Pull",
+   "esES": "Pullea",
+   "ptBR": "Puxa",
+   "ruRU": "Пулл",
+   "itIT": "Pulla"
+  }
+ },
+ {
+  "key": "pulling",
+  "terms": [
+   "pulling"
+  ],
+  "tr": {
+   "zhTW": "我來拉怪了",
+   "zhCN": "我拉了",
+   "koKR": "풀링한다",
+   "deDE": "Pulle",
+   "frFR": "Je pull",
+   "esES": "Pulleando",
+   "ptBR": "Puxando",
+   "ruRU": "Пулю",
+   "itIT": "Sto pullando"
+  }
+ },
+ {
+  "key": "rdy",
+  "terms": [
+   "rdy"
+  ],
+  "tr": {
+   "zhTW": "準備好了",
+   "zhCN": "准备好了",
+   "koKR": "준비됨",
+   "deDE": "Bereit",
+   "frFR": "Prêt",
+   "esES": "Listo",
+   "ptBR": "Pronto",
+   "ruRU": "Готов",
+   "itIT": "Pronto"
+  }
+ },
+ {
+  "key": "ready",
+  "terms": [],
+  "tr": {
+   "zhTW": "準備好了",
+   "zhCN": "准备好了",
+   "koKR": "준비됐어",
+   "deDE": "Bereit",
+   "frFR": "Prêt",
+   "esES": "Listo",
+   "ptBR": "Pronto",
+   "ruRU": "Готов",
+   "itIT": "Pronto"
+  }
+ },
+ {
+  "key": "release",
+  "terms": [
+   "release"
+  ],
+  "tr": {
+   "zhTW": "放靈",
+   "zhCN": "释放灵魂",
+   "koKR": "영혼 해방",
+   "deDE": "Geist freilassen",
+   "frFR": "Libère l'esprit",
+   "esES": "Libera espíritu",
+   "ptBR": "Libera o espírito",
+   "ruRU": "Выходи духом",
+   "itIT": "Libera lo spirito"
+  }
+ },
+ {
+  "key": "relog",
+  "terms": [
+   "relog"
+  ],
+  "tr": {
+   "zhTW": "重新登入",
+   "zhCN": "重新登录",
+   "koKR": "재접속",
+   "deDE": "Neu einloggen",
+   "frFR": "Reco",
+   "esES": "Reconectar",
+   "ptBR": "Relogar",
+   "ruRU": "Перезайти",
+   "itIT": "Riconnettersi"
+  }
+ },
+ {
+  "key": "rez",
+  "terms": [
+   "rez"
+  ],
+  "tr": {
+   "zhTW": "請復活",
+   "zhCN": "复活",
+   "koKR": "부활",
+   "deDE": "Rez",
+   "frFR": "Rez",
+   "esES": "Resucitar",
+   "ptBR": "Reviver",
+   "ruRU": "Рес",
+   "itIT": "Resurrezione"
+  }
+ },
+ {
+  "key": "rez pls",
+  "terms": [
+   "rez pls"
+  ],
+  "tr": {
+   "zhTW": "請復活我",
+   "zhCN": "求复活",
+   "koKR": "부활 부탁",
+   "deDE": "Bitte Rez",
+   "frFR": "Rez stp",
+   "esES": "Resucita porfa",
+   "ptBR": "Revive pfv",
+   "ruRU": "Ресни плз",
+   "itIT": "Resuscitami"
+  }
+ },
+ {
+  "key": "rip",
+  "terms": [
+   "rip"
+  ],
+  "tr": {
+   "zhTW": "慘了",
+   "zhCN": "完了",
+   "koKR": "ㅠㅠ",
+   "deDE": "RIP",
+   "frFR": "RIP",
+   "esES": "RIP",
+   "ptBR": "RIP",
+   "ruRU": "RIP",
+   "itIT": "RIP"
+  }
+ },
+ {
+  "key": "rolling",
+  "terms": [
+   "roll"
+  ],
+  "tr": {
+   "zhTW": "我來骰",
+   "zhCN": "我ROLL",
+   "koKR": "굴릴게",
+   "deDE": "Würfle",
+   "frFR": "Je lance",
+   "esES": "Tirando",
+   "ptBR": "Rolando",
+   "ruRU": "Кидаю",
+   "itIT": "Tiro"
+  }
+ },
+ {
+  "key": "same",
+  "terms": [],
+  "tr": {
+   "zhTW": "我也是",
+   "zhCN": "我也是",
+   "koKR": "나도",
+   "deDE": "Gleichfalls",
+   "frFR": "Pareil",
+   "esES": "Igual",
+   "ptBR": "Mesmo",
+   "ruRU": "Аналогично",
+   "itIT": "Anch'io"
+  }
+ },
+ {
+  "key": "sec",
+  "terms": [
+   "sec"
+  ],
+  "tr": {
+   "zhTW": "等我一下",
+   "zhCN": "等一下",
+   "koKR": "잠깐",
+   "deDE": "Moment",
+   "frFR": "Une sec",
+   "esES": "Un segundo",
+   "ptBR": "Um segundo",
+   "ruRU": "Секунду",
+   "itIT": "Un attimo"
+  }
+ },
+ {
+  "key": "sorry",
+  "terms": [],
+  "tr": {
+   "zhTW": "抱歉",
+   "zhCN": "抱歉",
+   "koKR": "미안",
+   "deDE": "Sorry",
+   "frFR": "Désolé",
+   "esES": "Lo siento",
+   "ptBR": "Desculpa",
+   "ruRU": "Извини",
+   "itIT": "Scusa"
+  }
+ },
+ {
+  "key": "sry",
+  "terms": [
+   "sry"
+  ],
+  "tr": {
+   "zhTW": "抱歉",
+   "zhCN": "抱歉",
+   "koKR": "미안",
+   "deDE": "Sorry",
+   "frFR": "Désolé",
+   "esES": "Perdón",
+   "ptBR": "Foi mal",
+   "ruRU": "Сорри",
+   "itIT": "Scusa"
+  }
+ },
+ {
+  "key": "still lf",
+  "terms": [
+   "LF"
+  ],
+  "tr": {
+   "zhTW": "還在找人嗎",
+   "zhCN": "还在找吗",
+   "koKR": "아직 구해?",
+   "deDE": "Noch auf der Suche?",
+   "frFR": "Toujours en recherche ?",
+   "esES": "¿Sigues buscando?",
+   "ptBR": "Ainda procurando?",
+   "ruRU": "Еще ищете?",
+   "itIT": "Ancora in cerca?"
+  }
+ },
+ {
+  "key": "still looking",
+  "terms": [],
+  "tr": {
+   "zhTW": "還在找人",
+   "zhCN": "还在找人",
+   "koKR": "아직 구하는 중",
+   "deDE": "Suchen noch",
+   "frFR": "On cherche encore",
+   "esES": "Seguimos buscando",
+   "ptBR": "Ainda procurando",
+   "ruRU": "Все еще ищем",
+   "itIT": "Cerchiamo ancora"
+  }
+ },
+ {
+  "key": "still need",
+  "terms": [
+   "need"
+  ],
+  "tr": {
+   "zhTW": "還缺人嗎",
+   "zhCN": "还缺人吗",
+   "koKR": "아직 필요해?",
+   "deDE": "Braucht ihr noch?",
+   "frFR": "Il vous faut encore ?",
+   "esES": "¿Aún necesitáis?",
+   "ptBR": "Ainda precisam?",
+   "ruRU": "Еще нужен?",
+   "itIT": "Serve ancora?"
+  }
+ },
+ {
+  "key": "stop",
+  "terms": [],
+  "tr": {
+   "zhTW": "停手",
+   "zhCN": "停",
+   "koKR": "멈춰",
+   "deDE": "Stopp",
+   "frFR": "Stop",
+   "esES": "Para",
+   "ptBR": "Para",
+   "ruRU": "Стоп",
+   "itIT": "Fermi"
+  }
+ },
+ {
+  "key": "stop pulling",
+  "terms": [
+   "pull"
+  ],
+  "tr": {
+   "zhTW": "別再拉怪",
+   "zhCN": "别再拉了",
+   "koKR": "풀링 그만",
+   "deDE": "Hör auf zu pullen",
+   "frFR": "Arrête de pull",
+   "esES": "Deja de pullear",
+   "ptBR": "Para de puxar",
+   "ruRU": "Хватит пуллить",
+   "itIT": "Smetti di pullare"
+  }
+ },
+ {
+  "key": "sum",
+  "terms": [
+   "summ"
+  ],
+  "tr": {
+   "zhTW": "召喚",
+   "zhCN": "拉我",
+   "koKR": "소환",
+   "deDE": "Beschwören",
+   "frFR": "Invoc",
+   "esES": "Invocar",
+   "ptBR": "Sumonar",
+   "ruRU": "Призыв",
+   "itIT": "Evoca"
+  }
+ },
+ {
+  "key": "sum pls",
+  "terms": [
+   "summ",
+   "pls"
+  ],
+  "tr": {
+   "zhTW": "請召喚我",
+   "zhCN": "求拉",
+   "koKR": "소환 부탁",
+   "deDE": "Bitte beschwören",
+   "frFR": "Invoc stp",
+   "esES": "Invocación porfa",
+   "ptBR": "Sumona pfv",
+   "ruRU": "Призови плз",
+   "itIT": "Evocami per favore"
+  }
+ },
+ {
+  "key": "summ pls",
+  "terms": [
+   "summ pls"
+  ],
+  "tr": {
+   "zhTW": "請召喚我",
+   "zhCN": "求拉",
+   "koKR": "소환 부탁",
+   "deDE": "Bitte beschwören",
+   "frFR": "Invoc stp",
+   "esES": "Invocación porfa",
+   "ptBR": "Sumona pfv",
+   "ruRU": "Призови плз",
+   "itIT": "Evocami per favore"
+  }
+ },
+ {
+  "key": "summon pls",
+  "terms": [
+   "summon",
+   "pls"
+  ],
+  "tr": {
+   "zhTW": "請召喚我",
+   "zhCN": "求拉",
+   "koKR": "소환 부탁",
+   "deDE": "Bitte beschwören",
+   "frFR": "Invoc stp",
+   "esES": "Invocación porfa",
+   "ptBR": "Sumona pfv",
+   "ruRU": "Призови плз",
+   "itIT": "Evocami per favore"
+  }
+ },
+ {
+  "key": "sup",
+  "terms": [
+   "sup"
+  ],
+  "tr": {
+   "zhTW": "最近如何",
+   "zhCN": "咋样",
+   "koKR": "뭐해",
+   "deDE": "Was geht",
+   "frFR": "Quoi de neuf",
+   "esES": "Qué tal",
+   "ptBR": "E aí",
+   "ruRU": "Как дела",
+   "itIT": "Come va"
+  }
+ },
+ {
+  "key": "sure",
+  "terms": [],
+  "tr": {
+   "zhTW": "好啊",
+   "zhCN": "好啊",
+   "koKR": "그래",
+   "deDE": "Klar",
+   "frFR": "Bien sûr",
+   "esES": "Claro",
+   "ptBR": "Claro",
+   "ruRU": "Конечно",
+   "itIT": "Certo"
+  }
+ },
+ {
+  "key": "thank you",
+  "terms": [],
+  "tr": {
+   "zhTW": "謝謝你",
+   "zhCN": "谢谢你",
+   "koKR": "고마워",
+   "deDE": "Danke dir",
+   "frFR": "Merci à toi",
+   "esES": "Gracias",
+   "ptBR": "Obrigado",
+   "ruRU": "Спасибо",
+   "itIT": "Grazie"
+  }
+ },
+ {
+  "key": "thanks",
+  "terms": [],
+  "tr": {
+   "zhTW": "謝謝",
+   "zhCN": "谢谢",
+   "koKR": "고마워",
+   "deDE": "Danke",
+   "frFR": "Merci",
+   "esES": "Gracias",
+   "ptBR": "Valeu",
+   "ruRU": "Спасибо",
+   "itIT": "Grazie"
+  }
+ },
+ {
+  "key": "thanks all",
+  "terms": [],
+  "tr": {
+   "zhTW": "謝謝大家",
+   "zhCN": "谢谢大家",
+   "koKR": "다들 고마워",
+   "deDE": "Danke an alle",
+   "frFR": "Merci à tous",
+   "esES": "Gracias a todos",
+   "ptBR": "Valeu a todos",
+   "ruRU": "Всем спасибо",
+   "itIT": "Grazie a tutti"
+  }
+ },
+ {
+  "key": "thanks for the buff",
+  "terms": [
+   "buff"
+  ],
+  "tr": {
+   "zhTW": "謝謝增益",
+   "zhCN": "谢谢BUFF",
+   "koKR": "버프 고마워",
+   "deDE": "Danke für den Buff",
+   "frFR": "Merci pour le buff",
+   "esES": "Gracias por el buff",
+   "ptBR": "Valeu pelo buff",
+   "ruRU": "Спасибо за бафф",
+   "itIT": "Grazie del buff"
+  }
+ },
+ {
+  "key": "thanks for the heal",
+  "terms": [],
+  "tr": {
+   "zhTW": "謝謝補血",
+   "zhCN": "谢谢奶",
+   "koKR": "힐 고마워",
+   "deDE": "Danke fürs Heilen",
+   "frFR": "Merci pour le soin",
+   "esES": "Gracias por la cura",
+   "ptBR": "Valeu pela cura",
+   "ruRU": "Спасибо за хил",
+   "itIT": "Grazie della cura"
+  }
+ },
+ {
+  "key": "thanks for the invite",
+  "terms": [
+   "invite"
+  ],
+  "tr": {
+   "zhTW": "謝謝邀請",
+   "zhCN": "谢谢邀请",
+   "koKR": "초대 고마워",
+   "deDE": "Danke für den Invite",
+   "frFR": "Merci pour l'invit",
+   "esES": "Gracias por invitar",
+   "ptBR": "Valeu pelo convite",
+   "ruRU": "Спасибо за инвайт",
+   "itIT": "Grazie dell'invito"
+  }
+ },
+ {
+  "key": "thanks for the run",
+  "terms": [],
+  "tr": {
+   "zhTW": "謝謝這趟，辛苦了",
+   "zhCN": "谢谢，辛苦了",
+   "koKR": "수고했어 고마워",
+   "deDE": "Danke für den Run",
+   "frFR": "Merci pour le run",
+   "esES": "Gracias por la run",
+   "ptBR": "Valeu pela run",
+   "ruRU": "Спасибо за забег",
+   "itIT": "Grazie per la run"
+  }
+ },
+ {
+  "key": "thx",
+  "terms": [
+   "thx"
+  ],
+  "tr": {
+   "zhTW": "謝了",
+   "zhCN": "谢了",
+   "koKR": "ㄳ",
+   "deDE": "Danke",
+   "frFR": "Merci",
+   "esES": "Gracias",
+   "ptBR": "Vlw",
+   "ruRU": "Спс",
+   "itIT": "Grazie"
+  }
+ },
+ {
+  "key": "thx all",
+  "terms": [
+   "thx"
+  ],
+  "tr": {
+   "zhTW": "謝謝大家",
+   "zhCN": "谢谢大家",
+   "koKR": "다들 ㄳ",
+   "deDE": "Danke an alle",
+   "frFR": "Merci à tous",
+   "esES": "Gracias a todos",
+   "ptBR": "Valeu galera",
+   "ruRU": "Всем спс",
+   "itIT": "Grazie a tutti"
+  }
+ },
+ {
+  "key": "trade me",
+  "terms": [
+   "trade"
+  ],
+  "tr": {
+   "zhTW": "跟我交易",
+   "zhCN": "跟我交易",
+   "koKR": "거래 걸어줘",
+   "deDE": "Handel mich an",
+   "frFR": "Échange-moi",
+   "esES": "Comercia conmigo",
+   "ptBR": "Me abre troca",
+   "ruRU": "Кинь трейд",
+   "itIT": "Scambiami"
+  }
+ },
+ {
+  "key": "true",
+  "terms": [],
+  "tr": {
+   "zhTW": "沒錯",
+   "zhCN": "没错",
+   "koKR": "맞아",
+   "deDE": "Stimmt",
+   "frFR": "C'est vrai",
+   "esES": "Cierto",
+   "ptBR": "Verdade",
+   "ruRU": "Правда",
+   "itIT": "Vero"
+  }
+ },
+ {
+  "key": "ty",
+  "terms": [
+   "ty"
+  ],
+  "tr": {
+   "zhTW": "謝謝",
+   "zhCN": "谢谢",
+   "koKR": "ㄱㅅ",
+   "deDE": "Danke",
+   "frFR": "Merci",
+   "esES": "Gracias",
+   "ptBR": "Valeu",
+   "ruRU": "Спс",
+   "itIT": "Grazie"
+  }
+ },
+ {
+  "key": "ty all",
+  "terms": [
+   "ty"
+  ],
+  "tr": {
+   "zhTW": "謝謝大家",
+   "zhCN": "谢谢大家",
+   "koKR": "다들 ㄱㅅ",
+   "deDE": "Danke an alle",
+   "frFR": "Merci à tous",
+   "esES": "Gracias a todos",
+   "ptBR": "Valeu a todos",
+   "ruRU": "Всем спс",
+   "itIT": "Grazie a tutti"
+  }
+ },
+ {
+  "key": "ty for the buff",
+  "terms": [
+   "ty",
+   "buff"
+  ],
+  "tr": {
+   "zhTW": "謝謝增益",
+   "zhCN": "谢谢BUFF",
+   "koKR": "버프 ㄱㅅ",
+   "deDE": "Danke für den Buff",
+   "frFR": "Merci pour le buff",
+   "esES": "Gracias por el buff",
+   "ptBR": "Valeu pelo buff",
+   "ruRU": "Спс за бафф",
+   "itIT": "Grazie del buff"
+  }
+ },
+ {
+  "key": "ty for the heal",
+  "terms": [
+   "ty"
+  ],
+  "tr": {
+   "zhTW": "謝謝補血",
+   "zhCN": "谢谢奶",
+   "koKR": "힐 ㄱㅅ",
+   "deDE": "Danke fürs Heilen",
+   "frFR": "Merci pour le soin",
+   "esES": "Gracias por la cura",
+   "ptBR": "Valeu pela cura",
+   "ruRU": "Спс за хил",
+   "itIT": "Grazie della cura"
+  }
+ },
+ {
+  "key": "ty for the inv",
+  "terms": [
+   "ty",
+   "inv"
+  ],
+  "tr": {
+   "zhTW": "謝謝邀請",
+   "zhCN": "谢谢邀请",
+   "koKR": "초대 ㄱㅅ",
+   "deDE": "Danke für den Invite",
+   "frFR": "Merci pour l'invit",
+   "esES": "Gracias por invitar",
+   "ptBR": "Valeu pelo convite",
+   "ruRU": "Спс за инвайт",
+   "itIT": "Grazie dell'invito"
+  }
+ },
+ {
+  "key": "ty for the invite",
+  "terms": [
+   "ty",
+   "invite"
+  ],
+  "tr": {
+   "zhTW": "謝謝邀請",
+   "zhCN": "谢谢邀请",
+   "koKR": "초대 ㄱㅅ",
+   "deDE": "Danke für den Invite",
+   "frFR": "Merci pour l'invit",
+   "esES": "Gracias por invitar",
+   "ptBR": "Valeu pelo convite",
+   "ruRU": "Спс за инвайт",
+   "itIT": "Grazie dell'invito"
+  }
+ },
+ {
+  "key": "ty for the port",
+  "terms": [
+   "ty",
+   "port"
+  ],
+  "tr": {
+   "zhTW": "謝謝傳送",
+   "zhCN": "谢谢开门",
+   "koKR": "차원문 ㄱㅅ",
+   "deDE": "Danke fürs Portal",
+   "frFR": "Merci pour le portail",
+   "esES": "Gracias por el portal",
+   "ptBR": "Valeu pelo portal",
+   "ruRU": "Спс за портал",
+   "itIT": "Grazie del portale"
+  }
+ },
+ {
+  "key": "ty for the rez",
+  "terms": [
+   "ty",
+   "rez"
+  ],
+  "tr": {
+   "zhTW": "謝謝復活",
+   "zhCN": "谢谢复活",
+   "koKR": "부활 ㄱㅅ",
+   "deDE": "Danke für den Rez",
+   "frFR": "Merci pour le rez",
+   "esES": "Gracias por resucitar",
+   "ptBR": "Valeu pelo revive",
+   "ruRU": "Спс за рес",
+   "itIT": "Grazie del rez"
+  }
+ },
+ {
+  "key": "ty for the run",
+  "terms": [
+   "ty"
+  ],
+  "tr": {
+   "zhTW": "謝謝這趟，辛苦了",
+   "zhCN": "谢谢，辛苦了",
+   "koKR": "수고했어 ㄱㅅ",
+   "deDE": "Danke für den Run",
+   "frFR": "Merci pour le run",
+   "esES": "Gracias por la run",
+   "ptBR": "Valeu pela run",
+   "ruRU": "Спс за забег",
+   "itIT": "Grazie per la run"
+  }
+ },
+ {
+  "key": "ty for the summon",
+  "terms": [
+   "ty",
+   "summon"
+  ],
+  "tr": {
+   "zhTW": "謝謝召喚",
+   "zhCN": "谢谢拉人",
+   "koKR": "소환 ㄱㅅ",
+   "deDE": "Danke fürs Beschwören",
+   "frFR": "Merci pour l'invoc",
+   "esES": "Gracias por invocar",
+   "ptBR": "Valeu pelo sumonar",
+   "ruRU": "Спс за призыв",
+   "itIT": "Grazie dell'evocazione"
+  }
+ },
+ {
+  "key": "ty guys",
+  "terms": [
+   "ty"
+  ],
+  "tr": {
+   "zhTW": "謝謝各位",
+   "zhCN": "谢谢各位",
+   "koKR": "다들 ㄱㅅ",
+   "deDE": "Danke Leute",
+   "frFR": "Merci les gars",
+   "esES": "Gracias chicos",
+   "ptBR": "Valeu galera",
+   "ruRU": "Спс, ребята",
+   "itIT": "Grazie ragazzi"
+  }
+ },
+ {
+  "key": "tyvm",
+  "terms": [
+   "tyvm"
+  ],
+  "tr": {
+   "zhTW": "非常感謝",
+   "zhCN": "非常感谢",
+   "koKR": "정말 고마워",
+   "deDE": "Vielen Dank",
+   "frFR": "Merci beaucoup",
+   "esES": "Muchas gracias",
+   "ptBR": "Muito obrigado",
+   "ruRU": "Большое спасибо",
+   "itIT": "Grazie mille"
+  }
+ },
+ {
+  "key": "wait",
+  "terms": [],
+  "tr": {
+   "zhTW": "等一下",
+   "zhCN": "等一下",
+   "koKR": "기다려",
+   "deDE": "Warte",
+   "frFR": "Attends",
+   "esES": "Espera",
+   "ptBR": "Espera",
+   "ruRU": "Подожди",
+   "itIT": "Aspetta"
+  }
+ },
+ {
+  "key": "wait for heals",
+  "terms": [],
+  "tr": {
+   "zhTW": "等補師",
+   "zhCN": "等治疗",
+   "koKR": "힐러 기다려",
+   "deDE": "Wartet auf Heiler",
+   "frFR": "Attendez le heal",
+   "esES": "Esperad al sanador",
+   "ptBR": "Esperem o healer",
+   "ruRU": "Ждите хила",
+   "itIT": "Aspettate il healer"
+  }
+ },
+ {
+  "key": "wait for mana",
+  "terms": [
+   "wait for mana"
+  ],
+  "tr": {
+   "zhTW": "等回魔",
+   "zhCN": "等蓝",
+   "koKR": "마나 기다려",
+   "deDE": "Wartet auf Mana",
+   "frFR": "Attendez le mana",
+   "esES": "Esperad maná",
+   "ptBR": "Esperem a mana",
+   "ruRU": "Ждем ману",
+   "itIT": "Aspettate il mana"
+  }
+ },
+ {
+  "key": "wb",
+  "terms": [
+   "wb"
+  ],
+  "tr": {
+   "zhTW": "歡迎回來",
+   "zhCN": "欢迎回来",
+   "koKR": "어서 와",
+   "deDE": "Willkommen zurück",
+   "frFR": "Re",
+   "esES": "Bienvenido de nuevo",
+   "ptBR": "Bem-vindo de volta",
+   "ruRU": "С возвращением",
+   "itIT": "Bentornato"
+  }
+ },
+ {
+  "key": "welcome",
+  "terms": [],
+  "tr": {
+   "zhTW": "歡迎",
+   "zhCN": "欢迎",
+   "koKR": "환영해",
+   "deDE": "Willkommen",
+   "frFR": "Bienvenue",
+   "esES": "Bienvenido",
+   "ptBR": "Bem-vindo",
+   "ruRU": "Добро пожаловать",
+   "itIT": "Benvenuto"
+  }
+ },
+ {
+  "key": "well done",
+  "terms": [],
+  "tr": {
+   "zhTW": "做得好",
+   "zhCN": "干得好",
+   "koKR": "잘했어",
+   "deDE": "Gut gemacht",
+   "frFR": "Bien joué",
+   "esES": "Bien hecho",
+   "ptBR": "Muito bem",
+   "ruRU": "Отлично",
+   "itIT": "Ben fatto"
+  }
+ },
+ {
+  "key": "where",
+  "terms": [],
+  "tr": {
+   "zhTW": "在哪",
+   "zhCN": "在哪",
+   "koKR": "어디?",
+   "deDE": "Wo?",
+   "frFR": "Où ?",
+   "esES": "¿Dónde?",
+   "ptBR": "Onde?",
+   "ruRU": "Где?",
+   "itIT": "Dove?"
+  }
+ },
+ {
+  "key": "where are you",
+  "terms": [],
+  "tr": {
+   "zhTW": "你在哪裡",
+   "zhCN": "你在哪",
+   "koKR": "어디야?",
+   "deDE": "Wo bist du?",
+   "frFR": "T'es où ?",
+   "esES": "¿Dónde estás?",
+   "ptBR": "Cadê você?",
+   "ruRU": "Ты где?",
+   "itIT": "Dove sei?"
+  }
+ },
+ {
+  "key": "wipe",
+  "terms": [
+   "wipe"
+  ],
+  "tr": {
+   "zhTW": "滅團了／放棄重來",
+   "zhCN": "团灭了/放弃重来",
+   "koKR": "전멸/전멸하자",
+   "deDE": "Wipe",
+   "frFR": "Wipe",
+   "esES": "Wipe",
+   "ptBR": "Wipe",
+   "ruRU": "Вайп",
+   "itIT": "Wipe"
+  }
+ },
+ {
+  "key": "wp",
+  "terms": [
+   "wp"
+  ],
+  "tr": {
+   "zhTW": "打得漂亮",
+   "zhCN": "打得漂亮",
+   "koKR": "잘했어",
+   "deDE": "Gut gespielt",
+   "frFR": "Bien joué",
+   "esES": "Bien jugado",
+   "ptBR": "Bem jogado",
+   "ruRU": "Хорошо сыграно",
+   "itIT": "Ben giocato"
+  }
+ },
+ {
+  "key": "wtb",
+  "terms": [
+   "WTB"
+  ],
+  "tr": {
+   "zhTW": "收購",
+   "zhCN": "收购",
+   "koKR": "삽니다",
+   "deDE": "Kaufe",
+   "frFR": "Achète",
+   "esES": "Compro",
+   "ptBR": "Compro",
+   "ruRU": "Куплю",
+   "itIT": "Compro"
+  }
+ },
+ {
+  "key": "wtf",
+  "terms": [
+   "wtf"
+  ],
+  "tr": {
+   "zhTW": "搞什麼鬼",
+   "zhCN": "搞什么鬼",
+   "koKR": "뭐야",
+   "deDE": "WTF",
+   "frFR": "WTF",
+   "esES": "Qué demonios",
+   "ptBR": "Que porra",
+   "ruRU": "Что за",
+   "itIT": "Ma che"
+  }
+ },
+ {
+  "key": "wts",
+  "terms": [
+   "WTS"
+  ],
+  "tr": {
+   "zhTW": "出售",
+   "zhCN": "出售",
+   "koKR": "팝니다",
+   "deDE": "Verkaufe",
+   "frFR": "Vends",
+   "esES": "Vendo",
+   "ptBR": "Vendo",
+   "ruRU": "Продам",
+   "itIT": "Vendo"
+  }
+ },
+ {
+  "key": "wtt",
+  "terms": [
+   "WTT"
+  ],
+  "tr": {
+   "zhTW": "想交換",
+   "zhCN": "求换",
+   "koKR": "교환 원함",
+   "deDE": "Tausche",
+   "frFR": "Échange",
+   "esES": "Cambio",
+   "ptBR": "Troco",
+   "ruRU": "Обменяю",
+   "itIT": "Scambio"
+  }
+ },
+ {
+  "key": "yeah",
+  "terms": [],
+  "tr": {
+   "zhTW": "對",
+   "zhCN": "对",
+   "koKR": "응",
+   "deDE": "Ja",
+   "frFR": "Ouais",
+   "esES": "Sí",
+   "ptBR": "É",
+   "ruRU": "Ага",
+   "itIT": "Sì"
+  }
+ },
+ {
+  "key": "yep",
+  "terms": [
+   "yep"
+  ],
+  "tr": {
+   "zhTW": "對",
+   "zhCN": "对",
+   "koKR": "응",
+   "deDE": "Jep",
+   "frFR": "Ouais",
+   "esES": "Sí",
+   "ptBR": "Sim",
+   "ruRU": "Ага",
+   "itIT": "Sì"
+  }
+ },
+ {
+  "key": "yes",
+  "terms": [],
+  "tr": {
+   "zhTW": "是",
+   "zhCN": "是",
+   "koKR": "네",
+   "deDE": "Ja",
+   "frFR": "Oui",
+   "esES": "Sí",
+   "ptBR": "Sim",
+   "ruRU": "Да",
+   "itIT": "Sì"
+  }
+ },
+ {
+  "key": "yw",
+  "terms": [
+   "yw"
+  ],
+  "tr": {
+   "zhTW": "不客氣",
+   "zhCN": "不客气",
+   "koKR": "천만에",
+   "deDE": "Gern geschehen",
+   "frFR": "De rien",
+   "esES": "De nada",
+   "ptBR": "De nada",
+   "ruRU": "Пожалуйста",
+   "itIT": "Prego"
+  }
+ },
+ {
+  "key": "ty for the group",
+  "terms": [
+   "ty"
+  ],
+  "tr": {
+   "zhTW": "謝謝這團",
+   "zhCN": "谢谢这队",
+   "koKR": "파티 고마워",
+   "deDE": "Danke für die Gruppe",
+   "frFR": "Merci pour le groupe",
+   "esES": "Gracias por el grupo",
+   "ptBR": "Valeu pelo grupo",
+   "ruRU": "Спс за группу",
+   "itIT": "Grazie del gruppo"
+  }
+ },
+ {
+  "key": "ty for the carry",
+  "terms": [
+   "ty",
+   "carry"
+  ],
+  "tr": {
+   "zhTW": "謝謝帶我",
+   "zhCN": "谢谢带我",
+   "koKR": "버스 고마워",
+   "deDE": "Danke fürs Durchziehen",
+   "frFR": "Merci pour le carry",
+   "esES": "Gracias por llevarme",
+   "ptBR": "Valeu por carregar",
+   "ruRU": "Спс, что протащили",
+   "itIT": "Grazie del carry"
+  }
+ },
+ {
+  "key": "tyty",
+  "terms": [
+   "tyty"
+  ],
+  "tr": {
+   "zhTW": "謝謝謝謝",
+   "zhCN": "谢谢谢谢",
+   "koKR": "ㄱㅅㄱㅅ",
+   "deDE": "Danke danke",
+   "frFR": "Merci merci",
+   "esES": "Gracias gracias",
+   "ptBR": "Valeu valeu",
+   "ruRU": "Спасибо-спасибо",
+   "itIT": "Grazie grazie"
+  }
+ },
+ {
+  "key": "ty <3",
+  "terms": [
+   "ty",
+   "<3"
+  ],
+  "tr": {
+   "zhTW": "謝謝 <3",
+   "zhCN": "谢谢 <3",
+   "koKR": "고마워 <3",
+   "deDE": "Danke <3",
+   "frFR": "Merci <3",
+   "esES": "Gracias <3",
+   "ptBR": "Valeu <3",
+   "ruRU": "Спс <3",
+   "itIT": "Grazie <3"
+  }
+ },
+ {
+  "key": "np gl",
+  "terms": [
+   "np",
+   "GL"
+  ],
+  "tr": {
+   "zhTW": "不客氣，祝好運",
+   "zhCN": "不客气，祝好运",
+   "koKR": "별말씀을, 행운을",
+   "deDE": "Kein Ding, viel Glück",
+   "frFR": "De rien, bonne chance",
+   "esES": "De nada, suerte",
+   "ptBR": "De nada, boa sorte",
+   "ruRU": "Не за что, удачи",
+   "itIT": "Figurati, buona fortuna"
+  }
+ },
+ {
+  "key": "gl hf",
+  "terms": [
+   "GL",
+   "HF"
+  ],
+  "tr": {
+   "zhTW": "祝好運玩得開心",
+   "zhCN": "祝好运玩得开心",
+   "koKR": "즐겜 행운을",
+   "deDE": "Viel Glück und Spaß",
+   "frFR": "Bonne chance, amuse-toi",
+   "esES": "Suerte y diviértete",
+   "ptBR": "Boa sorte, divirta-se",
+   "ruRU": "Удачи и веселья",
+   "itIT": "Buona fortuna, divertiti"
+  }
+ },
+ {
+  "key": "x",
+  "terms": [
+   "X"
+  ],
+  "tr": {
+   "zhTW": "我在／準備好了（團隊）",
+   "zhCN": "在/准备好了",
+   "koKR": "여기요/준비",
+   "deDE": "Da/bereit",
+   "frFR": "Présent/prêt",
+   "esES": "Aquí/listo",
+   "ptBR": "Aqui/pronto",
+   "ruRU": "Тут/готов",
+   "itIT": "Ci sono/pronto"
+  }
+ },
+ {
+  "key": "+1",
+  "terms": [
+   "+1"
+  ],
+  "tr": {
+   "zhTW": "算我一個",
+   "zhCN": "+1",
+   "koKR": "나도",
+   "deDE": "+1, bin dabei",
+   "frFR": "+1, j'en suis",
+   "esES": "+1, me apunto",
+   "ptBR": "+1, tô dentro",
+   "ruRU": "+1, я в деле",
+   "itIT": "+1, ci sto"
+  }
+ },
+ {
+  "key": "1",
+  "terms": [
+   "+1"
+  ],
+  "tr": {
+   "zhTW": "1（是／算我）",
+   "zhCN": "1（是/算我）",
+   "koKR": "1 (네)",
+   "deDE": "1 (ja)",
+   "frFR": "1 (oui)",
+   "esES": "1 (sí)",
+   "ptBR": "1 (sim)",
+   "ruRU": "1 (да)",
+   "itIT": "1 (sì)"
+  }
+ },
+ {
+  "key": "lol rip",
+  "terms": [
+   "lol",
+   "rip"
+  ],
+  "tr": {
+   "zhTW": "哈哈慘了",
+   "zhCN": "哈哈完了",
+   "koKR": "ㅋㅋ 망했네",
+   "deDE": "Lol RIP",
+   "frFR": "Mdr RIP",
+   "esES": "Jaja RIP",
+   "ptBR": "Kkkk RIP",
+   "ruRU": "Лол, RIP",
+   "itIT": "Lol RIP"
+  }
+ },
+ {
+  "key": "gratz",
+  "terms": [
+   "grats"
+  ],
+  "tr": {
+   "zhTW": "恭喜",
+   "zhCN": "恭喜",
+   "koKR": "축하해",
+   "deDE": "Gratuliere",
+   "frFR": "Bravo",
+   "esES": "Felicidades",
+   "ptBR": "Parabéns",
+   "ruRU": "Поздравляю",
+   "itIT": "Complimenti"
+  }
+ },
+ {
+  "key": "ding",
+  "terms": [
+   "ding"
+  ],
+  "tr": {
+   "zhTW": "升級了！",
+   "zhCN": "升级了！",
+   "koKR": "렙업!",
+   "deDE": "Ding! Level-Up",
+   "frFR": "Ding ! Niveau",
+   "esES": "¡Ding! Subí",
+   "ptBR": "Ding! Upei",
+   "ruRU": "Динь! Ап",
+   "itIT": "Ding! Livello"
+  }
+ },
+ {
+  "key": "ding 60",
+  "terms": [
+   "ding"
+  ],
+  "tr": {
+   "zhTW": "滿等了！",
+   "zhCN": "满级了！",
+   "koKR": "만렙 찍었다!",
+   "deDE": "Ding 60!",
+   "frFR": "Ding 60 !",
+   "esES": "¡Ding 60!",
+   "ptBR": "Ding 60!",
+   "ruRU": "Динь, 60!",
+   "itIT": "Ding 60!"
+  }
+ },
+ {
+  "key": "grats on 60",
+  "terms": [
+   "grats on 60"
+  ],
+  "tr": {
+   "zhTW": "恭喜滿等",
+   "zhCN": "恭喜满级",
+   "koKR": "만렙 축하",
+   "deDE": "Glückwunsch zu 60",
+   "frFR": "GG pour le 60",
+   "esES": "Felicidades por el 60",
+   "ptBR": "Parabéns pelo 60",
+   "ruRU": "Поздравляю с 60",
+   "itIT": "Complimenti per il 60"
+  }
+ },
+ {
+  "key": "hs",
+  "terms": [
+   "HS"
+  ],
+  "tr": {
+   "zhTW": "用爐石回城",
+   "zhCN": "炉石回城",
+   "koKR": "귀환할게",
+   "deDE": "Ruhestein",
+   "frFR": "Pierre de foyer",
+   "esES": "Piedra hogar",
+   "ptBR": "Pedra de Lar",
+   "ruRU": "Камень возвращения",
+   "itIT": "Pietra del Ritorno"
+  }
+ },
+ {
+  "key": "coming",
+  "terms": [],
+  "tr": {
+   "zhTW": "來了",
+   "zhCN": "来了",
+   "koKR": "간다",
+   "deDE": "Komme",
+   "frFR": "J'arrive",
+   "esES": "Voy",
+   "ptBR": "Tô indo",
+   "ruRU": "Иду",
+   "itIT": "Arrivo"
+  }
+ },
+ {
+  "key": "here",
+  "terms": [],
+  "tr": {
+   "zhTW": "我在",
+   "zhCN": "我在",
+   "koKR": "여기",
+   "deDE": "Hier",
+   "frFR": "Ici",
+   "esES": "Aquí",
+   "ptBR": "Aqui",
+   "ruRU": "Тут",
+   "itIT": "Qui"
+  }
+ },
+ {
+  "key": "ready check",
+  "terms": [
+   "ready check"
+  ],
+  "tr": {
+   "zhTW": "確認就緒",
+   "zhCN": "就位确认",
+   "koKR": "전투 준비 확인",
+   "deDE": "Bereitschaftscheck",
+   "frFR": "Appel",
+   "esES": "Comprobación",
+   "ptBR": "Verificação",
+   "ruRU": "Проверка готовности",
+   "itIT": "Controllo pronti"
+  }
+ },
+ {
+  "key": "r",
+  "terms": [],
+  "tr": {
+   "zhTW": "準備好了",
+   "zhCN": "准备好了",
+   "koKR": "준비",
+   "deDE": "Bereit",
+   "frFR": "Prêt",
+   "esES": "Listo",
+   "ptBR": "Pronto",
+   "ruRU": "Готов",
+   "itIT": "Pronto"
+  }
+ },
+ {
+  "key": "1 sec",
+  "terms": [
+   "sec"
+  ],
+  "tr": {
+   "zhTW": "等一下",
+   "zhCN": "等一下",
+   "koKR": "잠깐만",
+   "deDE": "Moment",
+   "frFR": "Une seconde",
+   "esES": "Un segundo",
+   "ptBR": "Um segundo",
+   "ruRU": "Секунду",
+   "itIT": "Un secondo"
+  }
+ },
+ {
+  "key": "afk bio",
+  "terms": [
+   "afk",
+   "bio"
+  ],
+  "tr": {
+   "zhTW": "離開上廁所",
+   "zhCN": "去厕所",
+   "koKR": "화장실 다녀올게",
+   "deDE": "AFK Klo",
+   "frFR": "AFK pipi",
+   "esES": "Ausente, baño",
+   "ptBR": "Ausente, banheiro",
+   "ruRU": "АФК, туалет",
+   "itIT": "AFK bagno"
+  }
+ },
+ {
+  "key": "bio",
+  "terms": [
+   "bio"
+  ],
+  "tr": {
+   "zhTW": "上廁所",
+   "zhCN": "上厕所",
+   "koKR": "화장실",
+   "deDE": "Klo",
+   "frFR": "Pause pipi",
+   "esES": "Al baño",
+   "ptBR": "Banheiro",
+   "ruRU": "В туалет",
+   "itIT": "Bagno"
+  }
+ },
+ {
+  "key": "brb bio",
+  "terms": [
+   "brb",
+   "bio"
+  ],
+  "tr": {
+   "zhTW": "上個廁所馬上回來",
+   "zhCN": "上个厕所马上回",
+   "koKR": "화장실 금방 올게",
+   "deDE": "Kurz Klo",
+   "frFR": "Pipi, je reviens",
+   "esES": "Baño, ahora vuelvo",
+   "ptBR": "Banheiro, já volto",
+   "ruRU": "В туалет, сейчас вернусь",
+   "itIT": "Bagno, torno subito"
+  }
+ },
+ {
+  "key": "ttyl",
+  "terms": [
+   "ttyl"
+  ],
+  "tr": {
+   "zhTW": "晚點聊",
+   "zhCN": "回头聊",
+   "koKR": "나중에 얘기해",
+   "deDE": "Bis später",
+   "frFR": "À plus",
+   "esES": "Hablamos luego",
+   "ptBR": "Falamos depois",
+   "ruRU": "Позже поговорим",
+   "itIT": "A dopo"
+  }
+ },
+ {
+  "key": "gn all",
+  "terms": [
+   "gn"
+  ],
+  "tr": {
+   "zhTW": "大家晚安",
+   "zhCN": "大家晚安",
+   "koKR": "다들 잘 자",
+   "deDE": "Gute Nacht alle",
+   "frFR": "Bonne nuit à tous",
+   "esES": "Buenas noches a todos",
+   "ptBR": "Boa noite a todos",
+   "ruRU": "Всем спокойной ночи",
+   "itIT": "Buonanotte a tutti"
+  }
+ },
+ {
+  "key": "o/",
+  "terms": [
+   "o/"
+  ],
+  "tr": {
+   "zhTW": "揮手打招呼",
+   "zhCN": "挥手",
+   "koKR": "안녕",
+   "deDE": "Hallo (winkt)",
+   "frFR": "Coucou",
+   "esES": "Hola (saludo)",
+   "ptBR": "Oi (aceno)",
+   "ruRU": "Привет (машет)",
+   "itIT": "Ciao (saluto)"
+  }
+ },
+ {
+  "key": "\\o",
+  "terms": [
+   "o/"
+  ],
+  "tr": {
+   "zhTW": "揮手打招呼",
+   "zhCN": "挥手",
+   "koKR": "안녕",
+   "deDE": "Hallo (winkt)",
+   "frFR": "Coucou",
+   "esES": "Hola (saludo)",
+   "ptBR": "Oi (aceno)",
+   "ruRU": "Привет (машет)",
+   "itIT": "Ciao (saluto)"
+  }
+ },
+ {
+  "key": ":)",
+  "terms": [],
+  "tr": {
+   "zhTW": "微笑",
+   "zhCN": "微笑",
+   "koKR": ":)",
+   "deDE": ":)",
+   "frFR": ":)",
+   "esES": ":)",
+   "ptBR": ":)",
+   "ruRU": ":)",
+   "itIT": ":)"
+  }
+ },
+ {
+  "key": "w/e",
+  "terms": [
+   "w/e"
+  ],
+  "tr": {
+   "zhTW": "隨便",
+   "zhCN": "随便",
+   "koKR": "아무거나",
+   "deDE": "Egal",
+   "frFR": "Peu importe",
+   "esES": "Lo que sea",
+   "ptBR": "Tanto faz",
+   "ruRU": "Пофиг",
+   "itIT": "Qualsiasi cosa"
+  }
+ },
+ {
+  "key": "idc",
+  "terms": [
+   "idc"
+  ],
+  "tr": {
+   "zhTW": "我不在乎",
+   "zhCN": "无所谓",
+   "koKR": "상관없어",
+   "deDE": "Ist mir egal",
+   "frFR": "Je m'en fiche",
+   "esES": "Me da igual",
+   "ptBR": "Tanto faz",
+   "ruRU": "Мне все равно",
+   "itIT": "Non mi importa"
+  }
+ },
+ {
+  "key": "gogo",
+  "terms": [
+   "gogo"
+  ],
+  "tr": {
+   "zhTW": "走走走",
+   "zhCN": "冲冲冲",
+   "koKR": "ㄱㄱ",
+   "deDE": "Los los",
+   "frFR": "Go go",
+   "esES": "Vamos vamos",
+   "ptBR": "Bora bora",
+   "ruRU": "Го-го",
+   "itIT": "Andiamo"
+  }
+ },
+ {
+  "key": "go go",
+  "terms": [
+   "gogo"
+  ],
+  "tr": {
+   "zhTW": "走走走",
+   "zhCN": "冲冲冲",
+   "koKR": "ㄱㄱ",
+   "deDE": "Los los",
+   "frFR": "Go go",
+   "esES": "Vamos vamos",
+   "ptBR": "Bora bora",
+   "ruRU": "Го-го",
+   "itIT": "Andiamo"
+  }
+ },
+ {
+  "key": "on it",
+  "terms": [],
+  "tr": {
+   "zhTW": "我來處理",
+   "zhCN": "我来",
+   "koKR": "내가 할게",
+   "deDE": "Mach ich",
+   "frFR": "Je m'en occupe",
+   "esES": "Me encargo",
+   "ptBR": "Deixa comigo",
+   "ruRU": "Займусь",
+   "itIT": "Ci penso io"
+  }
+ },
+ {
+  "key": "nw",
+  "terms": [
+   "nw"
+  ],
+  "tr": {
+   "zhTW": "別在意",
+   "zhCN": "没事",
+   "koKR": "괜찮아",
+   "deDE": "Kein Ding",
+   "frFR": "Pas de souci",
+   "esES": "No pasa nada",
+   "ptBR": "De boa",
+   "ruRU": "Без проблем",
+   "itIT": "Nessun problema"
+  }
+ },
+ {
+  "key": "my b",
+  "terms": [
+   "my b"
+  ],
+  "tr": {
+   "zhTW": "我的錯",
+   "zhCN": "我的锅",
+   "koKR": "내 탓",
+   "deDE": "Mein Fehler",
+   "frFR": "Ma faute",
+   "esES": "Culpa mía",
+   "ptBR": "Foi mal",
+   "ruRU": "Мой косяк",
+   "itIT": "Colpa mia"
+  }
+ },
+ {
+  "key": "ty for summon",
+  "terms": [
+   "ty",
+   "summ"
+  ],
+  "tr": {
+   "zhTW": "謝謝召喚",
+   "zhCN": "谢谢拉人",
+   "koKR": "소환 ㄱㅅ",
+   "deDE": "Danke fürs Porten",
+   "frFR": "Merci pour l'invoc",
+   "esES": "Gracias por invocar",
+   "ptBR": "Valeu pelo sumonar",
+   "ruRU": "Спс за призыв",
+   "itIT": "Grazie dell'evocazione"
+  }
+ },
+ {
+  "key": "ty for port",
+  "terms": [
+   "ty",
+   "port"
+  ],
+  "tr": {
+   "zhTW": "謝謝傳送",
+   "zhCN": "谢谢开门",
+   "koKR": "차원문 ㄱㅅ",
+   "deDE": "Danke fürs Portal",
+   "frFR": "Merci pour le portail",
+   "esES": "Gracias por el portal",
+   "ptBR": "Valeu pelo portal",
+   "ruRU": "Спс за портал",
+   "itIT": "Grazie del portale"
+  }
+ },
+ {
+  "key": "ty for water",
+  "terms": [
+   "ty",
+   "water"
+  ],
+  "tr": {
+   "zhTW": "謝謝法師水",
+   "zhCN": "谢谢法师水",
+   "koKR": "물 ㄱㅅ",
+   "deDE": "Danke fürs Wasser",
+   "frFR": "Merci pour l'eau",
+   "esES": "Gracias por el agua",
+   "ptBR": "Valeu pela água",
+   "ruRU": "Спс за воду",
+   "itIT": "Grazie dell'acqua"
+  }
+ },
+ {
+  "key": "ty for buffs",
+  "terms": [
+   "ty",
+   "buffs"
+  ],
+  "tr": {
+   "zhTW": "謝謝增益",
+   "zhCN": "谢谢BUFF",
+   "koKR": "버프 ㄱㅅ",
+   "deDE": "Danke für die Buffs",
+   "frFR": "Merci pour les buffs",
+   "esES": "Gracias por los buffs",
+   "ptBR": "Valeu pelos buffs",
+   "ruRU": "Спс за баффы",
+   "itIT": "Grazie dei buff"
+  }
+ },
+ {
+  "key": "ty for the res",
+  "terms": [
+   "ty",
+   "res"
+  ],
+  "tr": {
+   "zhTW": "謝謝復活",
+   "zhCN": "谢谢复活",
+   "koKR": "부활 ㄱㅅ",
+   "deDE": "Danke für den Rez",
+   "frFR": "Merci pour le rez",
+   "esES": "Gracias por resucitar",
+   "ptBR": "Valeu pelo revive",
+   "ruRU": "Спс за рес",
+   "itIT": "Grazie del rez"
+  }
+ },
+ {
+  "key": "need water",
+  "terms": [
+   "water"
+  ],
+  "tr": {
+   "zhTW": "需要法師水",
+   "zhCN": "要法师水",
+   "koKR": "물 필요해",
+   "deDE": "Brauche Wasser",
+   "frFR": "Besoin d'eau",
+   "esES": "Necesito agua",
+   "ptBR": "Preciso de água",
+   "ruRU": "Нужна вода",
+   "itIT": "Mi serve acqua"
+  }
+ },
+ {
+  "key": "water pls",
+  "terms": [
+   "water",
+   "pls"
+  ],
+  "tr": {
+   "zhTW": "請給法師水",
+   "zhCN": "求法师水",
+   "koKR": "물 좀",
+   "deDE": "Wasser bitte",
+   "frFR": "De l'eau stp",
+   "esES": "Agua porfa",
+   "ptBR": "Água pfv",
+   "ruRU": "Воды плз",
+   "itIT": "Acqua per favore"
+  }
+ },
+ {
+  "key": "heal pls",
+  "terms": [
+   "heal pls"
+  ],
+  "tr": {
+   "zhTW": "請補我",
+   "zhCN": "求奶",
+   "koKR": "힐 좀",
+   "deDE": "Heal bitte",
+   "frFR": "Soin stp",
+   "esES": "Cura porfa",
+   "ptBR": "Cura pfv",
+   "ruRU": "Хил плз",
+   "itIT": "Curami"
+  }
+ },
+ {
+  "key": "drinking",
+  "terms": [
+   "drink"
+  ],
+  "tr": {
+   "zhTW": "正在喝水",
+   "zhCN": "在喝水",
+   "koKR": "물 마시는 중",
+   "deDE": "Trinke",
+   "frFR": "Je bois",
+   "esES": "Bebiendo",
+   "ptBR": "Bebendo",
+   "ruRU": "Пью",
+   "itIT": "Sto bevendo"
+  }
+ },
+ {
+  "key": "inc",
+  "terms": [
+   "inc"
+  ],
+  "tr": {
+   "zhTW": "怪過來了",
+   "zhCN": "怪来了",
+   "koKR": "온다",
+   "deDE": "Kommt!",
+   "frFR": "Ça arrive",
+   "esES": "Vienen",
+   "ptBR": "Vindo aí",
+   "ruRU": "Идут",
+   "itIT": "In arrivo"
+  }
+ },
+ {
+  "key": "go ahead",
+  "terms": [],
+  "tr": {
+   "zhTW": "請便／你先",
+   "zhCN": "你先",
+   "koKR": "먼저 해",
+   "deDE": "Mach ruhig",
+   "frFR": "Vas-y",
+   "esES": "Adelante",
+   "ptBR": "Pode ir",
+   "ruRU": "Давай",
+   "itIT": "Vai pure"
+  }
+ },
+ {
+  "key": "oom drinking",
+  "terms": [
+   "OOM",
+   "drink"
+  ],
+  "tr": {
+   "zhTW": "沒魔了，在喝水",
+   "zhCN": "没蓝了，在喝水",
+   "koKR": "마나 없어 물 마심",
+   "deDE": "Kein Mana, trinke",
+   "frFR": "Plus de mana, je bois",
+   "esES": "Sin maná, bebiendo",
+   "ptBR": "Sem mana, bebendo",
+   "ruRU": "Нет маны, пью",
+   "itIT": "Senza mana, bevo"
+  }
+ },
+ {
+  "key": "ty for the group invite",
+  "terms": [
+   "ty",
+   "invite"
+  ],
+  "tr": {
+   "zhTW": "謝謝邀請入隊",
+   "zhCN": "谢谢邀请入队",
+   "koKR": "파티 초대 고마워",
+   "deDE": "Danke für den Invite",
+   "frFR": "Merci pour l'invit",
+   "esES": "Gracias por invitarme",
+   "ptBR": "Valeu pelo convite",
+   "ruRU": "Спс за приглашение",
+   "itIT": "Grazie dell'invito"
+  }
+ },
+ {
+  "key": "any healers",
+  "terms": [
+   "healer"
+  ],
+  "tr": {
+   "zhTW": "有補師嗎",
+   "zhCN": "有治疗吗",
+   "koKR": "힐러 있어?",
+   "deDE": "Heiler da?",
+   "frFR": "Des heals ?",
+   "esES": "¿Hay sanadores?",
+   "ptBR": "Tem healer?",
+   "ruRU": "Хилы есть?",
+   "itIT": "Ci sono healer?"
+  }
+ },
+ {
+  "key": "any tanks",
+  "terms": [
+   "tank"
+  ],
+  "tr": {
+   "zhTW": "有坦嗎",
+   "zhCN": "有坦克吗",
+   "koKR": "탱 있어?",
+   "deDE": "Tanks da?",
+   "frFR": "Des tanks ?",
+   "esES": "¿Hay tanques?",
+   "ptBR": "Tem tanque?",
+   "ruRU": "Танки есть?",
+   "itIT": "Ci sono tank?"
+  }
+ },
+ {
+  "key": "what spec",
+  "terms": [
+   "spec"
+  ],
+  "tr": {
+   "zhTW": "什麼天賦",
+   "zhCN": "什么天赋",
+   "koKR": "무슨 특성?",
+   "deDE": "Welche Skillung?",
+   "frFR": "Quelle spé ?",
+   "esES": "¿Qué especialización?",
+   "ptBR": "Qual spec?",
+   "ruRU": "Какой спек?",
+   "itIT": "Che spec?"
+  }
+ },
+ {
+  "key": "ah is down",
+  "terms": [
+   "AH",
+   "down"
+  ],
+  "tr": {
+   "zhTW": "拍賣場掛了",
+   "zhCN": "拍卖行挂了",
+   "koKR": "경매장 먹통",
+   "deDE": "AH ist down",
+   "frFR": "L'HV est en panne",
+   "esES": "La subasta no funciona",
+   "ptBR": "O leilão caiu",
+   "ruRU": "Аукцион лежит",
+   "itIT": "L'asta non funziona"
+  }
+ },
+ {
+  "key": "is ah down",
+  "terms": [
+   "AH",
+   "down"
+  ],
+  "tr": {
+   "zhTW": "拍賣場掛了嗎",
+   "zhCN": "拍卖行挂了吗",
+   "koKR": "경매장 먹통이야?",
+   "deDE": "Ist das AH down?",
+   "frFR": "L'HV est en panne ?",
+   "esES": "¿Se cayó la subasta?",
+   "ptBR": "O leilão caiu?",
+   "ruRU": "Аукцион лежит?",
+   "itIT": "L'asta è giù?"
+  }
+ },
+ {
+  "key": "server down",
+  "terms": [
+   "server",
+   "down"
+  ],
+  "tr": {
+   "zhTW": "伺服器掛了",
+   "zhCN": "服务器挂了",
+   "koKR": "서버 다운",
+   "deDE": "Server down",
+   "frFR": "Serveur en panne",
+   "esES": "Servidor caído",
+   "ptBR": "Servidor caiu",
+   "ruRU": "Сервер лежит",
+   "itIT": "Server giù"
+  }
+ },
+ {
+  "key": "gg wipe",
+  "terms": [
+   "gg",
+   "wipe"
+  ],
+  "tr": {
+   "zhTW": "滅團了",
+   "zhCN": "团灭了",
+   "koKR": "전멸 ㅈㅈ",
+   "deDE": "GG Wipe",
+   "frFR": "GG wipe",
+   "esES": "GG wipe",
+   "ptBR": "GG wipe",
+   "ruRU": "ГГ вайп",
+   "itIT": "GG wipe"
+  }
+ }
+]
