@@ -123,6 +123,8 @@ $lastKey = ""
 $lastWarn = [DateTime]::MinValue
 $proc = $null
 $parentCheck = [DateTime]::MinValue
+$handleCheck = [DateTime]::MinValue
+$hwnd = $null
 while ($true) {
   if (([DateTime]::Now - $parentCheck).TotalSeconds -ge 2) {
     $parentCheck = [DateTime]::Now
@@ -136,8 +138,20 @@ while ($true) {
       continue
     }
     Emit @{ info = "attached to '$($proc.MainWindowTitle)' (pid $($proc.Id)), corner $Corner" }
+    $hwnd = $null
+    $handleCheck = [DateTime]::MinValue
   }
-  $hwnd = $proc.MainWindowHandle
+  # Process.MainWindowHandle is cached on first read: a client found while still on
+  # its launch/splash window keeps that stale handle forever. Re-read it every 2 s.
+  if (([DateTime]::Now - $handleCheck).TotalSeconds -ge 2) {
+    $handleCheck = [DateTime]::Now
+    $proc.Refresh()
+    if ($proc.HasExited -or $proc.MainWindowHandle -eq 0) { $proc = $null; continue }
+    if ($hwnd -ne $proc.MainWindowHandle) {
+      if ($hwnd) { Emit @{ info = "game window handle changed, re-attached" } }
+      $hwnd = $proc.MainWindowHandle
+    }
+  }
   if ([WchCapWin]::IsIconic($hwnd)) { Start-Sleep -Milliseconds 1000; continue }
   $pt = New-Object WchCapWin+POINT
   [void][WchCapWin]::ClientToScreen($hwnd, [ref]$pt)
