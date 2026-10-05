@@ -151,7 +151,7 @@ test('resolveCommand: npm .cmd shim is unwrapped to the native claude.exe (Windo
   assert.match(none.note, /claude/);
 });
 
-test('resolveCommand: posix PATH lookup', () => {
+test('resolveCommand: posix PATH lookup', { skip: process.platform === 'win32' && 'simulates POSIX paths' }, () => {
   const dir = tmpdir('wch-path-');
   fs.writeFileSync(path.join(dir, 'claude'), '');
   const r = ai.resolveCommand('', { platform: 'linux', env: { PATH: dir }, home: path.join(dir, 'home') });
