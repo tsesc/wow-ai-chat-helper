@@ -54,7 +54,11 @@ session id kind channel sender model ctx text
 ```
 
 `kind` is `h` hello, `x` explain, `t` translate, `d` detail. The bridge dedups on
-`(session, id)`. The strip stays up until the `ack` signal for the highest id in the frame
+`(session, id)`. The addon starts a new `session` token on every load (login or
+`/reload`): SavedVariables are only written on a clean logout, so after a crash `lastId`
+comes back older than ids the bridge already handled, and a long-lived token would make
+new messages look like handled ones. The strip is parented to `WorldFrame` so hiding the
+UI (Alt+Z) does not hide it. The strip stays up until the `ack` signal for the highest id in the frame
 fires or 30 s pass; it is re-shown up to 3 times, then the records are marked failed.
 The magic bytes differ from wow-ai's (`C7 1A`), so the two never decode each other's frames.
 
@@ -63,12 +67,20 @@ The magic bytes differ from wow-ai's (`C7 1A`), so the two never decode each oth
 - The bridge cannot know which slot the game will load next, so every publish writes
   identical `Inbox.lua` content (`WCH_SlotData`, last 100 results) to all 200
   `WoWChatHelper_S001..S200` addons, atomically (temp file + rename), plus
-  `WoWChatHelper/Inbox.lua`.
+  `WoWChatHelper/Inbox.lua`. A rename that fails because another process holds the
+  file (Windows `EPERM`/`EBUSY`, e.g. an AV scan) is retried with a short backoff; files
+  still failing are retried every second, and the `ready` signal of a result waits until
+  a publish has reached every slot.
 - Signals are empty or valid `.wav` files under `WoWChatHelper/sig/` (`ready`, `ack`,
   `presence`, `ctl`); `NNN = ((id-1) mod 200) + 1`. The addon self-tests at login and falls
-  back to scheduled polling (4, 8, 14, 22, 34, 50 s, then every 30 s) when signals do not work.
-- Slot budget: one load per `ready`, at most every 3 s, warn at 20 left, stop at 0 and ask the
-  user to `/reload`. Never auto-reload.
+  back to scheduled polling (4, 8, 14, 22, 34, 50 s after the oldest pending request, then
+  every 30 s) when signals do not work. There is one schedule for everything pending.
+- Presence: the bridge keeps the 50 files after its beat counter empty. The addon finds the
+  head by probing every 50th file (one always lands in that gap, also after the counter
+  wrapped at 2000) and binary-searching the 50 before it.
+- Slot budget: one load per `ready`, at most every 3 s (8 s while other requests the bridge
+  has are still without a result, so they ride along), warn at 20 left, stop at 0 and ask
+  the user to `/reload`. Never auto-reload.
 
 ## Layout
 

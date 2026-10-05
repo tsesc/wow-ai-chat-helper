@@ -29,6 +29,8 @@ local ACK_WAIT = 30           -- seconds a record stays up waiting for its ack
 local MAX_RESHOWS = 3         -- re-shown this many times, then marked failed
 local HELLO_WAIT = 20         -- a hello is dropped (never failed) after this long
 local MIN_LOAD_INTERVAL = 3   -- never load slots more often than this (spec 3.5)
+local BUSY_LOAD_INTERVAL = 8  -- ...and while other requests are still in flight, wait this
+                              -- long so their results ride along (each load costs a slot)
 local POLL_SCHEDULE = { 4, 8, 14, 22, 34, 50 } -- without signals, after the oldest pending request
 local POLL_TAIL = 30          -- ...then every 30 s while anything is pending
 local SAFETY_SCHEDULE = { 50 } -- with working signals: one safety poll, then every SAFETY_TAIL
@@ -89,7 +91,9 @@ local cellPool = {}
 
 local function EnsureStrip()
 	if strip then return strip end
-	strip = CreateFrame("Frame", "WCHStrip", UIParent)
+	-- Parented to WorldFrame, not UIParent: Alt+Z (hide UI), cinematics and some
+	-- full-screen panels hide UIParent and everything under it.
+	strip = CreateFrame("Frame", "WCHStrip", WorldFrame or UIParent)
 	strip:SetFrameStrata("TOOLTIP")
 	strip:SetFrameLevel(10000)
 	-- One UI unit = one physical pixel (see Blizzard's PixelUtil).
@@ -109,7 +113,7 @@ local function PlaceStrip()
 	local s = EnsureStrip()
 	local corner = db() and db().stripCorner or "TOPLEFT"
 	s:ClearAllPoints()
-	s:SetPoint(corner, UIParent, corner, 0, 0)
+	s:SetPoint(corner, WorldFrame or UIParent, corner, 0, 0)
 end
 T.PlaceStrip = PlaceStrip
 
@@ -245,15 +249,39 @@ T.NotedBridge = NotedBridge
 
 local function PresencePath(k) return string.format("%spresence\\%04d.wav", SIG, k) end
 
--- Valid presence files form a prefix 1..k, so a binary search finds the head.
+-- The bridge keeps the PRESENCE_GAP files after its counter k empty (bridge.js
+-- AHEAD_CLEAR); every other file it has written stays valid. Before the counter first
+-- wraps the valid files are 1..k; after a wrap they are 1..k and k+51..PRESENCE_MAX, so
+-- a plain binary search over 1..PRESENCE_MAX is wrong. Any run of PRESENCE_GAP
+-- consecutive numbers holds exactly one multiple of PRESENCE_GAP: probe those, take an
+-- empty probe whose previous probe is valid (circularly), and binary-search the head in
+-- the PRESENCE_GAP files before it, where valid-then-empty does hold.
+local PRESENCE_GAP = 50
+local function PresenceAt(i) -- i in 0..PRESENCE_MAX, 0 meaning PRESENCE_MAX
+	return SoundValid(PresencePath(i == 0 and PRESENCE_MAX or i))
+end
+
 local function FindPresenceHead()
-	local lo, hi = 0, PRESENCE_MAX
+	local n = math.floor(PRESENCE_MAX / PRESENCE_GAP)
+	local probe = {}
+	for j = 1, n do probe[j] = PresenceAt(j * PRESENCE_GAP) end
+	local e
+	for j = 1, n do
+		if not probe[j] and probe[j == 1 and n or j - 1] then e = j * PRESENCE_GAP break end
+	end
+	if not e then
+		if probe[n] then return PRESENCE_MAX end -- every probe valid: no gap to go by
+		e = PRESENCE_GAP -- every probe empty: at most 1..49 (or nothing) is valid
+	end
+	local lo, hi = e - PRESENCE_GAP, e - 1 -- lo is valid (or 0 = nothing / PRESENCE_MAX)
 	while lo < hi do
 		local mid = math.ceil((lo + hi) / 2)
-		if SoundValid(PresencePath(mid)) then lo = mid else hi = mid - 1 end
+		if PresenceAt(mid) then lo = mid else hi = mid - 1 end
 	end
+	if lo == 0 then return probe[n] and PRESENCE_MAX or 0 end
 	return lo
 end
+T.FindPresenceHead = FindPresenceHead
 
 local function PollPresence()
 	if not run.signalsOk then return end
@@ -313,10 +341,12 @@ function T.Request(fields, meta)
 	}
 	rec.wire = BuildWire(rec)
 	run.req[id] = rec
-	if not rec.hello and run.signalsOk then
+	if run.signalsOk then
 		-- The bridge can't have answered a request it hasn't seen: a valid file now
-		-- is left over from id-200 (wrap-around), so don't trust it for this one.
-		if CheckSignal("ready", id) then rec.readyStale = true end
+		-- is left over from id-200 (wrap-around) or an earlier session, so don't trust
+		-- it for this one. Hellos too: a stale ack would take the hello down before
+		-- the bridge read it.
+		if not rec.hello and CheckSignal("ready", id) then rec.readyStale = true end
 		if CheckSignal("ack", id) then rec.ackStale = true end
 	end
 	RefreshStrip()
@@ -475,8 +505,11 @@ local function NextPollFor(r)
 	for _, t in ipairs(sched) do
 		if base + t > last then return base + t end
 	end
+	-- Past the list: every `tail` seconds on this request's grid, but never sooner
+	-- than ~`tail` after the last load (whichever request caused it), so a change of
+	-- the oldest request can't bunch loads up. 1 s slack absorbs tick jitter.
 	local t = sched[#sched]
-	local k = math.floor((last - base - t) / tail) + 1
+	local k = math.ceil((last + tail - 1 - base - t) / tail)
 	if k < 1 then k = 1 end
 	return base + t + k * tail
 end
@@ -505,10 +538,6 @@ function T.Tick()
 		end
 	end
 	for id, r in pairs(run.req) do
-		if r.hello and not r.acked and r.shownAt and run.bridgeSeen and run.bridgeSeen > r.shownAt + 1 then
-			MarkAcked(r) -- the bridge was seen after the hello went up
-			changed = true
-		end
 		if r.hello and r.acked then
 			run.req[id] = nil
 		elseif not r.acked and not r.failed and r.shownAt then
@@ -531,7 +560,11 @@ function T.Tick()
 	if run.slotsExhausted or run.slotsMissing then return end
 	local want
 	local anyPending = false
-	local nextAt
+	-- One poll schedule for everything pending, anchored to the oldest request that
+	-- has one (spec 3.5): one load picks up every result, so per-request schedules
+	-- would only interleave and burn slots.
+	local oldest
+	local inFlight = 0 -- pending requests the bridge has but whose result isn't ready
 	for id, r in pairs(run.req) do
 		if IsPending(r) then
 			anyPending = true
@@ -539,11 +572,13 @@ function T.Tick()
 				want = "signal"
 				run.signalIds = run.signalIds or {}
 				table.insert(run.signalIds, id)
+			elseif r.acked then
+				inFlight = inFlight + 1
 			end
-			local at = NextPollFor(r)
-			if at and (not nextAt or at < nextAt) then nextAt = at end
+			if (not oldest or id < oldest.id) and NextPollFor(r) then oldest = r end
 		end
 	end
+	local nextAt = oldest and NextPollFor(oldest)
 	if not want and nextAt and now >= nextAt then want = "schedule" end
 	if not want and not anyPending and not run.signalsOk and now - (run.lastIdlePoll or -1e9) >= IDLE_POLL then
 		run.lastIdlePoll = now
@@ -551,7 +586,9 @@ function T.Tick()
 	end
 	want = want or run.loadWanted
 	if want then
-		if now - (run.lastLoadAt or -1e9) >= MIN_LOAD_INTERVAL then
+		local gap = MIN_LOAD_INTERVAL
+		if want == "signal" and inFlight > 0 then gap = BUSY_LOAD_INTERVAL end
+		if now - (run.lastLoadAt or -1e9) >= gap then
 			TryLoadSlot(want)
 		else
 			run.loadWanted = want

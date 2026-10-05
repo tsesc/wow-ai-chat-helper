@@ -113,3 +113,23 @@ test('the addon never calls SendChatMessage (static check over its sources)', ()
     assert.ok(!/SendChatMessage\s*\(/.test(src), `${f} must not call SendChatMessage`);
   }
 });
+
+test('/tr target: whisper partner only while the LAST incoming message is a whisper; BN stays BN', () => {
+  const vm = boot();
+  const target = () => vm.eval('WCH.Chat.TranslateTarget()');
+  vm.receiveChat('WHISPER', 'hey', 'Alice');
+  vm.advance(1);
+  assert.equal(target().channel, 'WHISPER');
+  assert.equal(target().sender, 'Alice');
+  vm.advance(4);
+  vm.receiveChat('PARTY', 'pull now', 'Bob');
+  vm.advance(1);
+  assert.notEqual(target().channel, 'WHISPER', 'a later party line means the reply is not for Alice');
+  assert.equal(target().sender, '');
+  vm.receiveChat('BN_WHISPER', 'yo', 'Friend');
+  vm.advance(1);
+  assert.equal(target().channel, 'BN');
+  assert.equal(target().sender, 'Friend');
+  vm.advance(121);
+  assert.notEqual(target().channel, 'BN', 'older than 2 minutes');
+});

@@ -255,17 +255,17 @@ local function OnEvent(_, event, msg, sender, ...)
 	if not info then return end
 	local line = GetLine(event, msg, sender, ...)
 	if IsSelf(sender) then return end
-	if event == "CHAT_MSG_WHISPER" then
-		run.lastWhisper = { sender = line.sender, at = GetTime() }
-	end
+	-- The last incoming message of any channel (spec 4: /tr goes to the whisper
+	-- partner only if the last incoming message was a whisper).
+	run.lastIncoming = { channel = info.channel, sender = line.sender, at = GetTime() }
 	if info.group and ns.db.settings.auto[info.group] then
 		C.Explain(line, "auto")
 	end
 end
 
 ---------------------------------------------------------------------------
--- Translate target (spec 4): the last whisper partner if a whisper came in within
--- 2 minutes, else the chat type of the edit box (default SAY).
+-- Translate target (spec 4): the last whisper partner if the last incoming message
+-- was a whisper (or Battle.net whisper) within 2 minutes, else the chat type of the edit box (default SAY).
 ---------------------------------------------------------------------------
 
 local CHATTYPE_CHANNEL = {
@@ -285,9 +285,10 @@ end
 
 -- -> { channel (wire), sender, chanIndex, conv }
 function C.TranslateTarget()
-	local w = run.lastWhisper
-	if w and GetTime() - w.at <= WHISPER_FRESH then
-		return { channel = "WHISPER", sender = w.sender, conv = ConvKey("WHISPER", w.sender) }
+	local w = run.lastIncoming
+	if w and (w.channel == "WHISPER" or w.channel == "BN") and w.sender ~= "" and GetTime() - w.at <= WHISPER_FRESH then
+		-- BN keeps its channel so FillChat opens a Battle.net tell, not /w.
+		return { channel = w.channel, sender = w.sender, conv = ConvKey(w.channel, w.sender) }
 	end
 	local eb = EditBox()
 	local ct = eb and eb.GetAttribute and eb:GetAttribute("chatType") or "SAY"

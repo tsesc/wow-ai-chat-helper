@@ -16,7 +16,8 @@ param(
   [int]$IntervalMs = 250,
   [string]$ProcessName = "WowB",
   [ValidateSet("TOPLEFT", "TOPRIGHT")][string]$Corner = "TOPLEFT",
-  [string]$TestImage = ""
+  [string]$TestImage = "",
+  [int]$ParentPid = 0
 )
 
 $ErrorActionPreference = "Continue"
@@ -36,9 +37,18 @@ public class WchCapWin {
 "@
 [void][WchCapWin]::SetProcessDPIAware()
 
+# Windows does not kill children when the parent dies: if the bridge is gone (stdout
+# pipe broken), exit instead of capturing forever as an orphan.
 function Emit($obj) {
-  [Console]::Out.WriteLine((ConvertTo-Json -Compress -InputObject $obj))
-  [Console]::Out.Flush()
+  try {
+    [Console]::Out.WriteLine((ConvertTo-Json -Compress -InputObject $obj))
+    [Console]::Out.Flush()
+  } catch { exit 0 }
+}
+
+function ParentGone {
+  if ($ParentPid -le 0) { return $false }
+  return -not (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue)
 }
 
 # Each channel is either fully on or off, so anything past mid-grey counts as on.
@@ -112,7 +122,12 @@ if ($TestImage -ne "") {
 $lastKey = ""
 $lastWarn = [DateTime]::MinValue
 $proc = $null
+$parentCheck = [DateTime]::MinValue
 while ($true) {
+  if (([DateTime]::Now - $parentCheck).TotalSeconds -ge 2) {
+    $parentCheck = [DateTime]::Now
+    if (ParentGone) { exit 0 }
+  }
   if (-not $proc -or $proc.HasExited) {
     $proc = Get-Process $ProcessName -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
     if (-not $proc) {

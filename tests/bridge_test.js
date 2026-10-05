@@ -392,3 +392,41 @@ test('supervisor restarts the bridge 3 s after a crash', async () => {
   assert.match(out, /bridge exited \(1\); restarting in 3 s/);
   assert.ok(Date.now() - t0 >= 3000, 'waited 3 s between runs');
 });
+
+test('publish survives Windows EPERM renames: retried, slots still written, ready waits for a full publish', async () => {
+  const w = installed();
+  const { bridge, logs } = makeBridge(w, { publishRetryMs: 100 });
+  const realRename = fs.renameSync;
+  const eperm = (to) => { const e = new Error(`EPERM: operation not permitted, rename -> ${to}`); e.code = 'EPERM'; return e; };
+  let blockedSlot = path.join(w.addons, P.slotAddonName(7), 'Inbox.lua');
+  let inboxFails = 2; // a short AV scan: atomicWrite's own retries get past it
+  fs.renameSync = (from, to) => {
+    if (to === path.join(w.addons, 'WoWChatHelper', 'Inbox.lua') && inboxFails > 0) { inboxFails--; throw eperm(to); }
+    if (blockedSlot && to === blockedSlot) throw eperm(to); // held open for longer
+    return realRename(from, to);
+  };
+  try {
+    bridge.handleRecords([rec(1, 'x', 'lf1m tank')]);
+    assert.strictEqual(inboxFails, 0);
+    assert.match(fs.readFileSync(path.join(w.addons, 'WoWChatHelper', 'Inbox.lua'), 'utf8'), /status = "working"/);
+    assert.match(slotSrc(w, 8), /status = "working"/, 'slots written although a rename failed');
+    await bridge.idle();
+    assert.match(slotSrc(w, 8), /status = "done"/);
+    assert.ok(!raised(w, 'ready', 1), 'ready waits while slot 7 has not got the result');
+    assert.ok(logs.some(l => /publish: 1 file\(s\) not written \(EPERM\)/.test(l)), logs.join('\n'));
+    blockedSlot = null; // the scan is over
+    await new Promise(r => setTimeout(r, 250));
+    assert.match(slotSrc(w, 7), /status = "done"/, 'retried');
+    assert.ok(raised(w, 'ready', 1), 'ready raised after the retry reached every slot');
+  } finally { fs.renameSync = realRename; bridge.stop(); }
+});
+
+test('checkClaude: a logged-out CLI is named in the bridge window at startup', async () => {
+  const w = installed();
+  const { bridge, logs } = makeBridge(w);
+  bridge.runner.checkLogin = async () => ({ ok: false, loggedOut: true, err: 'claude not logged in: Invalid API key' });
+  try {
+    await bridge.checkClaude();
+    assert.ok(logs.some(l => /!! Claude Code CLI is not logged in/.test(l)), logs.join('\n'));
+  } finally { bridge.stop(); }
+});

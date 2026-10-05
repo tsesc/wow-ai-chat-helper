@@ -325,3 +325,36 @@ test('stop() resolves queued and in-flight requests as errors and kills the proc
   await new Promise(r => setTimeout(r, 300));
   for (const e of events().filter(e => e.event === 'start')) assert.ok(!alive(e.pid), 'killed ' + e.mode);
 });
+
+test('a retry runs off the queue: a later request does not wait for it (no head-of-line blocking)', async () => {
+  const { runner } = setup();
+  try {
+    const t0 = Date.now();
+    const order = [];
+    const a = runner.request(req(1, 'bad one #invalid #slow:1500')).then((r) => { order.push('A'); return r; });
+    await new Promise(r => setTimeout(r, 1800)); // A's batch has failed; its retry is running
+    const tb = Date.now();
+    const b = await runner.request(req(2, 'lf1m tank'));
+    order.push('B');
+    const bMs = Date.now() - tb;
+    assert.strictEqual(b.status, 'done');
+    const ra = await a;
+    assert.strictEqual(ra.status, 'error');
+    assert.deepStrictEqual(order, ['B', 'A'], `B took ${bMs} ms, A ${Date.now() - t0} ms`);
+  } finally { runner.stop(); }
+});
+
+test('checkLogin: startup probe reports a logged-out CLI; ok otherwise; missing CLI without spawning', async () => {
+  const { runner } = setup();
+  try {
+    assert.deepStrictEqual(await runner.checkLogin(), { ok: true });
+    const r = await runner.checkLogin('ping #autherr');
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(r.loggedOut, true);
+    assert.match(r.err, /claude not logged in/);
+  } finally { runner.stop(); }
+  const missing = new ai.AiRunner({ claudePath: path.join(os.tmpdir(), 'no-such-claude.exe') });
+  const m = await missing.checkLogin();
+  assert.strictEqual(m.ok, false);
+  assert.match(m.err, /claude CLI not found/);
+});

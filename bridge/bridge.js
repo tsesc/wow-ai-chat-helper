@@ -38,7 +38,7 @@ const CONFIG_DEFAULTS = {
   models: { explain: 'haiku', translate: 'haiku', detail: 'sonnet' },
   capture: { enabled: true, corner: 'TOPLEFT', intervalMs: 250, processName: 'WowB', cellPx: 4, cellsPerRow: 200, maxRows: 48 },
   timeoutMs: 60000, batchWindowMs: 400, persistent: true, persistentMaxTurns: 40, maxThinkingTokens: 0,
-  slots: P.SLOT_COUNT, presenceMax: 2000, presenceIntervalMs: 30000, progressWriteMs: 2000,
+  slots: P.SLOT_COUNT, presenceMax: 2000, presenceIntervalMs: 30000, progressWriteMs: 2000, publishRetryMs: 1000,
 };
 
 // config.json (or an object) -> full config with defaults and addonDir resolved.
@@ -54,10 +54,23 @@ function readJson(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
 }
 
+// On Windows a rename over a file another process has open (Defender or the indexer
+// scanning it, WoW reading a slot) fails with EPERM/EACCES/EBUSY for a few ms: retry with
+// a short backoff, as graceful-fs does.
+const TRANSIENT = new Set(['EPERM', 'EACCES', 'EBUSY']);
+const RENAME_BACKOFF_MS = [5, 20, 50, 100];
+const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
 function atomicWrite(file, content) {
   const tmp = file + '.' + process.pid + '.tmp';
   fs.writeFileSync(tmp, content);
-  try { fs.renameSync(tmp, file); } catch (e) { try { fs.unlinkSync(tmp); } catch {} throw e; }
+  for (let i = 0; ; i++) {
+    try { fs.renameSync(tmp, file); return; } catch (e) {
+      if (TRANSIENT.has(e.code) && i < RENAME_BACKOFF_MS.length) { sleepSync(RENAME_BACKOFF_MS[i]); continue; }
+      try { fs.unlinkSync(tmp); } catch {}
+      throw e;
+    }
+  }
 }
 
 class Bridge {
@@ -91,6 +104,9 @@ class Bridge {
     this.captureProc = null;
     this.stopped = false;
     this.warnedNoAddon = false;
+    this.retryTimer = null;
+    this.readyWaiting = new Set(); // result ids whose ready signal waits for a full publish
+    this.failedSignals = new Map(); // signal file -> wanted state (true = valid)
     this.idleWaiters = [];
   }
 
@@ -147,20 +163,61 @@ class Bridge {
     return P.renderSlotFile({ v: 1, now: this.nowFn(), session: this.state.session, results: this.state.results });
   }
 
+  // Writes the slot data to Inbox.lua and every slot. Returns true when every slot got
+  // it. Files that failed (even after atomicWrite's retries) are retried on a timer
+  // (the whole publish, with the then-current data); ready signals of results published
+  // meanwhile wait for a publish that reached every slot (raiseReady).
   publishNow() {
     if (this.publishTimer) { clearTimeout(this.publishTimer); this.publishTimer = null; }
     this.lastPublish = Date.now();
     const body = this.slotSource();
-    try { atomicWrite(this.addonPath('Inbox.lua'), body); } catch (e) {
-      if (!this.warnedNoAddon) {
-        this.warnedNoAddon = true;
-        this.log(`publish: cannot write ${this.addonPath('Inbox.lua')} (${e.code || e.message}); addon not installed? run: node setup.js, then restart WoW`);
-      }
-      return;
+    const failed = [];
+    const inbox = this.addonPath('Inbox.lua');
+    try { atomicWrite(inbox, body); } catch (e) {
+      if (e.code === 'ENOENT' && !this.addonInstalled()) {
+        if (!this.warnedNoAddon) {
+          this.warnedNoAddon = true;
+          this.log(`publish: cannot write ${inbox} (${e.code}); addon not installed? run: node setup.js, then restart WoW`);
+        }
+      } else failed.push([inbox, e]);
     }
+    // The slots are what the game reads: write them even if Inbox.lua failed.
     for (let i = 1; i <= this.cfg.slots; i++) {
-      try { atomicWrite(path.join(this.cfg.addonDir, P.slotAddonName(i), 'Inbox.lua'), body); } catch {}
+      const file = path.join(this.cfg.addonDir, P.slotAddonName(i), 'Inbox.lua');
+      try { atomicWrite(file, body); } catch (e) {
+        if (e.code === 'ENOENT' && !fs.existsSync(path.dirname(file))) continue; // slot not installed (banner says so)
+        failed.push([file, e]);
+      }
     }
+    if (failed.length) {
+      const [file, e] = failed[0];
+      this.log(`publish: ${failed.length} file(s) not written (${e.code || e.message}), e.g. ${file}; retrying in ${this.cfg.publishRetryMs} ms`);
+      this.scheduleRetry();
+      return false;
+    }
+    this.flushReady();
+    return true;
+  }
+
+  scheduleRetry() {
+    if (this.retryTimer || this.stopped) return;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      if (this.stopped) return;
+      this.publishNow();
+      this.retrySignals();
+    }, this.cfg.publishRetryMs);
+  }
+
+  // A result's ready signal, once a publish carrying it reached every slot.
+  raiseReady(id) {
+    this.readyWaiting.add(id);
+    if (!this.retryTimer) this.flushReady();
+  }
+
+  flushReady() {
+    for (const id of this.readyWaiting) this.signal('ready', id, true);
+    this.readyWaiting.clear();
   }
 
   // Final results and receipts publish immediately; anything else at most every
@@ -173,12 +230,36 @@ class Bridge {
   }
 
   // kind 'ready' | 'ack' (n = request id) | 'presence' (n = beat). on: valid / empty wav.
+  // A write that fails is logged and retried with the next publish retry; the newest
+  // wanted state of a file wins.
   signal(kind, n, on) {
     const file = this.addonPath(...P.signalPath(kind, n).split('/'));
+    this.failedSignals.delete(file);
     try {
-      if (!on) { const st = fs.statSync(file); if (st.size === 0) return; }
+      if (!on) {
+        let st = null;
+        try { st = fs.statSync(file); } catch (e) { if (e.code === 'ENOENT') return; throw e; }
+        if (st.size === 0) return;
+      }
       atomicWrite(file, on ? SILENT_WAV : Buffer.alloc(0));
-    } catch {}
+    } catch (e) {
+      if (e.code === 'ENOENT' && !fs.existsSync(path.dirname(file))) return; // signals not installed
+      this.log(`signal: cannot write ${file} (${e.code || e.message}); will retry`);
+      this.failedSignals.set(file, on);
+      this.scheduleRetry();
+    }
+  }
+
+  retrySignals() {
+    const todo = [...this.failedSignals];
+    this.failedSignals.clear();
+    for (const [file, on] of todo) {
+      try { atomicWrite(file, on ? SILENT_WAV : Buffer.alloc(0)); } catch (e) {
+        this.failedSignals.set(file, on);
+        this.log(`signal: still cannot write ${file} (${e.code || e.message})`);
+      }
+    }
+    if (this.failedSignals.size) this.scheduleRetry();
   }
 
   // A new id: its ready file must be empty until the result is in, and the files of the
@@ -270,7 +351,7 @@ class Bridge {
       this.setResult({ ...result, id: rec.id, kind: rec.kind });
       this.saveState();
       this.publish(true);
-      this.signal('ready', rec.id, true);
+      this.raiseReady(rec.id);
       this.log(`result #${rec.id}: ${result.status}${result.err ? ' (' + result.err + ')' : ''}`);
     }).catch((e) => this.log(`result #${rec.id} failed: ${e && e.stack || e}`))
       .finally(() => { this.inflight.delete(p); this.checkIdle(); });
@@ -303,7 +384,8 @@ class Bridge {
     if (process.platform !== 'win32') return null;
     return ['powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(HERE, 'capture.ps1'),
       '-Cell', String(cap.cellPx), '-Cells', String(cap.cellsPerRow), '-MaxRows', String(cap.maxRows),
-      '-IntervalMs', String(cap.intervalMs), '-ProcessName', cap.processName, '-Corner', cap.corner]];
+      '-IntervalMs', String(cap.intervalMs), '-ProcessName', cap.processName, '-Corner', cap.corner,
+      '-ParentPid', String(process.pid)]];
   }
 
   startCapture() {
@@ -345,6 +427,16 @@ class Bridge {
     return lines.join('\n');
   }
 
+  // Banner follow-up: is the CLI logged in? Logs a warning line when it is not.
+  async checkClaude() {
+    if (typeof this.runner.checkLogin !== 'function' || (this.runner.cmd && !this.runner.cmd.found)) return null;
+    const r = await this.runner.checkLogin();
+    if (r.ok) this.log('claude   : login ok');
+    else if (r.loggedOut) this.log(`  !! Claude Code CLI is not logged in (${r.err}). Run \`claude\` once in a terminal and log in; until then every request comes back as an error.`);
+    else this.log(`  !! Claude Code CLI check failed: ${r.err}`);
+    return r;
+  }
+
   // opts: { capture: bool, presence: bool }
   start(opts = {}) {
     this.publishNow();
@@ -357,10 +449,18 @@ class Bridge {
     if (opts.capture !== false && this.cfg.capture.enabled) this.startCapture();
   }
 
+  // Synchronous best-effort kill of every child process (process 'exit' handler).
+  kill() {
+    this.stopped = true;
+    if (this.captureProc) { try { ai.killTree(this.captureProc); } catch {} }
+    try { this.runner.stop(); } catch {}
+  }
+
   stop() {
     this.stopped = true;
     for (const t of this.timers) { clearTimeout(t); clearInterval(t); }
     if (this.publishTimer) { clearTimeout(this.publishTimer); this.publishTimer = null; }
+    if (this.retryTimer) { clearTimeout(this.retryTimer); this.retryTimer = null; }
     if (this.captureProc) { try { ai.killTree(this.captureProc); } catch {} }
     try { this.runner.stop(); } catch {}
     this.saveState();
@@ -412,9 +512,15 @@ async function main(argv) {
   }
   console.log('Leave this window open while you play. Ctrl+C to stop.\n');
   bridge.start({ capture: !argv.includes('--no-capture') });
+  if (cfg.startupCheck !== false) bridge.checkClaude().catch(() => {});
   const stop = () => { bridge.stop(); process.exit(0); };
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
+  // Windows does not kill child processes with their parent: on any exit (including a
+  // crash) take capture.ps1 and the claude processes down too. capture.ps1 also exits
+  // by itself once this process is gone (-ParentPid).
+  process.on('exit', () => { if (!bridge.stopped) { try { bridge.kill(); } catch {} } });
+  process.on('uncaughtException', (e) => { console.error(e); try { bridge.kill(); } catch {} process.exit(1); });
 }
 
 if (require.main === module) main(process.argv.slice(2)).catch((e) => { console.error(e); process.exit(1); });

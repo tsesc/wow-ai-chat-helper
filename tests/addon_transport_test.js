@@ -278,3 +278,133 @@ test('/wch corner moves the strip and saves WCH_DB.stripCorner; old settings.str
   assert.equal(old.str('tostring(WCH_DB.chatFont)'), 'false');
   assert.equal(old.str('tostring(WCH_DB.settings.stripCorner)'), 'nil');
 });
+
+test('every load starts a new session, so ids reused after a crash are never deduped by the bridge', () => {
+  const vm = boot();
+  const saved = vm.savedVariables(); // what the client last wrote (clean logout / reload)
+  const s1 = session(vm);
+  vm.receiveChat('WHISPER', 'first message', 'Bob');
+  vm.advance(0.6);
+  const r1 = vm.decodeStrip().records[0];
+  ackStrip(vm);
+  // The client crashes: nothing is saved, the next login reads the old WCH_DB.
+  const vm2 = boot({ saved, hello: false });
+  const s2 = session(vm2);
+  assert.notEqual(s2, s1);
+  vm2.advance(2.5);
+  const r2 = vm2.decodeStrip().records[0]; // the login hello takes the rolled-back id
+  assert.equal(r2.id, r1.id, 'lastId rolled back (precondition)');
+  assert.equal(r2.session, s2);
+  assert.notEqual(`${r2.session}/${r2.id}`, `${r1.session}/${r1.id}`, 'dedup key differs');
+  // A result the bridge kept for the old session is not applied to the new request.
+  vm2.setSlotSource(P.renderSlotFile({ now: vm2.num('time()'), session: s1, results: [sample.x(r1.id, { zh: '舊的答案' })] }));
+  ackStrip(vm2);
+  vm2.receiveChat('WHISPER', 'totally different message', 'Eve');
+  vm2.advance(0.6);
+  const r3 = vm2.decodeStrip().records[0];
+  ackStrip(vm2);
+  vm2.raiseSignal('ready', r3.id);
+  vm2.advance(3.6);
+  assert.ok(!vm2.chatText().some(t => t.includes('舊的答案')));
+});
+
+test('without signals, one poll schedule for all pending requests (anchored to the oldest)', () => {
+  const vm = boot({ signals: false });
+  const before = vm.loadLog().length;
+  // Bridge down, a party line every 6 s for 2 minutes, then 2 more quiet minutes.
+  for (let i = 0; i < 20; i++) { vm.receiveChat('PARTY', 'line number ' + i + ' lf healer', 'Bob'); vm.advance(6); }
+  vm.advance(120);
+  const loads = vm.loadLog().length - before;
+  // 4, 8, 14, 22, 34, 50, 80, ..., 230 s after the first: about 12 (not one per 3 s).
+  assert.ok(loads <= 14, `slot loads: ${loads}`);
+  assert.ok(loads >= 9, `still polling: ${loads}`);
+});
+
+test('while other requests are in flight a ready load waits 8 s so their results ride along', () => {
+  const vm = boot();
+  for (const m of ['one', 'two', 'three']) vm.receiveChat('PARTY', 'msg ' + m, 'Bob');
+  vm.advance(0.6);
+  const [a, b, c] = vm.decodeStrip().records.map(r => r.id);
+  ackStrip(vm);
+  const working = (id) => ({ id, kind: 'x', status: 'working' });
+  publish(vm, [sample.x(a, { zh: '一' }), working(b), working(c)]);
+  vm.raiseSignal('ready', a);
+  vm.advance(0.6);
+  const n = vm.loadLog().length;
+  const t1 = vm.now();
+  publish(vm, [sample.x(a, { zh: '一' }), sample.x(b, { zh: '二' }), working(c)]);
+  vm.raiseSignal('ready', b);
+  vm.advance(5);
+  assert.equal(vm.loadLog().length, n, 'c is still in flight: no load at 3 s');
+  // c's result arrives too: nothing left in flight, so the load happens right away.
+  publish(vm, [sample.x(a, { zh: '一' }), sample.x(b, { zh: '二' }), sample.x(c, { zh: '三' })]);
+  vm.raiseSignal('ready', c);
+  vm.advance(0.6);
+  assert.equal(vm.loadLog().length, n + 1, 'one load for both');
+  assert.ok(vm.now() - t1 < 8);
+  assert.ok(vm.chatText().some(t => t.includes('二')) && vm.chatText().some(t => t.includes('三')));
+  // A lone in-flight request delays a ready load by at most 8 s.
+  vm.receiveChat('PARTY', 'msg four', 'Bob');
+  vm.receiveChat('PARTY', 'msg five', 'Bob');
+  vm.advance(0.6);
+  const [d, e] = vm.decodeStrip().records.map(r => r.id);
+  ackStrip(vm);
+  const t2 = vm.now();
+  publish(vm, [sample.x(d, { zh: '四' }), working(e)]);
+  vm.raiseSignal('ready', d);
+  vm.advance(9);
+  assert.equal(vm.loadLog().length, n + 2);
+  assert.ok(vm.chatText().some(t => t.includes('四')));
+  assert.ok(vm.now() - t2 <= 9.5);
+});
+
+test('presence head after the bridge counter wrapped: a stopped bridge is not shown as alive', () => {
+  const pad = (k) => 'sig/presence/' + String(k).padStart(4, '0') + '.wav';
+  // Wrapped to 30 and stopped: 1..30 and 81..2000 valid, the 50 after 30 empty.
+  const vm = boot({ hello: false, login: false });
+  for (let k = 1; k <= 2000; k++) if (k <= 30 || k > 80) vm.setPlayable(pad(k));
+  vm.login();
+  vm.advance(10);
+  assert.notEqual(vm.str('(WCH.Transport.BridgeState())'), 'ok');
+  assert.equal(vm.num('WCH.Transport.run.presence.last'), 30);
+  vm.setPlayable(pad(31)); // the bridge comes back: next beat
+  vm.advance(1);
+  assert.equal(vm.str('(WCH.Transport.BridgeState())'), 'ok');
+  // Other layouts: before any wrap, head at 0, head at 2000, head inside 1..49.
+  const head = (valid) => {
+    const v = boot({ hello: false, login: false, signals: true });
+    for (let k = 1; k <= 2000; k++) if (valid(k)) v.setPlayable(pad(k));
+    v.login();
+    v.advance(0.6);
+    return v.num('WCH.Transport.run.presence.last');
+  };
+  assert.equal(head(k => k <= 777), 777);
+  assert.equal(head(() => false), 0);
+  assert.equal(head(k => k > 50), 2000);
+  assert.equal(head(k => k <= 7 || k > 57), 7);
+  assert.equal(head(k => k <= 1950), 1950);
+  assert.equal(head(k => k <= 1999), 1999);
+  assert.equal(head(k => k <= 1260 || k > 1310), 1260);
+});
+
+test('a stale ack file does not take the login hello down before the bridge read it', () => {
+  const vm = boot({ hello: false, login: false });
+  for (let k = 1; k <= 200; k++) vm.raiseSignal('ack', k);
+  vm.login();
+  vm.advance(2.2);
+  assert.ok(vm.decodeStrip(), 'hello up');
+  vm.advance(5);
+  const f = vm.decodeStrip();
+  assert.ok(f && f.records[0].kind === 'h', 'still up after several ticks');
+  vm.advance(20);
+  assert.equal(vm.decodeStrip(), null, 'dropped after HELLO_WAIT');
+});
+
+test('the strip is not under UIParent: hiding the UI (Alt+Z) keeps it visible', () => {
+  const vm = boot();
+  vm.run('UIParent:Hide()');
+  vm.receiveChat('WHISPER', 'are you there?', 'Bob');
+  vm.advance(0.6);
+  const f = vm.decodeStrip();
+  assert.ok(f && f.records.some(r => r.text === 'are you there?'));
+});

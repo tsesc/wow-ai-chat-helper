@@ -106,12 +106,14 @@ local function InitDB()
 	local db = WCH_DB
 	ns.db = db
 	db.lastId = tonumber(db.lastId) or 0
-	-- Identifies this counter's lifetime: if the saved data is reset, the bridge can
-	-- tell "request #1 again" from "request #1, already handled" (dedup on session+id).
-	if type(db.session) ~= "string" or db.session == "" then
-		db.session = string.format("%x%04x%04x", time() % 0xFFFFFF, math.random(0, 0xFFFF), math.random(0, 0xFFFF))
-		db.lastId = 0
-	end
+	-- A new session token on every load (login or /reload). The bridge dedups on
+	-- (session, id), and SavedVariables are only written on a clean logout or /reload:
+	-- after a crash lastId comes back older than ids the bridge already handled, so a
+	-- token that outlived the load would make new messages look like handled ones (and
+	-- pick up their old results). Requests never outlive the load (run state isn't
+	-- saved), so nothing is lost by starting a new session.
+	local up = GetTime and math.floor((GetTime() or 0) * 1000) % 0xFFFF or 0
+	db.session = string.format("%x%04x%04x%04x", time() % 0xFFFFFF, math.random(0, 0xFFFF), math.random(0, 0xFFFF), up)
 	db.settings = type(db.settings) == "table" and db.settings or {}
 	local s = db.settings
 	s.auto = type(s.auto) == "table" and s.auto or {}

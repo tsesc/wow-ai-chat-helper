@@ -468,9 +468,16 @@ class AiRunner {
     if (!q || q.busy || q.items.length === 0) return;
     const batch = q.items.splice(0, this.opts.maxBatch);
     q.busy = true;
-    try { await this.runBatch(batch, model); } finally {
+    let retry = [];
+    try { retry = await this.runBatch(batch, model); } finally {
       q.busy = false;
       if (q.items.length && !q.timer) q.timer = setTimeout(() => { q.timer = null; this.flush(model); }, this.opts.batchWindowMs);
+    }
+    // Retries are one-shot processes of their own: run them off the queue so one bad or
+    // hanging item doesn't hold up the requests behind it (no head-of-line blocking).
+    for (const { req, resolve, err } of retry) {
+      this.stats.retries++;
+      this.runAlone(req, model, false, err).then(resolve, (e) => resolve(errorResult(req, String(e && e.message || e))));
     }
   }
 
@@ -494,11 +501,13 @@ class AiRunner {
     // A reply that didn't parse means the conversation may be off the rails: start fresh.
     if (persistent && r.ok && (!parsed || failed.length)) { const p = this.procs.get(model); if (p) p.stop(); }
     const firstErr = r.ok ? 'invalid reply' : r.err;
-    await Promise.all(batch.map(async ({ req, resolve }) => {
-      if (done.has(req.id)) { resolve(done.get(req.id)); return; }
-      this.stats.retries++;
-      resolve(await this.runAlone(req, model, false, firstErr));
-    }));
+    // Valid items resolve now; the rest are returned for flush() to retry once alone.
+    const retry = [];
+    for (const { req, resolve } of batch) {
+      if (done.has(req.id)) resolve(done.get(req.id));
+      else retry.push({ req, resolve, err: firstErr });
+    }
+    return retry;
   }
 
   // One request alone, one-shot. `first` = this is its first attempt (detail), so one more
@@ -516,6 +525,17 @@ class AiRunner {
     this.log(`ai: request ${req.id} ${first ? 'attempt' : 'retry'} failed: ${err}${prevErr ? ' (first: ' + prevErr + ')' : ''}`);
     if (first) { this.stats.retries++; return this.runAlone(req, model, false, err); }
     return errorResult(req, err);
+  }
+
+  // Startup check (spec 6: "CLI missing / not logged in -> banner says so"): one tiny
+  // one-shot call. -> Promise<{ ok: true } | { ok: false, loggedOut: bool, err }>.
+  async checkLogin(text = '好') {
+    const prompt = buildPrompt([{ id: 1, kind: 't', channel: 'SAY', sender: '', model: '', ctx: '', text }]);
+    if (!this.cmd.found) return { ok: false, loggedOut: false, err: 'claude CLI not found: ' + (this.cmd.note || INSTALL_HINT) };
+    const opts = { ...this.opts, timeoutMs: Math.min(this.opts.timeoutMs, 30000) };
+    const r = await runOnce(this.cmd, this.opts.models.explain, prompt, opts, this.children);
+    if (r.ok) return { ok: true };
+    return { ok: false, loggedOut: /not logged in/.test(r.err), err: r.err };
   }
 
   // Every request still queued or in flight resolves as an error.
