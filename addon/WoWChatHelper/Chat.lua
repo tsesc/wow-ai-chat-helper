@@ -1,6 +1,7 @@
 -- WoWChatHelper chat side: watches incoming chat, keeps per-conversation context,
 -- sends explain requests (auto channels) or adds a [?] link (manual channels), and
--- answers fixed phrases offline from the built-in glossary (spec 3.5, 4).
+-- answers fixed phrases offline from the active language's glossary (spec 3.5, 4):
+-- WCH_Glossary.phrases[key] = { tr, terms = { { term, expansion, tr } } }.
 --
 -- Never sends chat: replies only ever go into the edit box (UI.FillChat).
 
@@ -212,7 +213,7 @@ end
 function C.ExplainKey(key, frame)
 	local line = run.lines[tostring(key)]
 	if not line then
-		ns.Print("這一行太舊了，找不到原文。")
+		ns.Print(ns.L.LINE_TOO_OLD)
 		return
 	end
 	NoteFrame(line, frame)

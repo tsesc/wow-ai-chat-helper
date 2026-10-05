@@ -18,6 +18,9 @@
 --   STUB.itemRefs      every SetItemRef call reaching the stub's own handler
 --   STUB.texts         every SetText value (any widget)
 --   STUB.now           GetTime(); STUB.epoch + floor(now) is time()
+--   STUB.locale        what GetLocale() returns (default "enUS")
+--   STUB.lodAddons     name -> Lua source of another load-on-demand addon (e.g. the
+--                      WoWChatHelper_Glossary_<lang> addons); LoadAddOn runs it once
 --
 -- Extend freely: later tracks add whatever API their code touches.
 
@@ -25,7 +28,7 @@ STUB = {
 	frames = {}, texts = {}, timers = {}, tickers = {}, prints = {}, chat = {}, bindings = {},
 	now = 1000, epoch = 1790000000, sounds = {}, soundCalls = {}, loaded = {}, loadLog = {},
 	slotFiles = {}, slotSource = nil, slotCount = 200, slotPrefix = "WoWChatHelper_S",
-	missingAddons = {}, addonMetadata = {}, namespaces = {},
+	missingAddons = {}, addonMetadata = {}, namespaces = {}, lodAddons = {}, locale = "enUS",
 	openChat = {}, sent = {}, itemRefs = {}, filters = {}, badFonts = {},
 	reloaded = false, focus = nil, lineID = 0, timerSeq = 0, soundHandle = 0,
 	group = { party = false, raid = false, guild = true },
@@ -434,7 +437,7 @@ function StaticPopup_Show(which, a, b, data) STUB.popup = { which = which, a = a
 function StaticPopup_Hide(which) if STUB.popup and STUB.popup.which == which then STUB.popup = nil end end
 SlashCmdList = {}
 UISpecialFrames = {}
-function GetLocale() return "enUS" end
+function GetLocale() return STUB.locale or "enUS" end
 function GetPhysicalScreenSize() return 1920, 1080 end
 function GetScreenWidth() return 1365 end
 function GetScreenHeight() return 768 end
@@ -512,13 +515,20 @@ end
 
 C_AddOns = {
 	IsAddOnLoaded = function(name) return STUB.loaded[name] or false end,
-	IsAddOnLoadOnDemand = function(name) return slotExists(name) and true or false end,
-	DoesAddOnExist = function(name) return (slotExists(name) or STUB.loaded[name] or STUB.addonMetadata[name]) and true or false end,
+	IsAddOnLoadOnDemand = function(name) return (slotExists(name) or STUB.lodAddons[name]) and true or false end,
+	DoesAddOnExist = function(name) return (slotExists(name) or STUB.lodAddons[name] or STUB.loaded[name] or STUB.addonMetadata[name]) and true or false end,
 	GetAddOnMetadata = function(name, field) return (STUB.addonMetadata[name] or {})[field] end,
 	LoadAddOn = function(name)
 		local ok, reason
 		if STUB.loaded[name] then
 			ok = true -- already loaded: the file is not read again
+		elseif STUB.lodAddons[name] and not STUB.missingAddons[name] then
+			STUB.loaded[name] = true
+			local fn, err = load(STUB.lodAddons[name], "@" .. name)
+			if not fn then error(err) end
+			fn(name, STUB.AddonNamespace(name))
+			STUB.FireEvent("ADDON_LOADED", name)
+			ok = true
 		elseif STUB.missingAddons[name] or not slotExists(name) then
 			ok, reason = false, "MISSING"
 		else

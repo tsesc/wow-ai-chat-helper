@@ -1,5 +1,5 @@
-// End to end (spec 8, e2e): the real addon (TOC: Codec, Glossary, Core, Transport, Chat,
-// UI) in the fengari VM -> strip cells -> the bridge's own decoder (capture line
+// End to end (spec 8, e2e): the real addon (TOC: Codec, Locales, Core, Transport, Chat,
+// UI; the glossary load-on-demand addon for the language) in the fengari VM -> strip cells -> the bridge's own decoder (capture line
 // {cells}) -> bridge pipeline with the fake claude -> slot file on disk -> the addon VM
 // loads that file as a slot -> annotation / picker -> chat edit box. No network.
 'use strict';
@@ -70,10 +70,12 @@ function start(w) {
   const hello = captureStrip(vm, w);
   assert.equal(hello.records[0].kind, 'h');
   assert.match(hello.records[0].text, /corner=TOPLEFT/);
+  assert.match(hello.records[0].text, /(^|;)lang=zhTW(;|$)/);
   mirrorSignal(vm, w, 'ack', hello.id);
   vm.advance(0.6);
   assert.equal(w.bridge.state.session, vm.str('WCH_DB.session'));
   assert.equal(w.bridge.state.settings.corner, 'TOPLEFT');
+  assert.equal(w.bridge.state.settings.lang, 'zhTW');
   return vm;
 }
 
@@ -148,6 +150,36 @@ test('e2e: /tr 中文 -> strip t record -> bridge -> slot -> picker -> edit box 
     const call = vm.openChatCalls().at(-1);
     assert.deepEqual({ line: call.line, chatType: call.chatType, tellTarget: call.tellTarget },
       { line: '/w Thalric omw, 5 min', chatType: 'WHISPER', tellTarget: 'Thalric' });
+    assert.deepEqual(vm.sent(), []);
+  } finally { w.bridge.stop(); }
+});
+
+test('e2e: /wch lang koKR -> hello lang=koKR -> the bridge answers in koKR; the annotation uses Korean labels', async () => {
+  const w = installedClient();
+  try {
+    const vm = start(w);
+    vm.slash('/wch lang koKR');
+    vm.advance(0.6);
+    const hello = captureStrip(vm, w);
+    const h = hello.records.find(r => r.kind === 'h');
+    assert.ok(h, 'a new hello after the language switch');
+    assert.match(h.text, /(^|;)lang=koKR(;|$)/);
+    mirrorSignal(vm, w, 'ack', hello.id);
+    vm.advance(0.6);
+    assert.equal(w.bridge.state.settings.lang, 'koKR');
+    assert.equal(w.bridge.locale(), 'koKR');
+
+    vm.clearChat();
+    vm.receiveChat('WHISPER', 'LF1M tank', 'Grimtusk');
+    vm.advance(0.6);
+    const frame = captureStrip(vm, w);
+    const rec = frame.records.at(-1);
+    mirrorSignal(vm, w, 'ack', frame.id);
+    vm.advance(0.6);
+    await deliverFromBridge(vm, w, rec.id);
+    const line = vm.chatText('ChatFrame1').find(t => t.includes('[번역]'));
+    assert.ok(line, 'annotation with the Korean tag:\n' + vm.chatText('ChatFrame1').join('\n'));
+    assert.deepEqual(vm.links(line).map(l => l.text), ['[답장]', '[상세]']);
     assert.deepEqual(vm.sent(), []);
   } finally { w.bridge.stop(); }
 });

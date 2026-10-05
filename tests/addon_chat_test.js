@@ -5,7 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { boot, ackStrip, deliver, sample, FILES } = require('./helpers/addon');
+const { boot, ackStrip, deliver, sample, slotLoads, FILES, glossaryAddon } = require('./helpers/addon');
 
 const xRecords = (vm) => { const f = vm.decodeStrip(); return f ? f.records.filter(r => r.kind === 'x') : []; };
 
@@ -25,10 +25,12 @@ test('offline short-circuit: a known phrase is explained locally, no request', (
   assert.deepEqual(vm.links(lines[ty]).map(l => l.text), ['[回覆]', '[詳細]']);
   assert.ok(lines.some(t => t.includes('[譯·離線]|r 請邀我')));
   assert.ok(lines.some(t => t.includes('[譯·離線]|r 我在路上了')));
-  assert.equal(vm.loadLog().length, 0);
+  assert.deepEqual(slotLoads(vm), [], 'no slot read');
+  assert.deepEqual(vm.loadLog().map(l => l.name), ['WoWChatHelper_Glossary_zhTW'], 'only the glossary addon, at login');
 });
 
-test('offline short-circuit with the real Glossary.lua (whole TOC)', { skip: !fs.existsSync(path.join(path.dirname(FILES[0]), 'Glossary.lua')) }, () => {
+const REAL_ZHTW = path.join(path.dirname(FILES[0]), '..', glossaryAddon('zhTW'), 'Glossary.lua');
+test('offline short-circuit with the real generated zhTW glossary addon (whole TOC)', { skip: !fs.existsSync(REAL_ZHTW) && 'glossary addon not generated yet' }, () => {
   const vm = boot({ toc: true });
   vm.receiveChat('WHISPER', 'gg', 'Bob');
   vm.advance(1);
@@ -90,7 +92,7 @@ test('annotations go to the chat frame that showed the original line', () => {
   vm.advance(0.6);
   const [r] = xRecords(vm);
   ackStrip(vm);
-  deliver(vm, r.id, [sample.x(r.id, { zh: '要決鬥嗎？' })]);
+  deliver(vm, r.id, [sample.x(r.id, { tr: '要決鬥嗎？' })]);
   assert.ok(vm.chatText('ChatFrame2').some(t => t.includes('要決鬥嗎？')));
   assert.ok(!vm.chatText('ChatFrame1').some(t => t.includes('要決鬥嗎？')));
 });

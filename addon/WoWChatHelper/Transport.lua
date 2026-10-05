@@ -19,6 +19,7 @@ local T = {}
 ns.Transport = T
 
 local Codec = ns.Codec or WCH_Codec
+local L, F = ns.L, ns.F
 
 local SLOT_COUNT = 200
 local SLOT_PREFIX = "WoWChatHelper_S"
@@ -298,16 +299,16 @@ end
 -- "ok" | "stale" | "down" | "unknown", r, g, b, description (as wow-ai's BridgeState).
 function T.BridgeState()
 	local seen = run.bridgeSeen
-	if not seen then return "unknown", 0.6, 0.6, 0.6, "橋接程式：尚未連線" end
+	if not seen then return "unknown", 0.6, 0.6, 0.6, L.BRIDGE_UNKNOWN end
 	local age = GetTime() - seen
 	local okFor, staleFor = 90, 300
 	if not run.signalsOk then okFor, staleFor = IDLE_POLL + 120, IDLE_POLL * 2 + 120 end
 	if age < okFor then
-		return "ok", 0.2, 0.9, 0.3, "橋接程式：已連線（" .. ns.FmtDur(age) .. " 前）"
+		return "ok", 0.2, 0.9, 0.3, F("BRIDGE_OK", ns.FmtDur(age))
 	elseif age < staleFor then
-		return "stale", 0.95, 0.8, 0.2, "橋接程式：" .. ns.FmtDur(age) .. " 前最後一次回應"
+		return "stale", 0.95, 0.8, 0.2, F("BRIDGE_STALE", ns.FmtDur(age))
 	end
-	return "down", 0.9, 0.25, 0.25, "橋接程式：" .. ns.FmtDur(age) .. " 沒有回應，是否已啟動？"
+	return "down", 0.9, 0.25, 0.25, F("BRIDGE_DOWN", ns.FmtDur(age))
 end
 
 ---------------------------------------------------------------------------
@@ -407,7 +408,7 @@ local function Exhausted()
 	if run.slotsExhausted then return end
 	run.slotsExhausted = true
 	run.slotsLeft = 0
-	ns.Print("|cffff6060讀取用的 slot 已全部用完，暫停接收結果。方便時請輸入 /reload（會重置 slot）。|r")
+	ns.Print("|cffff6060" .. L.SLOTS_EXHAUSTED .. "|r")
 	Changed()
 end
 
@@ -457,7 +458,7 @@ local function TryLoadSlot(why)
 		run.slotError = reason
 		if reason == "MISSING" or reason == "DISABLED" or reason == "NOT_INSTALLED" then
 			run.slotsMissing = true
-			ns.Print("|cffff6060找不到 slot 插件 " .. name .. "（" .. tostring(reason) .. "）。請在電腦上執行 node setup.js，然後重開遊戲。|r")
+			ns.Print("|cffff6060" .. F("SLOT_MISSING", name, tostring(reason)) .. "|r")
 		end
 		CountFree()
 		Changed()
@@ -484,7 +485,7 @@ local function TryLoadSlot(why)
 		Exhausted()
 	elseif left <= WARN_SLOTS and not run.warnedLow then
 		run.warnedLow = true
-		ns.Print("|cffffd040讀取用的 slot 只剩 " .. left .. " 個。用完後要 /reload 才能繼續收結果。|r")
+		ns.Print("|cffffd040" .. F("SLOTS_LOW", left) .. "|r")
 	end
 	Changed()
 end
@@ -549,7 +550,7 @@ function T.Tick()
 					r.shownAt = now
 					run.frameKey = nil -- redraw
 				else
-					Fail(r, "橋接程式沒有回應")
+					Fail(r, L.NO_RESPONSE)
 				end
 				changed = true
 			end

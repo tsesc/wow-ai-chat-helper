@@ -3,7 +3,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { boot, ackStrip, publish, deliver, session, lastId, sample, P } = require('./helpers/addon');
+const { boot, ackStrip, publish, deliver, session, lastId, sample, slotLoads, P } = require('./helpers/addon');
 
 test('login: hello record carries the session and k=v settings; ack takes the strip down', () => {
   const vm = boot({ hello: false });
@@ -132,18 +132,18 @@ test('ready signal -> one slot load picks up all results; loads are >= 3 s apart
   vm.advance(0.6);
   const [a, b] = vm.decodeStrip().records.map(r => r.id);
   ackStrip(vm);
-  publish(vm, [sample.x(a, { zh: '第一則' }), { id: b, kind: 'x', status: 'working' }]);
+  publish(vm, [sample.x(a, { tr: '第一則' }), { id: b, kind: 'x', status: 'working' }]);
   vm.raiseSignal('ready', a);
   vm.advance(0.6);
-  assert.equal(vm.loadLog().length, 1);
+  assert.equal(slotLoads(vm).length, 1);
   const t1 = vm.now();
   assert.ok(vm.chatText().some(t => t.includes('第一則')));
-  publish(vm, [sample.x(a, { zh: '第一則' }), sample.x(b, { zh: '第二則' })]);
+  publish(vm, [sample.x(a, { tr: '第一則' }), sample.x(b, { tr: '第二則' })]);
   vm.raiseSignal('ready', b);
   vm.advance(1);
-  assert.equal(vm.loadLog().length, 1, 'waits for the 3 s minimum');
+  assert.equal(slotLoads(vm).length, 1, 'waits for the 3 s minimum');
   vm.advance(2.5);
-  assert.equal(vm.loadLog().length, 2);
+  assert.equal(slotLoads(vm).length, 2);
   assert.ok(vm.now() - t1 >= 3);
   assert.equal(vm.chatText().filter(t => t.includes('第一則')).length, 1, 'a result is shown once');
   assert.ok(vm.chatText().some(t => t.includes('第二則')));
@@ -153,14 +153,14 @@ test('ready signal -> one slot load picks up all results; loads are >= 3 s apart
 test('signals self-test fails -> schedule-only polling at 4, 8, 14, 22, 34, 50, then every 30 s', () => {
   const vm = boot({ signals: false });
   assert.notEqual(vm.str('WCH.Transport.run.selftest'), 'passed');
-  const before = vm.loadLog().length;
+  const before = slotLoads(vm).length;
   vm.receiveChat('WHISPER', 'slow one', 'Bob');
   const t0 = vm.now();
   const times = [];
   vm.run('STUB.onLoadAddOn = function(name) table.insert(LOADS, GetTime()) end; LOADS = {}');
   vm.advance(112);
   for (const t of vm.eval('LOADS')) times.push(Math.round(t - t0));
-  assert.equal(before, vm.loadLog().length - times.length);
+  assert.equal(before, slotLoads(vm).length - times.length);
   assert.deepEqual(times, [4, 8, 14, 22, 34, 50, 80, 110]);
 });
 
@@ -186,12 +186,12 @@ test('wrap-around: a ready file valid before the request is ignored for it (fall
   vm.advance(0.6);
   assert.equal(vm.str(`tostring(WCH.Transport.Get(${next}).readyStale)`), 'true');
   ackStrip(vm);
-  const loads0 = vm.loadLog().length;
-  publish(vm, [sample.x(next, { zh: '繞回' })]);
+  const loads0 = slotLoads(vm).length;
+  publish(vm, [sample.x(next, { tr: '繞回' })]);
   vm.advance(2);
-  assert.equal(vm.loadLog().length, loads0, 'no load from the stale signal');
+  assert.equal(slotLoads(vm).length, loads0, 'no load from the stale signal');
   vm.advance(3);
-  assert.equal(vm.loadLog().length, loads0 + 1, 'scheduled poll ~4 s after the ack');
+  assert.equal(slotLoads(vm).length, loads0 + 1, 'scheduled poll ~4 s after the ack');
   assert.ok(vm.chatText().some(t => t.includes('繞回')));
 });
 
@@ -201,7 +201,7 @@ test('results of another session are ignored', () => {
   vm.advance(0.6);
   const id = vm.decodeStrip().records[0].id;
   ackStrip(vm);
-  vm.setSlotSource(P.renderSlotFile({ now: vm.num('time()'), session: 'someoneelse', results: [sample.x(id, { zh: '別人的' })] }));
+  vm.setSlotSource(P.renderSlotFile({ now: vm.num('time()'), session: 'someoneelse', results: [sample.x(id, { tr: '別人的' })] }));
   vm.raiseSignal('ready', id);
   vm.advance(1);
   assert.ok(!vm.chatText().some(t => t.includes('別人的')));
@@ -218,7 +218,7 @@ test('slot economy: warning at 20 left, stop at 0 and ask for /reload (never rel
   deliver(vm, id, [sample.x(id)]);
   assert.equal(vm.num('WCH.Transport.SlotsLeft()'), 20);
   assert.ok(vm.chatText().some(t => t.includes('只剩 20 個')), 'warned');
-  assert.equal(vm.loadLog().at(-1).name, 'WoWChatHelper_S180');
+  assert.equal(slotLoads(vm).at(-1).name, 'WoWChatHelper_S180');
   vm.run('for i = 181, 199 do STUB.loaded[string.format("WoWChatHelper_S%03d", i)] = true end');
   vm.receiveChat('WHISPER', 'two', 'Bob');
   vm.advance(0.6);
@@ -227,14 +227,14 @@ test('slot economy: warning at 20 left, stop at 0 and ask for /reload (never rel
   deliver(vm, id2, [sample.x(id2)]);
   assert.equal(vm.num('WCH.Transport.SlotsLeft()'), 0);
   assert.ok(vm.chatText().some(t => t.includes('/reload')));
-  const n = vm.loadLog().length;
+  const n = slotLoads(vm).length;
   vm.receiveChat('WHISPER', 'three', 'Bob');
   vm.advance(0.6);
   const id3 = vm.decodeStrip().records[0].id;
   ackStrip(vm);
   vm.raiseSignal('ready', id3);
   vm.advance(120);
-  assert.equal(vm.loadLog().length, n, 'no more loads');
+  assert.equal(slotLoads(vm).length, n, 'no more loads');
   assert.equal(vm.str('tostring(STUB.reloaded)'), 'false');
   // /reload resets the pool.
   const vm2 = vm.reload();
@@ -297,7 +297,7 @@ test('every load starts a new session, so ids reused after a crash are never ded
   assert.equal(r2.session, s2);
   assert.notEqual(`${r2.session}/${r2.id}`, `${r1.session}/${r1.id}`, 'dedup key differs');
   // A result the bridge kept for the old session is not applied to the new request.
-  vm2.setSlotSource(P.renderSlotFile({ now: vm2.num('time()'), session: s1, results: [sample.x(r1.id, { zh: '舊的答案' })] }));
+  vm2.setSlotSource(P.renderSlotFile({ now: vm2.num('time()'), session: s1, results: [sample.x(r1.id, { tr: '舊的答案' })] }));
   ackStrip(vm2);
   vm2.receiveChat('WHISPER', 'totally different message', 'Eve');
   vm2.advance(0.6);
@@ -310,11 +310,11 @@ test('every load starts a new session, so ids reused after a crash are never ded
 
 test('without signals, one poll schedule for all pending requests (anchored to the oldest)', () => {
   const vm = boot({ signals: false });
-  const before = vm.loadLog().length;
+  const before = slotLoads(vm).length;
   // Bridge down, a party line every 6 s for 2 minutes, then 2 more quiet minutes.
   for (let i = 0; i < 20; i++) { vm.receiveChat('PARTY', 'line number ' + i + ' lf healer', 'Bob'); vm.advance(6); }
   vm.advance(120);
-  const loads = vm.loadLog().length - before;
+  const loads = slotLoads(vm).length - before;
   // 4, 8, 14, 22, 34, 50, 80, ..., 230 s after the first: about 12 (not one per 3 s).
   assert.ok(loads <= 14, `slot loads: ${loads}`);
   assert.ok(loads >= 9, `still polling: ${loads}`);
@@ -327,20 +327,20 @@ test('while other requests are in flight a ready load waits 8 s so their results
   const [a, b, c] = vm.decodeStrip().records.map(r => r.id);
   ackStrip(vm);
   const working = (id) => ({ id, kind: 'x', status: 'working' });
-  publish(vm, [sample.x(a, { zh: '一' }), working(b), working(c)]);
+  publish(vm, [sample.x(a, { tr: '一' }), working(b), working(c)]);
   vm.raiseSignal('ready', a);
   vm.advance(0.6);
-  const n = vm.loadLog().length;
+  const n = slotLoads(vm).length;
   const t1 = vm.now();
-  publish(vm, [sample.x(a, { zh: '一' }), sample.x(b, { zh: '二' }), working(c)]);
+  publish(vm, [sample.x(a, { tr: '一' }), sample.x(b, { tr: '二' }), working(c)]);
   vm.raiseSignal('ready', b);
   vm.advance(5);
-  assert.equal(vm.loadLog().length, n, 'c is still in flight: no load at 3 s');
+  assert.equal(slotLoads(vm).length, n, 'c is still in flight: no load at 3 s');
   // c's result arrives too: nothing left in flight, so the load happens right away.
-  publish(vm, [sample.x(a, { zh: '一' }), sample.x(b, { zh: '二' }), sample.x(c, { zh: '三' })]);
+  publish(vm, [sample.x(a, { tr: '一' }), sample.x(b, { tr: '二' }), sample.x(c, { tr: '三' })]);
   vm.raiseSignal('ready', c);
   vm.advance(0.6);
-  assert.equal(vm.loadLog().length, n + 1, 'one load for both');
+  assert.equal(slotLoads(vm).length, n + 1, 'one load for both');
   assert.ok(vm.now() - t1 < 8);
   assert.ok(vm.chatText().some(t => t.includes('二')) && vm.chatText().some(t => t.includes('三')));
   // A lone in-flight request delays a ready load by at most 8 s.
@@ -350,10 +350,10 @@ test('while other requests are in flight a ready load waits 8 s so their results
   const [d, e] = vm.decodeStrip().records.map(r => r.id);
   ackStrip(vm);
   const t2 = vm.now();
-  publish(vm, [sample.x(d, { zh: '四' }), working(e)]);
+  publish(vm, [sample.x(d, { tr: '四' }), working(e)]);
   vm.raiseSignal('ready', d);
   vm.advance(9);
-  assert.equal(vm.loadLog().length, n + 2);
+  assert.equal(slotLoads(vm).length, n + 2);
   assert.ok(vm.chatText().some(t => t.includes('四')));
   assert.ok(vm.now() - t2 <= 9.5);
 });

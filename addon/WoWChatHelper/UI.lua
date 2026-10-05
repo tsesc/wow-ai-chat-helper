@@ -1,13 +1,15 @@
 -- WoWChatHelper UI (spec 4): annotation lines in the chat frames, the [回覆] / [詳細] /
 -- [重試] / [?] hyperlinks, the reply picker (fills the chat edit box; never sends),
 -- /tr translate, detail output, the glossary panel, the status frame and fonts.
+-- Every label goes through ns.L (Locales.lua) in the player's language; the tags and
+-- links named above are the zhTW wording.
 
 local _, ns = ...
 if type(ns) ~= "table" then ns = WCH end
 local UI = {}
 ns.UI = UI
 
-local FONT = ns.FONT
+local L, F = ns.L, ns.F
 local P = ns.C_PREFIX
 local DIM = ns.C_DIM
 local MAX_GLOSSARY_ROWS = 400
@@ -20,7 +22,9 @@ local BACKDROP = {
 }
 
 -- offline[k] = chat line explained from the phrase table (links use id "o<k>")
-local run = { offline = {}, offSeq = 0, origFonts = {}, origEditFonts = {} }
+-- fontStrings: { fs, size, flags } for every FontString UI.Font set up, so a language
+-- switch can give them the new language's font.
+local run = { offline = {}, offSeq = 0, origFonts = {}, origEditFonts = {}, fontStrings = {}, fontSet = {} }
 UI.run = run
 
 local function T() return ns.Transport end
@@ -39,11 +43,31 @@ local function Link(kind, arg, label)
 end
 UI.Link = Link
 
--- Our own FontStrings use the bundled CJK font; fall back to a client font object.
-function UI.Font(fs, size, flags)
-	local ok = fs:SetFont(FONT, size or 12, flags or "")
+-- The client's own font for text in a Latin/Cyrillic language (the chat font: on an
+-- enUS client FRIZQT__ lacks Cyrillic, ARIALN has it).
+local function ClientFont()
+	if ChatFontNormal and ChatFontNormal.GetFont then
+		local path = ChatFontNormal:GetFont()
+		if type(path) == "string" and path ~= "" and not ns.IsBundledFont(path) then return path end
+	end
+	return STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
+end
+
+-- Our own FontStrings: the bundled font of a CJK/Hangul language (always, it is known
+-- to cover it), else the client's font; a client font object if that fails.
+local function ApplyFont(fs, size, flags)
+	local path = ns.LANG_FONT[ns.lang] and ns.LangFont() or ClientFont()
+	local ok = fs:SetFont(path, size or 12, flags or "")
 	if ok == false then
 		if GameFontHighlight then fs:SetFontObject(GameFontHighlight) end
+	end
+end
+
+function UI.Font(fs, size, flags)
+	ApplyFont(fs, size, flags)
+	if not run.fontSet[fs] then
+		run.fontSet[fs] = true
+		run.fontStrings[#run.fontStrings + 1] = { fs, size, flags }
 	end
 	return fs
 end
@@ -96,22 +120,27 @@ local function Out(frames, text)
 	end
 end
 
-local CHANNEL_LABEL = {
-	WHISPER = "密語", BN = "Battle.net 密語", PARTY = "隊伍", RAID = "團隊", GUILD = "公會",
-	OFFICER = "幹部", INSTANCE = "副本", SAY = "說", YELL = "大喊",
+local CHANNEL_KEY = {
+	WHISPER = "CH_WHISPER", BN = "CH_BN", PARTY = "CH_PARTY", RAID = "CH_RAID", GUILD = "CH_GUILD",
+	OFFICER = "CH_OFFICER", INSTANCE = "CH_INSTANCE", SAY = "CH_SAY", YELL = "CH_YELL",
 }
 function UI.TargetLabel(t)
 	local ch = t and t.channel or "SAY"
 	local base = ch:match("^CHANNEL:(.*)$")
-	if base then return "頻道 " .. base end
-	local l = CHANNEL_LABEL[ch] or ch
+	if base then return F("CH_CHANNEL", base) end
+	local l = CHANNEL_KEY[ch] and L[CHANNEL_KEY[ch]] or ch
 	if (ch == "WHISPER" or ch == "BN") and t.sender and t.sender ~= "" then l = l .. " " .. t.sender end
 	return l
 end
 
 ---------------------------------------------------------------------------
--- Glossary data: built-in (WCH_Glossary.terms) + learned (WCH_DB.learned)
+-- Glossary data: built-in (WCH_Glossary.terms of the active language: term,
+-- expansion, tr, cat, ambiguity) + learned (WCH_DB.learned: term, expansion, tr,
+-- locale, t)
 ---------------------------------------------------------------------------
+
+-- A learned entry belongs to the language its translation is in (old ones: zhTW).
+local function LearnedLang(e) return e.locale or "zhTW" end
 
 local builtinIndex
 local function Builtin()
@@ -124,15 +153,22 @@ local function Builtin()
 	return builtinIndex
 end
 
--- Store AI-explained terms that aren't built in, with their first-seen time.
+-- Store AI-explained terms that aren't built in, with their first-seen time and the
+-- language of their translation. A term learned in another language takes this
+-- one's translation (keeping its first-seen time).
 function UI.Learn(terms)
 	if type(terms) ~= "table" or not ns.db then return 0 end
 	local idx, learned, n = Builtin(), ns.db.learned, 0
 	for _, t in ipairs(terms) do
 		if type(t) == "table" and type(t.term) == "string" and ns.Trim(t.term) ~= "" then
 			local k = ns.Trim(t.term):lower()
-			if not idx[k] and not learned[k] then
-				learned[k] = { term = ns.Trim(t.term), expansion = t.expansion and tostring(t.expansion) or "", zh = t.zh and tostring(t.zh) or "", t = time() }
+			local old = learned[k]
+			if not idx[k] and (not old or (type(old) == "table" and LearnedLang(old) ~= ns.lang)) then
+				learned[k] = {
+					term = ns.Trim(t.term), expansion = t.expansion and tostring(t.expansion) or "",
+					tr = t.tr and tostring(t.tr) or "", locale = ns.lang,
+					t = type(old) == "table" and tonumber(old.t) or time(),
+				}
 				n = n + 1
 			end
 		end
@@ -140,14 +176,14 @@ function UI.Learn(terms)
 	return n
 end
 
--- Entries matching q in term, expansion or Chinese (case-insensitive substring);
--- built-in first in their own order, then learned sorted by term.
+-- Entries matching q in term, expansion or translation (case-insensitive substring);
+-- built-in first in their own order, then learned (this language's) sorted by term.
 function UI.SearchGlossary(q)
 	q = ns.Trim(q or ""):lower()
 	local out = {}
 	local function Match(e)
 		if q == "" then return true end
-		for _, f in ipairs({ e.term, e.expansion, e.zh }) do
+		for _, f in ipairs({ e.term, e.expansion, e.tr }) do
 			if f and tostring(f):lower():find(q, 1, true) then return true end
 		end
 		return false
@@ -155,13 +191,14 @@ function UI.SearchGlossary(q)
 	local g = WCH_Glossary
 	for _, e in ipairs(type(g) == "table" and type(g.terms) == "table" and g.terms or {}) do
 		if type(e) == "table" and e.term and Match(e) then
-			out[#out + 1] = { term = e.term, expansion = e.expansion or "", zh = e.zh or "", cat = e.cat, source = "內建" }
+			out[#out + 1] = { term = e.term, expansion = e.expansion or "", tr = e.tr or "", cat = e.cat,
+				ambiguity = e.ambiguity, source = "builtin" }
 		end
 	end
 	local learned = {}
 	for _, e in pairs(ns.db and ns.db.learned or {}) do
-		if type(e) == "table" and e.term and Match(e) then
-			learned[#learned + 1] = { term = e.term, expansion = e.expansion or "", zh = e.zh or "", t = e.t, source = "AI" }
+		if type(e) == "table" and e.term and LearnedLang(e) == ns.lang and Match(e) then
+			learned[#learned + 1] = { term = e.term, expansion = e.expansion or "", tr = e.tr or "", t = e.t, source = "AI" }
 		end
 	end
 	table.sort(learned, function(a, b) return a.term:lower() < b.term:lower() end)
@@ -178,15 +215,16 @@ local function TermsLine(terms)
 	local parts = {}
 	for _, t in ipairs(terms) do
 		if type(t) == "table" and t.term then
-			parts[#parts + 1] = Esc(t.term) .. "=" .. Esc(t.zh or t.expansion or "")
+			local tr = (t.tr and t.tr ~= "") and t.tr or t.expansion or ""
+			parts[#parts + 1] = Esc(t.term) .. "=" .. Esc(tr)
 		end
 	end
 	if #parts == 0 then return nil end
 	return "   " .. table.concat(parts, " · ")
 end
 
-local function PrintExplain(frames, tag, zh, terms, linkId)
-	Out(frames, P .. tag .. "|r " .. Esc(zh) .. "  " .. Link("r", linkId, "回覆") .. " " .. Link("d", linkId, "詳細"))
+local function PrintExplain(frames, tag, tr, terms, linkId)
+	Out(frames, P .. tag .. "|r " .. Esc(tr) .. "  " .. Link("r", linkId, L.LINK_REPLY) .. " " .. Link("d", linkId, L.LINK_DETAIL))
 	local tl = TermsLine(terms)
 	if tl then Out(frames, DIM .. tl .. "|r") end
 end
@@ -196,36 +234,36 @@ function UI.ShowOffline(line, hit)
 	run.offSeq = run.offSeq + 1
 	run.offline[run.offSeq] = line
 	local frames = (line.frames and #line.frames > 0) and line.frames or { DEFAULT_CHAT_FRAME }
-	PrintExplain(frames, "[譯·離線]", hit.zh or "", hit.terms, "o" .. run.offSeq)
+	PrintExplain(frames, L.TAG_OFFLINE, hit.tr or "", hit.terms, "o" .. run.offSeq)
 end
 
-local FAIL_TAG = { x = "[譯]", t = "[翻譯]", d = "[詳細]" }
+local FAIL_TAG = { x = "TAG_X", t = "TAG_T", d = "TAG_D" }
 
 function UI.OnFailed(rec, err)
 	if not rec or rec.hello then return end
 	local frames = FramesFor(rec)
-	Out(frames, P .. (FAIL_TAG[rec.kind] or "[譯]") .. "|r |cffff7070失敗 (" .. Esc(err or "error") .. ")|r " .. Link("retry", rec.id, "重試"))
+	Out(frames, P .. L[FAIL_TAG[rec.kind] or "TAG_X"] .. "|r |cffff7070" .. F("FAILED", Esc(err or "error")) .. "|r " .. Link("retry", rec.id, L.LINK_RETRY))
 	UI.UpdateStatus()
 end
 
 function UI.OnResult(rec, r)
 	if rec.kind == "x" then
 		UI.Learn(r.terms)
-		PrintExplain(FramesFor(rec), "[譯]", r.zh or "", r.terms, rec.id)
+		PrintExplain(FramesFor(rec), L.TAG_X, r.tr or "", r.terms, rec.id)
 		if rec.meta.wantPicker then UI.OpenPicker(rec.id) end
 	elseif rec.kind == "t" then
-		Out(FramesFor(rec), P .. "[翻譯]|r " .. Esc(rec.text) .. " → " .. UI.TargetLabel(rec.meta.target) .. "  " .. Link("r", rec.id, "回覆"))
+		Out(FramesFor(rec), P .. L.TAG_T .. "|r " .. Esc(rec.text) .. " → " .. UI.TargetLabel(rec.meta.target) .. "  " .. Link("r", rec.id, L.LINK_REPLY))
 		UI.OpenPicker(rec.id)
 	elseif rec.kind == "d" then
 		local frames = FramesFor(rec)
 		local any = false
 		for l in tostring(r.detail or ""):gmatch("[^\r\n]+") do
 			if ns.Trim(l) ~= "" then
-				Out(frames, P .. "[詳細]|r " .. Esc(l))
+				Out(frames, P .. L.TAG_D .. "|r " .. Esc(l))
 				any = true
 			end
 		end
-		if not any then Out(frames, P .. "[詳細]|r " .. DIM .. "（沒有內容）|r") end
+		if not any then Out(frames, P .. L.TAG_D .. "|r " .. DIM .. L.NO_CONTENT .. "|r") end
 	end
 	UI.UpdateStatus()
 end
@@ -296,14 +334,14 @@ local function BuildPicker()
 	return picker
 end
 
-local TONE = { casual = "輕鬆", polite = "禮貌", short = "簡短" }
+local TONE = { casual = "TONE_casual", polite = "TONE_polite", short = "TONE_short" }
 
 -- Open the picker for a result (x or t) by request id.
 function UI.OpenPicker(id)
 	local rec = T().Get(id)
 	if not rec then return end
 	if not rec.result then
-		ns.Print("這個請求還在處理中，請稍候。")
+		ns.Print(L.STILL_WORKING)
 		return
 	end
 	local replies = {}
@@ -312,7 +350,7 @@ function UI.OpenPicker(id)
 		if #replies == 3 then break end
 	end
 	if #replies == 0 then
-		ns.Print("沒有可用的回覆候選句。")
+		ns.Print(L.NO_REPLIES)
 		return
 	end
 	local target
@@ -325,13 +363,13 @@ function UI.OpenPicker(id)
 	end
 	local p = BuildPicker()
 	p.cands, p.target, p.id = replies, target, id
-	p.title:SetText("選一句回覆 → " .. UI.TargetLabel(target) .. DIM .. "（點選後填入輸入框，按 Enter 才會送出）|r")
+	p.title:SetText(F("PICKER_TITLE", UI.TargetLabel(target)) .. DIM .. L.PICKER_HINT .. "|r")
 	for i, b in ipairs(p.buttons) do
 		local c = replies[i]
 		if c then
 			b.en:SetText(c.en)
-			local gloss = tostring(c.zh or "")
-			if c.tone and TONE[c.tone] then gloss = gloss .. "  · " .. TONE[c.tone] end
+			local gloss = tostring(c.tr or "")
+			if c.tone and TONE[c.tone] then gloss = gloss .. "  · " .. L[TONE[c.tone]] end
 			b.gloss:SetText(gloss)
 			b:Show()
 		else
@@ -358,7 +396,7 @@ end
 function UI.Translate(text)
 	text = ns.Trim(text)
 	if text == "" then
-		ns.Print("用法：" .. (ns.trRegistered and "/tr" or "/wch tr") .. " <中文>，例如 /wch tr 我五分鐘後到")
+		ns.Print(F("TR_USAGE", ns.trRegistered and "/tr" or "/wtr"))
 		return
 	end
 	local target = Chat().TranslateTarget()
@@ -366,7 +404,7 @@ function UI.Translate(text)
 		kind = "t", channel = target.channel, sender = target.sender or "", model = "",
 		ctx = Chat().CtxFor(target.conv), text = text,
 	}, { target = target, frame = DEFAULT_CHAT_FRAME })
-	Out({ DEFAULT_CHAT_FRAME }, P .. "[翻譯]|r " .. DIM .. "已送出，目標：" .. (target.channel == "SAY" and "輸入框目前的頻道" or UI.TargetLabel(target)) .. "（填入後可在輸入框改頻道）|r")
+	Out({ DEFAULT_CHAT_FRAME }, P .. L.TAG_T .. "|r " .. DIM .. F("TR_SENT", target.channel == "SAY" and L.TR_BOX_CHANNEL or UI.TargetLabel(target)) .. "|r")
 	return id
 end
 
@@ -391,7 +429,7 @@ function UI.Detail(arg)
 		kind = "d", channel = base.channel, sender = base.sender, model = "", ctx = base.ctx, text = base.text,
 	}, { frames = frames, parent = arg })
 	base.detailId = id
-	Out(frames, P .. "[詳細]|r " .. DIM .. "詢問中…|r")
+	Out(frames, P .. L.TAG_D .. "|r " .. DIM .. L.DETAIL_ASKING .. "|r")
 	return id
 end
 
@@ -420,7 +458,7 @@ function UI.HandleLink(link, text, button, frame)
 			local line = run.offline[tonumber(k)]
 			if line then
 				Chat().Explain(line, "manual", { forceAI = true, wantPicker = true })
-				Out(FramesFor({ meta = { line = line } }), P .. "[譯]|r " .. DIM .. "正在產生回覆候選…|r")
+				Out(FramesFor({ meta = { line = line } }), P .. L.TAG_X .. "|r " .. DIM .. L.REPLY_GENERATING .. "|r")
 			end
 		else
 			UI.OpenPicker(tonumber(arg))
@@ -443,7 +481,7 @@ local gloss
 
 local function BuildGlossary()
 	if gloss then return gloss end
-	gloss = NewWindow("WCHGlossary", 520, 420, "術語表")
+	gloss = NewWindow("WCHGlossary", 520, 420, L.GLOSSARY_TITLE)
 	gloss:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 	local search = CreateFrame("EditBox", "WCHGlossarySearch", gloss, "InputBoxTemplate")
 	search:SetSize(300, 22)
@@ -478,14 +516,14 @@ function UI.RenderGlossary()
 			gloss.rows[i] = fs
 		end
 		local e = list[i]
-		local tag = e.source == "AI" and "|cff7fd17fAI|r" or (DIM .. "內建|r")
-		fs:SetText(Esc(e.term) .. " — " .. Esc(e.expansion) .. " — " .. Esc(e.zh) .. "  " .. tag)
+		local tag = e.source == "AI" and ("|cff7fd17f" .. L.SRC_AI .. "|r") or (DIM .. L.SRC_BUILTIN .. "|r")
+		fs:SetText(Esc(e.term) .. " — " .. Esc(e.expansion) .. " — " .. Esc(e.tr) .. "  " .. tag)
 		fs:Show()
 	end
 	for i = shown + 1, #gloss.rows do gloss.rows[i]:Hide() end
 	gloss.content:SetHeight(math.max(10, shown * 18))
-	local c = #list .. " 筆"
-	if #list > shown then c = c .. "（顯示前 " .. shown .. " 筆）" end
+	local c = F("GLOSSARY_COUNT", #list)
+	if #list > shown then c = c .. F("GLOSSARY_SHOWN", shown) end
 	gloss.count:SetText(c)
 	gloss.results = list
 end
@@ -513,7 +551,6 @@ end
 ---------------------------------------------------------------------------
 
 local status
-local GROUP_LABEL = { whisper = "密語", party = "隊伍/副本", raid = "團隊", guild = "公會/幹部" }
 
 local function NewCheck(parent, label, x, y, onClick)
 	local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
@@ -541,21 +578,29 @@ local function BuildStatus()
 	status.pending = NewText(status, 12)
 	status.pending:SetPoint("TOPLEFT", status, "TOPLEFT", 14, -72)
 	status.checks = {}
-	local head = NewText(status, 12)
-	head:SetPoint("TOPLEFT", status, "TOPLEFT", 14, -96)
-	head:SetText("自動解釋：")
+	status.head = NewText(status, 12)
+	status.head:SetPoint("TOPLEFT", status, "TOPLEFT", 14, -96)
 	for i, g in ipairs(ns.AUTO_GROUPS) do
-		status.checks[g] = NewCheck(status, GROUP_LABEL[g], 14 + ((i - 1) % 2) * 130, -112 - math.floor((i - 1) / 2) * 26, function(on)
+		status.checks[g] = NewCheck(status, "", 14 + ((i - 1) % 2) * 130, -112 - math.floor((i - 1) / 2) * 26, function(on)
 			ns.db.settings.auto[g] = on
 		end)
 	end
-	status.fontCheck = NewCheck(status, "聊天框使用內建中文字型", 14, -172, function(on) UI.SetChatFont(on) end)
+	status.fontCheck = NewCheck(status, "", 14, -172, function(on) UI.SetChatFont(on) end)
 	status.hint = NewText(status, 11)
 	status.hint:SetPoint("TOPLEFT", status, "TOPLEFT", 14, -204)
 	status.hint:SetWidth(252)
-	status.hint:SetText(DIM .. "/wch g 術語表　/tr 中文翻英文　/wch help|r")
+	UI.StatusTexts()
 	status:SetScript("OnShow", function() UI.UpdateStatus() end)
 	return status
+end
+
+-- The status frame's fixed labels in the active language.
+function UI.StatusTexts()
+	if not status then return end
+	status.head:SetText(L.AUTO_HEAD)
+	for g, cb in pairs(status.checks) do cb.label:SetText(L["GROUP_" .. g]) end
+	status.fontCheck.label:SetText(L.FONT_CHECK)
+	status.hint:SetText(DIM .. L.STATUS_HINT .. "|r")
 end
 
 function UI.UpdateStatus()
@@ -563,12 +608,12 @@ function UI.UpdateStatus()
 	local Tr = T()
 	local _, r, g, b, tip = Tr.BridgeState()
 	status.light:SetColorTexture(r, g, b, 1)
-	local sig = Tr.SignalsWork() and "" or (DIM .. "（訊號不可用，定時檢查）|r")
+	local sig = Tr.SignalsWork() and "" or (DIM .. L.SIGNALS_OFF .. "|r")
 	status.bridge:SetText(tip .. sig)
-	status.slots:SetText("剩餘 slot：" .. Tr.SlotsLeft() .. " / " .. Tr.SLOT_COUNT)
-	status.pending:SetText("等待結果：" .. Tr.PendingCount())
+	status.slots:SetText(F("SLOTS_LEFT", Tr.SlotsLeft(), Tr.SLOT_COUNT))
+	status.pending:SetText(F("PENDING", Tr.PendingCount()))
 	for gname, cb in pairs(status.checks) do cb:SetChecked(ns.db.settings.auto[gname] and true or false) end
-	status.fontCheck:SetChecked(ns.db.chatFont and true or false)
+	status.fontCheck:SetChecked(ns.ChatFontOn())
 end
 
 function UI.ToggleStatus(show)
@@ -579,40 +624,58 @@ function UI.ToggleStatus(show)
 end
 
 ---------------------------------------------------------------------------
--- Chat-frame font (WCH_DB.chatFont): the bundled CJK font at each frame's size
+-- Chat-frame font (WCH_DB.chatFont, nil = automatic: ns.ChatFontOn): the active
+-- language's bundled font (ns.LangFont) at each frame's size
 ---------------------------------------------------------------------------
 
-local function SwapFont(obj, store, key, on)
+local function SwapFont(obj, store, key, on, font)
 	if not obj or not obj.GetFont or not obj.SetFont then return end
 	local path, size, flags = obj:GetFont()
 	if on then
-		if path ~= FONT then store[key] = path end
-		local ok = obj:SetFont(FONT, size or 14, flags or "")
+		if not ns.IsBundledFont(path) then store[key] = path end
+		if path == font then return end
+		local ok = obj:SetFont(font, size or 14, flags or "")
 		if ok == false then
 			if store[key] then obj:SetFont(store[key], size or 14, flags or "") end
 			run.fontMissing = true
 		end
-	elseif store[key] and path == FONT then
+	elseif store[key] and ns.IsBundledFont(path) then
 		obj:SetFont(store[key], size or 14, flags or "")
 	end
 end
 
 function UI.ApplyChatFont(on)
 	run.fontMissing = nil
+	local font = ns.LangFont()
 	for i = 1, (NUM_CHAT_WINDOWS or 10) do
-		SwapFont(_G["ChatFrame" .. i], run.origFonts, i, on)
-		SwapFont(_G["ChatFrame" .. i .. "EditBox"], run.origEditFonts, i, on)
+		SwapFont(_G["ChatFrame" .. i], run.origFonts, i, on, font)
+		SwapFont(_G["ChatFrame" .. i .. "EditBox"], run.origEditFonts, i, on, font)
 	end
-	if run.fontMissing and not run.fontWarned then
-		run.fontWarned = true
-		ns.Print("找不到內建字型 Fonts\\WCH-CJK.ttf，中文可能顯示成方塊。")
+	run.fontWarned = run.fontWarned or {}
+	if run.fontMissing and not run.fontWarned[font] then
+		run.fontWarned[font] = true
+		ns.Print(F("FONT_MISSING", ns.LangFontFile()))
 	end
 end
 
+-- on: true/false = the player's choice; nil = back to automatic.
 function UI.SetChatFont(on)
-	ns.db.chatFont = on and true or false
-	UI.ApplyChatFont(ns.db.chatFont)
+	if on == nil then ns.db.chatFont = nil else ns.db.chatFont = on and true or false end
+	UI.ApplyChatFont(ns.ChatFontOn())
 	UI.UpdateStatus()
+end
+
+-- /wch lang: new glossary (already loaded by Core), texts and fonts.
+function UI.OnLangChanged()
+	builtinIndex = nil
+	for _, e in ipairs(run.fontStrings) do ApplyFont(e[1], e[2], e[3]) end
+	if gloss then
+		gloss.title:SetText(L.GLOSSARY_TITLE)
+		if gloss:IsShown() then UI.RenderGlossary() end
+	end
+	UI.StatusTexts()
+	UI.UpdateStatus()
+	UI.ApplyChatFont(ns.ChatFontOn())
 end
 
 ---------------------------------------------------------------------------
@@ -632,9 +695,9 @@ ns.OnLogin(function()
 		if type(FCF_SetChatWindowFontSize) == "function" then
 			-- The chat font size menu resets the font file; put ours back at the new size.
 			hooksecurefunc("FCF_SetChatWindowFontSize", function()
-				if ns.db and ns.db.chatFont then UI.ApplyChatFont(true) end
+				if ns.db and ns.ChatFontOn() then UI.ApplyChatFont(true) end
 			end)
 		end
 	end
-	if ns.db.chatFont then UI.ApplyChatFont(true) end
+	if ns.ChatFontOn() then UI.ApplyChatFont(true) end
 end)

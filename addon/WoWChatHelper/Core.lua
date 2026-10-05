@@ -2,18 +2,20 @@
 --
 -- Every file of the addon shares one namespace table (the `...` the client passes);
 -- it is also the global WCH so tests and /dump can reach it. The modules hang off it:
---   WCH.Codec (Codec.lua), WCH.Transport, WCH.Chat, WCH.UI. The offline glossary is
---   the global WCH_Glossary (Glossary.lua).
+--   WCH.Codec (Codec.lua), WCH.Locales / WCH.L (Locales.lua), WCH.Transport, WCH.Chat,
+--   WCH.UI. The offline glossary is the global WCH_Glossary, defined by the
+--   load-on-demand addon WoWChatHelper_Glossary_<lang> for the active language.
 -- Spec: docs/superpowers/specs/2026-10-05-wow-ai-chat-helper-design.md (sections 3, 4).
 
 local ADDON, ns = ...
-if type(ns) ~= "table" then ns = {} end
+if type(ns) ~= "table" then ns = WCH or {} end
 WCH = ns
 ns.ADDON = ADDON or "WoWChatHelper"
 ns.VERSION = "0.1.0"
 ns.ROOT = "Interface\\AddOns\\WoWChatHelper\\"
-ns.FONT = ns.ROOT .. "Fonts\\WCH-CJK.ttf"
+ns.FONT = ns.ROOT .. "Fonts\\WCH-CJK.ttf" -- Traditional Chinese subset (the zhTW font)
 ns.Codec = ns.Codec or WCH_Codec
+local L, F = ns.L, ns.F
 
 -- Colors used in chat output (gray-blue prefix, light-blue links).
 ns.C_PREFIX = "|cff8fa9c8"
@@ -96,6 +98,152 @@ function ns.IsSecret(v)
 end
 
 ---------------------------------------------------------------------------
+-- Language (the player's own; explanations, glosses and the addon's text use it,
+-- English replies never change)
+---------------------------------------------------------------------------
+
+local SUPPORTED = {}
+for _, c in ipairs(ns.LANGS) do SUPPORTED[c:lower()] = c end
+local ALIAS = { esmx = "esES" }
+
+-- "kokr" / "koKR" / "esMX" -> "koKR" / "esES"; nil if not supported.
+function ns.ValidLang(code)
+	if type(code) ~= "string" then return nil end
+	local k = ns.Trim(code):lower():gsub("[_%-]", "")
+	return SUPPORTED[k] or ALIAS[k]
+end
+
+-- The client's locale as a supported language, or nil (enUS, enGB, ...).
+function ns.ClientLang()
+	return ns.ValidLang(GetLocale and GetLocale() or "")
+end
+
+-- Bundled fonts for the languages whose script a client of another locale may lack.
+ns.LANG_FONT = { zhTW = "WCH-CJK.ttf", zhCN = "WCH-SC.ttf", koKR = "WCH-KR.ttf" }
+ns.BUNDLED_FONTS = {}
+for _, f in pairs(ns.LANG_FONT) do ns.BUNDLED_FONTS[(ns.ROOT .. "Fonts\\" .. f):lower()] = true end
+
+function ns.IsBundledFont(path)
+	return type(path) == "string" and ns.BUNDLED_FONTS[path:lower()] == true
+end
+
+-- The bundled font for the active language; for a Latin/Cyrillic language, the one
+-- matching the client's own CJK script (keeps names in chat readable), else TC.
+function ns.LangFontFile()
+	return ns.LANG_FONT[ns.lang] or ns.LANG_FONT[ns.ClientLang() or ""] or ns.LANG_FONT.zhTW
+end
+function ns.LangFont() return ns.ROOT .. "Fonts\\" .. ns.LangFontFile() end
+
+-- Does the active language need the bundled font? Only a client of the same locale is
+-- known to cover it (a zhTW client is not trusted with Simplified, nor any CJK client
+-- with Hangul). Latin and Cyrillic languages use the client's fonts.
+function ns.NeedsBundledFont()
+	return ns.LANG_FONT[ns.lang] ~= nil and ns.ClientLang() ~= ns.lang
+end
+ns.FontDefault = ns.NeedsBundledFont
+
+-- WCH_DB.chatFont: true/false = the player's choice, nil = automatic.
+function ns.ChatFontOn()
+	local db = ns.db
+	if db and db.chatFont ~= nil then return db.chatFont and true or false end
+	return ns.FontDefault()
+end
+
+-- Offline glossary: WoWChatHelper_Glossary_<lang> sets WCH_Glossary when it loads.
+-- A load-on-demand addon runs once per UI session, so each language's table is kept
+-- here and reused when the player switches back.
+ns.glossaries = {}
+local glossaryWarned = {}
+
+function ns.GlossaryAddon(lang) return "WoWChatHelper_Glossary_" .. tostring(lang) end
+
+function ns.LoadGlossary(lang)
+	lang = lang or ns.lang
+	local cached = ns.glossaries[lang]
+	if cached then
+		WCH_Glossary = cached
+		ns.glossaryLang = lang
+		return true
+	end
+	local name = ns.GlossaryAddon(lang)
+	WCH_Glossary = nil
+	local ok, reason = false, "NO_API"
+	if C_AddOns and C_AddOns.LoadAddOn then
+		local pok, a, b = pcall(C_AddOns.LoadAddOn, name)
+		if pok then ok, reason = a, b else reason = tostring(a) end
+	end
+	local g = WCH_Glossary
+	if ok and type(g) == "table" and (g.locale == nil or g.locale == lang) then
+		ns.glossaries[lang] = g
+		ns.glossaryLang = lang
+		return true
+	end
+	-- Never keep another language's table under this one.
+	WCH_Glossary = nil
+	ns.glossaryLang = nil
+	if ok then reason = "NO_DATA" end
+	if not glossaryWarned[lang] then
+		glossaryWarned[lang] = true
+		ns.Print("|cffffd040" .. F("GLOSSARY_MISSING", name, tostring(reason or "?")) .. "|r")
+	end
+	return false
+end
+
+-- "zhTW 繁體中文, zhCN 简体中文, ..."
+function ns.LangList()
+	local parts = {}
+	for _, c in ipairs(ns.LANGS) do parts[#parts + 1] = c .. " " .. ns.Locales[c].LANG_NAME end
+	return table.concat(parts, ", ")
+end
+
+local function LangLabel(code)
+	local t = ns.Locales[code]
+	return (t and t.LANG_NAME or code) .. " " .. code
+end
+
+-- Make `lang` active: its glossary, the UI's texts and fonts, and a fresh hello so
+-- the bridge answers in it.
+function ns.SetLang(lang)
+	ns.lang = lang
+	ns.LoadGlossary(lang)
+	if ns.UI and ns.UI.OnLangChanged then ns.UI.OnLangChanged() end
+	if ns.Transport and ns.started then ns.Transport.SayHello(true) end
+end
+
+local function LangCommand(rest)
+	local arg = ns.Trim(rest)
+	local low = arg:lower()
+	local function Current()
+		ns.Print(F("LANG_CURRENT", LangLabel(ns.lang)) .. (ns.db.lang and "" or (" " .. L.LANG_AUTO)))
+	end
+	if arg == "" then
+		Current()
+		ns.Print(F("LANG_USAGE", ns.LangList()))
+		return
+	end
+	if low == "list" or low == "help" or low == "?" then
+		ns.Print(F("LANG_USAGE", ns.LangList()))
+		return
+	end
+	local new
+	if low == "auto" or low == "default" or low == "reset" then
+		ns.db.lang = nil
+		new = ns.ClientLang() or "zhTW"
+	else
+		new = ns.ValidLang(arg)
+		if not new then
+			ns.Print(F("LANG_UNKNOWN", arg))
+			ns.Print(F("LANG_USAGE", ns.LangList()))
+			return
+		end
+		ns.db.lang = new
+	end
+	ns.SetLang(new)
+	ns.Print(F("LANG_SET", LangLabel(new)))
+end
+ns.LangCommand = LangCommand
+
+---------------------------------------------------------------------------
 -- Saved data
 ---------------------------------------------------------------------------
 
@@ -124,11 +272,26 @@ local function InitDB()
 	-- Spec names these at the top level (WCH_DB.chatFont, WCH_DB.stripCorner); migrate
 	-- values an earlier build kept under settings.
 	if db.chatFont == nil then db.chatFont = s.chatFont end
-	if db.chatFont == nil then db.chatFont = true end
+	-- chatFont nil = automatic (ns.FontDefault). Builds before the language setting
+	-- saved true as the default for everyone, so a true from then is not a choice;
+	-- false always was.
+	if (tonumber(db.fontPolicy) or 0) < 2 then
+		if db.chatFont == true then db.chatFont = nil end
+		db.fontPolicy = 2
+	end
 	if db.stripCorner == nil then db.stripCorner = s.stripCorner end
 	if db.stripCorner ~= "TOPLEFT" and db.stripCorner ~= "TOPRIGHT" then db.stripCorner = "TOPLEFT" end
 	s.chatFont, s.stripCorner = nil, nil
 	db.learned = type(db.learned) == "table" and db.learned or {}
+	-- Learned terms from before the language setting were Traditional Chinese.
+	for _, e in pairs(db.learned) do
+		if type(e) == "table" and e.tr == nil and e.zh ~= nil then
+			e.tr = e.zh
+			e.locale = e.locale or "zhTW"
+		end
+	end
+	if db.lang ~= nil and not ns.ValidLang(db.lang) then db.lang = nil end
+	ns.lang = ns.ValidLang(db.lang) or ns.ClientLang() or "zhTW"
 	return db
 end
 ns.InitDB = InitDB
@@ -148,6 +311,7 @@ function ns.HelloSettings()
 	local kv = {
 		{ "addon", ns.VERSION },
 		{ "corner", ns.db.stripCorner },
+		{ "lang", ns.lang or "zhTW" },
 		{ "locale", GetLocale and GetLocale() or "" },
 		{ "player", tostring(name or (UnitName and UnitName("player")) or "") .. (realm and realm ~= "" and ("-" .. realm) or "") },
 		{ "signals", (ns.Transport and ns.Transport.SignalsWork()) and "ok" or "off" },
@@ -163,15 +327,7 @@ end
 -- Slash commands
 ---------------------------------------------------------------------------
 
-local HELP = {
-	"/wch — 狀態視窗（橋接燈號、slot、開關）",
-	"/wtr <中文> — 翻成英文候選句（同 /wch tr；/tr 沒被佔用時也可以）",
-	"/wch g [關鍵字] — 術語表",
-	"/wch auto <whisper|party|raid|guild> on|off — 自動解釋的頻道",
-	"/wch font on|off — 聊天框使用內建中文字型",
-	"/wch corner TOPLEFT|TOPRIGHT — strip 位置（要和 bridge config 的 capture.corner 一樣）",
-	"/wch hello — 重新連線橋接程式",
-}
+local HELP = { "H_STATUS", "H_TR", "H_GLOSSARY", "H_LANG", "H_AUTO", "H_FONT", "H_CORNER", "H_HELLO" }
 
 local function OnOff(v)
 	v = (v or ""):lower()
@@ -195,35 +351,42 @@ function ns.HandleSlash(msg)
 		group = (group or ""):lower()
 		local on = OnOff(v)
 		if ns.db.settings.auto[group] == nil or on == nil then
-			ns.Print("用法：/wch auto <whisper|party|raid|guild> on|off")
+			ns.Print(L.AUTO_USAGE)
 		else
 			ns.db.settings.auto[group] = on
-			ns.Print("自動解釋 " .. group .. "：" .. (on and "開" or "關"))
+			ns.Print(F("AUTO_SET", group, on and L.ON or L.OFF))
 			if UI then UI.UpdateStatus() end
 		end
 	elseif cmd == "font" then
-		local on = OnOff(rest)
-		if on == nil then on = not ns.db.chatFont end
-		if UI then UI.SetChatFont(on) end
-		ns.Print("聊天框中文字型：" .. (on and "開" or "關"))
+		if rest:lower() == "auto" then
+			if UI then UI.SetChatFont(nil) else ns.db.chatFont = nil end
+			ns.Print(F("FONT_AUTO", ns.ChatFontOn() and L.ON or L.OFF))
+		else
+			local on = OnOff(rest)
+			if on == nil then on = not ns.ChatFontOn() end
+			if UI then UI.SetChatFont(on) else ns.db.chatFont = on end
+			ns.Print(F("FONT_STATE", on and L.ON or L.OFF))
+		end
+	elseif cmd == "lang" or cmd == "language" then
+		LangCommand(rest)
 	elseif cmd == "corner" then
 		local c = rest:upper()
 		if c == "TOPLEFT" or c == "TOPRIGHT" then
 			ns.db.stripCorner = c
 			if T then T.PlaceStrip() end
-			ns.Print("strip 位置：" .. c .. "（bridge config 的 capture.corner 也要改成 " .. c .. "）")
+			ns.Print(F("CORNER_SET", c, c))
 		else
-			ns.Print("strip 位置：" .. tostring(ns.db.stripCorner) .. "；用法：/wch corner TOPLEFT|TOPRIGHT")
+			ns.Print(F("CORNER_USAGE", tostring(ns.db.stripCorner)))
 		end
 	elseif cmd == "hello" or cmd == "connect" then
 		if T then T.SayHello(true) end
 	elseif cmd == "status" then
 		if T then
 			local _, _, _, _, tip = T.BridgeState()
-			ns.Print(tip .. "；slot 剩 " .. T.SlotsLeft() .. "；等待中 " .. T.PendingCount())
+			ns.Print(F("STATUS_LINE", tip, T.SlotsLeft(), T.PendingCount()))
 		end
 	else
-		for _, l in ipairs(HELP) do ns.Print(l) end
+		for _, k in ipairs(HELP) do ns.Print(L[k]) end
 	end
 end
 
@@ -260,14 +423,14 @@ local function RegisterTr()
 		ns.trRegistered = true
 	else
 		ns.trBlocked = true
-		ns.Print("/tr 已被遊戲或其他插件使用，翻譯請改用 /wtr <中文>")
+		ns.Print(L.TR_TAKEN)
 	end
 end
 ns.RegisterTr = RegisterTr
 
 ---------------------------------------------------------------------------
--- Login order: InitDB on ADDON_LOADED, then each module's Start at PLAYER_LOGIN
--- in file order (Transport, Chat, UI).
+-- Login order: InitDB on ADDON_LOADED, then at PLAYER_LOGIN the language's glossary,
+-- then each module's Start in file order (Transport, Chat, UI).
 ---------------------------------------------------------------------------
 
 ns.starters = {}
@@ -283,6 +446,12 @@ ev:SetScript("OnEvent", function(_, event, arg1)
 		if not ns.db then InitDB() end
 		if ns.started then return end
 		ns.started = true
+		ns.LoadGlossary(ns.lang)
+		if not ns.db.lang and not ns.ClientLang() and not ns.db.langPrompted then
+			-- Client locale isn't one we support (e.g. enUS): ask once.
+			ns.db.langPrompted = true
+			ns.Print(ns.LANG_PROMPT)
+		end
 		RegisterTr()
 		for _, fn in ipairs(ns.starters) do fn() end
 	end

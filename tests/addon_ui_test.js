@@ -172,7 +172,7 @@ test('[回覆] on an offline line asks the AI for candidates and opens the picke
   const rec = vm.decodeStrip().records.at(-1);
   assert.deepEqual([rec.kind, rec.text, rec.channel], ['x', 'ty', 'WHISPER']);
   ackStrip(vm);
-  deliver(vm, rec.id, [sample.x(rec.id, { zh: '謝謝' })]);
+  deliver(vm, rec.id, [sample.x(rec.id, { tr: '謝謝' })]);
   assert.equal(vm.str('tostring(WCHPicker:IsShown())'), 'true');
 });
 
@@ -183,7 +183,7 @@ test('glossary: search matches term, expansion or Chinese; panel filters as you 
   assert.deepEqual(terms('heroic'), ['HC']);
   assert.deepEqual(terms('徵人'), ['LFM']);
   assert.deepEqual(terms('looking for'), ['LFM', 'LF1M']);
-  assert.equal(terms('').length, 5);
+  assert.equal(terms('').length, 6);
   vm.slash('/wch g tank');
   assert.equal(vm.str('tostring(WCHGlossary:IsShown())'), 'true');
   assert.deepEqual(vm.eval('WCH.UI.GlossaryRows()'), ['tank — damage-absorbing role — 坦克  |cff9a9a9a內建|r']);
@@ -195,12 +195,13 @@ test('glossary: search matches term, expansion or Chinese; panel filters as you 
 
 test('learned terms: AI terms not built in are saved with first-seen time and survive /reload', () => {
   const { vm } = explained('WHISPER', 'Bob', 'LF1M DM run', {}, {
-    terms: [{ term: 'HC', expansion: 'Heroic', zh: '英雄難度' }, { term: 'DM', expansion: 'Dire Maul', zh: '厄運之槌' }],
+    terms: [{ term: 'HC', expansion: 'Heroic', tr: '英雄難度' }, { term: 'DM', expansion: 'Dire Maul', tr: '厄運之槌' }],
   });
   const learned = vm.eval('WCH_DB.learned');
   assert.deepEqual(Object.keys(learned), ['dm']);
   assert.equal(learned.dm.term, 'DM');
-  assert.equal(learned.dm.zh, '厄運之槌');
+  assert.equal(learned.dm.tr, '厄運之槌');
+  assert.equal(learned.dm.locale, 'zhTW');
   assert.ok(learned.dm.t >= 1790000000 && learned.dm.t <= vm.num('time()'), 'first-seen time');
   const first = learned.dm.t;
   const vm2 = vm.reload();
