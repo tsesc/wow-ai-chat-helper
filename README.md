@@ -6,7 +6,40 @@ jargon broken down), suggests natural English replies you can drop into the chat
 one click, translates your Chinese into English, and keeps a searchable glossary of WoW
 terms, all inside the game window.
 
-> Status: early development. See [the design spec](docs/superpowers/specs/2026-10-05-wow-ai-chat-helper-design.md).
+## Status
+
+v0.1, feature-complete against [the design spec](docs/superpowers/specs/2026-10-05-wow-ai-chat-helper-design.md),
+but **not yet tried on a real WoW: Forever client**. Everything is tested on Linux with
+`npm test` (fengari Lua VM with a WoW API stub, a fake `claude` CLI, and an end-to-end
+test that goes addon → pixel strip → bridge → slot file → addon). The Windows-only
+parts (`bridge/capture.ps1` screen capture, CJK font rendering, IME, hyperlink clicks)
+still need the phase-0 spike on the real client.
+
+- Addon `WoWChatHelper`: auto-explains whisper/party/raid/guild, `[?]` for other
+  channels, reply picker, `/tr` translate, glossary panel (756 terms, 216 offline
+  phrases), status frame, bundled Noto Sans TC subset font.
+- Bridge (Node.js ≥ 22.2, no runtime dependencies): Claude Code CLI with Haiku
+  (persistent, batched) and Sonnet for "detail"; 200 load-on-demand slots and wav
+  signals, as in wow-ai.
+- Do not run this bridge and the wow-ai bridge at the same time: both capture the
+  same screen corner.
+
+## Quick start
+
+On the Windows PC that runs the game (full steps in Traditional Chinese:
+[docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md)):
+
+```
+git clone https://github.com/tsesc/wow-ai-chat-helper
+cd wow-ai-chat-helper
+node setup.js      # installs the addon, slots and signal files; writes bridge/config.json
+npm start          # runs the bridge; leave the window open while you play
+```
+
+Then restart the game client and use `/wch` in game. Before the first real use, run the
+diagnostics addon and report the results:
+[docs/SPIKE-CHECKLIST.md](docs/SPIKE-CHECKLIST.md). Developers: `npm ci && npm test`;
+design notes in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## How it works
 
