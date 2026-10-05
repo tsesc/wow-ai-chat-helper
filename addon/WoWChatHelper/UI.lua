@@ -235,7 +235,9 @@ end
 ---------------------------------------------------------------------------
 
 local SLASH = {
-	PARTY = "/p ", RAID = "/ra ", GUILD = "/g ", OFFICER = "/o ", INSTANCE = "/i ", SAY = "/s ", YELL = "/y ",
+	-- No /s: a SAY target (also the fallback when the channel is unknown) keeps whatever
+	-- channel the box is on instead of switching it away from the player's choice.
+	PARTY = "/p ", RAID = "/ra ", GUILD = "/g ", OFFICER = "/o ", INSTANCE = "/i ", YELL = "/y ",
 }
 
 -- target = { channel (wire name), sender, chanIndex, frame }
@@ -364,7 +366,7 @@ function UI.Translate(text)
 		kind = "t", channel = target.channel, sender = target.sender or "", model = "",
 		ctx = Chat().CtxFor(target.conv), text = text,
 	}, { target = target, frame = DEFAULT_CHAT_FRAME })
-	Out({ DEFAULT_CHAT_FRAME }, P .. "[翻譯]|r " .. DIM .. "已送出，目標：" .. UI.TargetLabel(target) .. "（填入後可在輸入框改頻道）|r")
+	Out({ DEFAULT_CHAT_FRAME }, P .. "[翻譯]|r " .. DIM .. "已送出，目標：" .. (target.channel == "SAY" and "輸入框目前的頻道" or UI.TargetLabel(target)) .. "（填入後可在輸入框改頻道）|r")
 	return id
 end
 

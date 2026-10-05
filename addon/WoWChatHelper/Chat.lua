@@ -274,6 +274,31 @@ local CHATTYPE_CHANNEL = {
 	INSTANCE_CHAT = "INSTANCE", INSTANCE_CHAT_LEADER = "INSTANCE", WHISPER = "WHISPER", BN_WHISPER = "BN",
 }
 
+-- The box's chat type, via the 12.x mixin method when present, else the attribute.
+local function BoxType(eb)
+	if not eb then return nil end
+	local ct = eb.GetChatType and eb:GetChatType() or (eb.GetAttribute and eb:GetAttribute("chatType"))
+	if type(ct) ~= "string" or ct == "" then return nil end
+	return { ct = ct, tell = eb.GetAttribute and eb:GetAttribute("tellTarget"),
+		chan = eb.GetAttribute and eb:GetAttribute("channelTarget") }
+end
+
+-- Remember which channel the player's box is on while they type ordinary text: by
+-- the time a slash command like /wtr runs, the live client may already report the
+-- box as SAY, so the type read at that moment can't be trusted.
+local function Track(eb)
+	if not eb or eb.wchTracked or not eb.HookScript then return end
+	eb.wchTracked = true
+	local function note(self)
+		local text = self.GetText and self:GetText() or ""
+		if type(text) == "string" and text:sub(1, 1) == "/" then return end
+		local bt = BoxType(self)
+		if bt then run.boxType = bt end
+	end
+	eb:HookScript("OnShow", note)
+	eb:HookScript("OnTextChanged", note)
+end
+
 local function EditBox()
 	local get = (ChatFrameUtil and ChatFrameUtil.GetActiveWindow) or ChatEdit_GetActiveWindow
 	local eb = get and get()
@@ -291,15 +316,19 @@ function C.TranslateTarget()
 		return { channel = w.channel, sender = w.sender, conv = ConvKey(w.channel, w.sender) }
 	end
 	local eb = EditBox()
-	local ct = eb and eb.GetAttribute and eb:GetAttribute("chatType") or "SAY"
+	-- A non-SAY type read now is trustworthy; SAY may be the client's reset during the
+	-- slash command, so then fall back to what the box was on while the player typed.
+	local cur = BoxType(eb)
+	local bt = (cur and cur.ct ~= "SAY" and cur) or run.boxType or cur or { ct = "SAY" }
+	local ct = bt.ct
 	if ct == "WHISPER" then
-		local target = eb:GetAttribute("tellTarget")
+		local target = bt.tell
 		if target and target ~= "" then
 			return { channel = "WHISPER", sender = WireSender(target), conv = ConvKey("WHISPER", target) }
 		end
 		ct = "SAY"
 	elseif ct == "CHANNEL" then
-		local idx = tonumber(eb:GetAttribute("channelTarget"))
+		local idx = tonumber(bt.chan)
 		local name = idx and GetChannelName and select(2, GetChannelName(idx))
 		if idx and name then
 			local base = tostring(name):match("^(.-) %- ") or tostring(name)
@@ -325,4 +354,5 @@ ns.OnLogin(function()
 	for ev in pairs(OUTGOING) do f:RegisterEvent(ev) end
 	f:SetScript("OnEvent", OnEvent)
 	C.frame = f
+	for i = 1, (NUM_CHAT_WINDOWS or 10) do Track(_G["ChatFrame" .. i .. "EditBox"]) end
 end)

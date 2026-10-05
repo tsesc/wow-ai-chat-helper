@@ -259,3 +259,25 @@ test('end to end: nothing the addon does ever calls SendChatMessage', () => {
   publish(vm, []);
   assert.deepEqual(vm.sent(), []);
 });
+
+test('/wtr typed in a party box targets PARTY even if the client reports SAY by the time the slash runs', () => {
+  const vm = boot();
+  // The player switches the box to party (/p ), the box shows "隊伍:" with empty text...
+  vm.run('ChatFrame1EditBox:SetAttribute("chatType", "PARTY") ChatFrame1EditBox:SetText("")');
+  // ...types the slash command; the live client then reports SAY while executing it.
+  vm.run('ChatFrame1EditBox:SetText("/wtr 測試") ChatFrame1EditBox:SetAttribute("chatType", "SAY")');
+  vm.slash('/wtr 測試');
+  vm.advance(0.6);
+  const r = vm.decodeStrip().records.at(-1);
+  assert.deepEqual([r.kind, r.channel], ['t', 'PARTY']);
+});
+
+test('a SAY target fills the box without /s, keeping the channel the box is on', () => {
+  const vm = boot();
+  vm.run('WCH.UI.FillChat("omw", { channel = "SAY" })');
+  const c = vm.openChatCalls().at(-1);
+  assert.equal(c.line, 'omw');
+  vm.run('ChatFrame1EditBox:SetAttribute("chatType", "PARTY")');
+  vm.run('WCH.UI.FillChat("omw", { channel = "SAY" })');
+  assert.equal(vm.openChatCalls().at(-1).chatType, 'PARTY');
+});
