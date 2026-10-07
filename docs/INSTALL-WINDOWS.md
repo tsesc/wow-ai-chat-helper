@@ -6,25 +6,49 @@ bridge 會從畫面角落讀取 addon 傳出的訊息，呼叫本機的 Claude C
 
 ## 事前準備
 
-- **Node.js 22.2 或以上**：到 <https://nodejs.org> 安裝，之後在 PowerShell 執行
-  `node -v` 確認（要 v22.2 以上）。
-- **Git**，以及能存取私人 repo 的 GitHub 認證（見下方 clone 步驟）。
-- **Claude Code 已安裝並登入**：在 PowerShell 執行 `claude`，確認能正常對話；
-  若尚未登入，照畫面指示登入你的訂閱帳號。bridge 使用的是同一個登入。
+- 一個 **Claude 帳號**（Pro / Max / Team 都可以）。bridge 透過本機的 Claude Code 呼叫 Claude，
+  用量算在你的訂閱裡，不需要 API key。
+- Node.js 與 Claude Code **不用先裝**，下面的一鍵安裝會自己裝；已經有就會跳過。
+  （手動安裝才需要自己準備：Node.js 22.2 以上、Claude Code 並 `claude auth login`。）
 - **遊戲要用「視窗」或「無邊框視窗」模式**（設定 → 系統 → 圖形）。
   獨佔全螢幕會讓螢幕擷取失敗。
 - 建議先完成 [SPIKE-CHECKLIST.md](SPIKE-CHECKLIST.md)，確認字型與輸入法沒問題。
 
-## 安裝步驟
+## 一鍵安裝（建議）
 
-1. 取得程式碼（這是私人 repo）：
+在 **跑遊戲的那台 Windows** 開 PowerShell（開始 → 輸入 PowerShell），貼上這一行按 Enter：
+
+```powershell
+irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1 | iex
+```
+
+安裝器會依序做六件事，每一步已經完成的會自動跳過：
+
+1. 裝 **Node.js**（用 winget）。
+2. 裝 **Claude Code**；若還沒登入，會開瀏覽器讓你登入 Claude 帳號（這就是「輸入訂閱」的步驟，
+   登入一次即可，之後 bridge 都用這個登入）。
+3. 把本專案下載成 zip（不需要 Git）到 `%LOCALAPPDATA%\WoWChatHelper\app`。
+4. 自動尋找 WoW 資料夾（找所有磁碟的 `World of Warcraft\_forever_`、`_classic_beta_`），
+   把 addon、9 個語言的詞彙表、200 個資料槽裝進 `Interface\AddOns`，寫好 `bridge\config.json`。
+   找不到會問你路徑。
+5. 在桌面放 **WoW Chat Helper** 捷徑（雙擊就啟動 bridge；bridge 啟動前會再確認 Claude 已登入）。
+6. 問你要不要「登入 Windows 時自動啟動 bridge」，預設不要。
+
+然後照下面「手動安裝」第 3 步起繼續（完全重開 WoW、勾選 addon、雙擊捷徑、進遊戲打 `/wch`）。
+**更新**：再貼一次同一行，會保留你的 `bridge\config.json`。
+**移除**：刪掉 `%LOCALAPPDATA%\WoWChatHelper`、桌面捷徑，以及 `Interface\AddOns` 裡所有 `WoWChatHelper*` 資料夾。
+
+安裝器可加參數（存成檔案再執行時）：`-WowPath "G:\battle.net\World of Warcraft\_classic_beta_"` 指定遊戲路徑、
+`-AutoStart` 直接開啟自動啟動、`-NoShortcut` 不建捷徑、`-InstallDir` 換安裝位置。
+
+## 手動安裝（開發者）
+
+1. 取得程式碼：
    ```powershell
-   gh auth login        # 若已安裝 GitHub CLI；依指示登入一次
    git clone https://github.com/tsesc/wow-ai-chat-helper.git
    cd wow-ai-chat-helper
    ```
-   沒有 `gh` 的話，可以建立一個有 repo 讀取權限的 personal access token，
-   clone 時帳號填 GitHub 帳號、密碼填 token。
+   沒有 Git 的話，到 GitHub 頁面按 **Code → Download ZIP** 解壓縮也可以。
 2. 安裝 addon 到遊戲（會自動尋找 WoW 資料夾）：
    ```powershell
    node setup.js

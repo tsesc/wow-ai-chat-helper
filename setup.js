@@ -54,7 +54,11 @@ function findClient(wow, env = process.env, platform = process.platform) {
   }
   let roots;
   if (platform === 'win32') {
-    roots = [env['ProgramFiles(x86)'], env.ProgramFiles, 'C:\\', 'D:\\', 'E:\\', 'C:\\Games', 'D:\\Games', 'E:\\Games']
+    // Battle.net lets people install anywhere, so also look at <drive>:\, <drive>:\Games and
+    // <drive>:\battle.net on every drive letter that exists (e.g. G:\battle.net\World of Warcraft).
+    const drives = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(d => `${d}:\\`).filter(d => { try { return fs.existsSync(d); } catch { return false; } });
+    roots = [env['ProgramFiles(x86)'], env.ProgramFiles]
+      .concat(drives.flatMap(d => [d, path.join(d, 'Games'), path.join(d, 'battle.net'), path.join(d, 'Battle.net')]))
       .filter(Boolean).map(r => path.join(r, 'World of Warcraft'));
   } else {
     roots = [env.WINEPREFIX, path.join(os.homedir(), '.wine')].filter(Boolean)

@@ -120,7 +120,7 @@ repository without `addon/`) in a following step, or point users to `git clone`.
    ```
 3. Create API tokens and add them as repository secrets `CF_API_KEY` and
    `WAGO_API_TOKEN` (GitHub: Settings → Secrets and variables → Actions).
-4. The repository is private today; packaging works either way, but public addon pages
+4. The repository is public; packaging works either way, but public addon pages
    should link to a public source repository (Blizzard's policy forbids obfuscation, and
    users will want to read what the bridge does).
 

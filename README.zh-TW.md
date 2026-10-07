@@ -77,11 +77,23 @@ WoW 的 addon 在沙盒裡執行：遊戲中不能連網路、也不能讀檔。
 - **[Node.js](https://nodejs.org) 22.2 以上**（24 LTS 可以）。
 - **[Claude Code](https://claude.com/claude-code)**，已安裝並用 Claude 帳號**登入**
   （`claude auth status` 顯示 `loggedIn: true`）。用量算在你的 Claude 方案裡。
-- Git，用來下載本專案。
+- **不需要** Git：安裝器直接下載 zip。（開發者可以自己 clone。）
 
 ## 安裝
 
-完整逐步說明：[docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md)。簡短版（PowerShell）：
+**在跑遊戲的 Windows 電腦上，開 PowerShell 貼這一行：**
+
+```powershell
+irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1 | iex
+```
+
+它會自動裝 Node.js 與 Claude Code（已經有就跳過）、第一次會開瀏覽器讓你登入 Claude 帳號
+（你的 Claude 訂閱就是這樣接上的，不用 API key）、把本專案下載到 `%LOCALAPPDATA%\WoWChatHelper`、
+把 addon 裝進 WoW，最後在桌面放一個 **WoW Chat Helper** 捷徑用來啟動 bridge。要更新就再貼一次同一行。
+完整逐步說明：[docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md)。
+
+<details>
+<summary>手動安裝（有 Git 的人、開發者）</summary>
 
 ```powershell
 # 1. 工具（已經有的可以跳過）
@@ -118,6 +130,8 @@ node setup.js                                # 或：node setup.js --wow "G:\...
 
 **更新**：`git pull`，再跑一次 `node setup.js`，重啟 bridge。如果更新加了新的 addon 檔案
 （版本說明會寫），要完全重開 WoW；否則 `/reload` 就好。
+
+</details>
 
 ## 遊戲內使用方式
 

@@ -85,12 +85,24 @@ Nothing injects code, reads game memory or presses keys. Technical details:
 - **[Claude Code](https://claude.com/claude-code)**, installed and **logged in** with a
   Claude account (`claude auth status` shows `loggedIn: true`). Its usage counts against
   your Claude plan.
-- Git, to download this repository.
+- Git is **not** required: the installer downloads a zip. (Developers can clone instead.)
 
 ## Install
 
-Full step-by-step guide (Traditional Chinese):
-[docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md). Short version, in PowerShell:
+**One line, on the Windows PC that runs WoW.** Open PowerShell and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1 | iex
+```
+
+It installs Node.js and Claude Code if they are missing, opens the Claude login in your
+browser the first time (that is how your Claude subscription gets connected; there is no API
+key), downloads this project to `%LOCALAPPDATA%\WoWChatHelper`, installs the addon into WoW,
+and puts a **WoW Chat Helper** shortcut on the desktop that starts the bridge. Run the same
+line again to update. Full guide (Traditional Chinese): [docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md).
+
+<details>
+<summary>Manual install (Git users, developers)</summary>
 
 ```powershell
 # 1. Tools (skip what you already have)
@@ -131,6 +143,8 @@ Then:
 **Updating:** `git pull`, then `node setup.js` again, restart the bridge, and fully
 restart WoW when the update adds new addon files (the release notes say so; otherwise
 `/reload` is enough).
+
+</details>
 
 ## Using it in game
 
