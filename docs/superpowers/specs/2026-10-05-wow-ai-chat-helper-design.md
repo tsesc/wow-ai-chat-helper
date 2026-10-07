@@ -58,7 +58,7 @@ Claude, no restore-after-wipe bundle, no reload-only transport mode.
 ```
 
 Transport is derived from wow-ai (MIT, commit 3756eb5). A local clone for reference is at
-`/home/jack/github/wow-ai` (read its `docs/ARCHITECTURE.md`, `addon/WoWAI/Codec.lua`,
+`../wow-ai` (read its `docs/ARCHITECTURE.md`, `addon/WoWAI/Codec.lua`,
 `addon/WoWAI/WoWAI.lua`, `bridge/protocol.js`, `bridge/capture.ps1`, `bridge/install-slots.js`,
 `setup.js`, `tests/wow_stub.lua`, `tests/addon_test.js`). Copied/adapted files start with
 a comment: `-- Adapted from wow-ai (MIT) by chelinho139: <path>` (or `//` in JS).
@@ -314,7 +314,7 @@ user verify on the real client, reporting results back:
 
 ## 9. Delivery
 
-Developed on a Linux box (`/home/jack/github/ai-in-wow`), pushed to the private GitHub
+Developed on a Linux box (`<repo root>`), pushed to the private GitHub
 repo `tsesc/wow-ai-chat-helper`; the user clones it on the Windows PC and runs
 `node setup.js` then `npm start`. `docs/INSTALL-WINDOWS.md` in Traditional Chinese.
 

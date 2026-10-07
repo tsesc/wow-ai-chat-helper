@@ -4,3 +4,4 @@ bridge/state.json
 bridge/probe.png
 *.log
 .DS_Store
+.env*

@@ -43,3 +43,10 @@ SOFTWARE.
 Noto Sans TC, Noto Sans SC and Noto Sans KR (Copyright Google LLC / Adobe), licensed under
 the SIL Open Font License 1.1. The full license text is in
 `addon/WoWChatHelper/Fonts/OFL.txt`; the subsets are rebuilt by `tools/build-font.*`.
+
+## MOE common-character list (`tools/data/moe-4808.txt`)
+
+The list of 4,808 common Traditional Chinese characters used to pick the glyphs for
+`WCH-CJK.ttf` was copied from https://github.com/Watermelonnn/ChineseUsefulToolKit
+(itself derived from the Taiwan Ministry of Education 常用國字標準字體表). It is data,
+not code, and is used only at font build time by `tools/build-font.py`.
