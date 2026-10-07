@@ -207,5 +207,6 @@ Write-Host 'Done. Next:' -ForegroundColor Yellow
 Write-Host '  1. Fully quit and relaunch World of Warcraft (it only discovers new addon files at launch).'
 Write-Host '  2. On the character screen open AddOns and tick "WoW Chat Helper" (leave the slot/Glossary entries alone).'
 Write-Host '  3. Double-click "WoW Chat Helper" on the desktop and leave that window open while you play.'
-Write-Host '  4. In game type /wch - the light turns green when the addon and the bridge see each other.'
+Write-Host '  4. In game: /wch opens the status window (the light turns green once the bridge is connected);'
+Write-Host '     /wtr <your text> translates it into English reply candidates.'
 Write-Host "  Update later: run this installer again. Uninstall: delete $InstallDir, the desktop shortcut, and WoWChatHelper* in Interface\AddOns."

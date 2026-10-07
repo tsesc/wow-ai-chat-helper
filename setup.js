@@ -177,7 +177,8 @@ Done. Next:
   1. Fully quit and relaunch World of Warcraft (it only discovers new addon files at launch).
   2. At character select > AddOns, enable "WoW Chat Helper" (leave the "slot ###" and glossary entries enabled).
   3. Start the bridge:  npm start   (or double-click bridge\\start-window.cmd for its own window)
-  4. In game:  /wch
+  4. In game:  /wch  (status window; green light = bridge connected)
+     /wtr <your text>  translates it into English reply candidates
 ${claude.found ? '' : '\n  !! Install Claude Code and log in first (https://claude.com/claude-code, then run `claude` once).\n'}`);
   return { client, configFile, cfg, addonDest: dest, copied, glossary, made, kept, claude };
 }

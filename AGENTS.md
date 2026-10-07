@@ -55,8 +55,8 @@ The installer `install.ps1` does everything and is idempotent. Prefer it over ma
    The banner ends with `claude : login ok`.
 6. **Tell the user the two things only they can do**: fully quit and relaunch WoW (new addon
    files are only discovered at launch), then on the character screen open **AddOns** and tick
-   **WoW Chat Helper** (leave the slot and Glossary entries alone). In game, `/wch` shows a
-   green light once the addon and the bridge see each other.
+   **WoW Chat Helper** (leave the slot and Glossary entries alone). In game, `/wch` opens the status window (green
+   light = bridge connected) and `/wtr <text>` translates text into English reply candidates.
 
 ### Update
 
