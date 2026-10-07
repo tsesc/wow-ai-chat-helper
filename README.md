@@ -101,6 +101,16 @@ key), downloads this project to `%LOCALAPPDATA%\WoWChatHelper`, installs the add
 and puts a **WoW Chat Helper** shortcut on the desktop that starts the bridge. Run the same
 line again to update. Full guide (Traditional Chinese): [docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md).
 
+**Using a coding agent instead?** Paste this into Claude Code (or Codex, Gemini CLI, Copilot)
+on the PC that runs WoW:
+
+```text
+Install WoW Chat Helper from https://github.com/tsesc/wow-ai-chat-helper on this Windows PC, following the repo's AGENTS.md.
+```
+
+[AGENTS.md](AGENTS.md) tells the agent how to install, verify, update and uninstall without
+asking you for anything except the Claude login.
+
 <details>
 <summary>Manual install (Git users, developers)</summary>
 

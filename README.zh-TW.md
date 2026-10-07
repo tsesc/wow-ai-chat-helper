@@ -92,6 +92,14 @@ irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1 
 把 addon 裝進 WoW，最後在桌面放一個 **WoW Chat Helper** 捷徑用來啟動 bridge。要更新就再貼一次同一行。
 完整逐步說明：[docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md)。
 
+**習慣用 AI 助手？** 在跑遊戲的 PC 上開 Claude Code（Codex、Gemini CLI、Copilot 也行），貼這句：
+
+```text
+Install WoW Chat Helper from https://github.com/tsesc/wow-ai-chat-helper on this Windows PC, following the repo's AGENTS.md.
+```
+
+[AGENTS.md](AGENTS.md) 會告訴助手怎麼安裝、驗證、更新、移除；除了登入 Claude 以外不會問你別的。
+
 <details>
 <summary>手動安裝（有 Git 的人、開發者）</summary>
 

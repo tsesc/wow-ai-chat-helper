@@ -41,6 +41,18 @@ irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1 
 安裝器可加參數（存成檔案再執行時）：`-WowPath "G:\battle.net\World of Warcraft\_classic_beta_"` 指定遊戲路徑、
 `-AutoStart` 直接開啟自動啟動、`-NoShortcut` 不建捷徑、`-InstallDir` 換安裝位置。
 
+## 用 AI 助手安裝
+
+在跑遊戲的 PC 上開 Claude Code（或 Codex、Gemini CLI、Copilot），貼這句就好：
+
+```text
+Install WoW Chat Helper from https://github.com/tsesc/wow-ai-chat-helper on this Windows PC, following the repo's AGENTS.md.
+```
+
+助手會照 [AGENTS.md](../AGENTS.md) 的流程做：先確認 `claude auth status` 已登入（沒登入會請你自己跑
+`claude auth login`）、找 WoW 資料夾、以 `-NonInteractive` 跑安裝器、檢查結果、幫你開 bridge，
+最後提醒你重開 WoW 與勾選 addon。
+
 ## 手動安裝（開發者）
 
 1. 取得程式碼：
