@@ -455,7 +455,7 @@ local function RegisterTr()
 		ns.trRegistered = true
 	else
 		ns.trBlocked = true
-		ns.Print(L.TR_TAKEN)
+		ns.Print(L.TR_HINT) -- /tr is taken: just say how to translate, no warning
 	end
 end
 ns.RegisterTr = RegisterTr
