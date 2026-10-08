@@ -1,17 +1,18 @@
 // Adapted from wow-ai (MIT) by chelinho139: bridge/agents.js (resolveCommand, unwrapShim,
-// the Claude stream-json event handling) and bridge/bridge.js (killTree).
+// the Claude stream-json event handling) and bridge/bridge.js (killTree); those parts now
+// live in bridge/providers/.
 //
-// The Claude Code CLI runner (spec section 5): turns explain / translate / detail requests
-// into the AI result JSON of spec 3.2.
+// The AI runner (spec section 5): turns explain / translate / detail requests into the AI
+// result JSON of spec 3.2, through whichever provider config.json's "agent" names
+// (bridge/providers/, docs/PROVIDERS.md: Claude Code, Codex).
 //
-//   persistent mode  one long-lived `claude -p --input-format stream-json --output-format
-//                    stream-json --verbose ...` per model; requests that arrive within
-//                    batchWindowMs go out as one user turn, the reply is one JSON array.
-//                    Restarted after persistentMaxTurns turns, on crash, on a parse failure
-//                    and on timeout.
-//   one-shot mode    `claude -p --output-format json ...`, prompt on stdin. The fallback
-//                    (persistent=false), always used for kind "d" (detail, Sonnet), and for
-//                    every retry.
+//   batches          requests that arrive within batchWindowMs (same model and language)
+//                    go out as one prompt on the batch session, the reply is one JSON
+//                    array. For Claude that session is a persistent process (unless
+//                    persistent=false or the model is Sonnet); for Codex every ask is one
+//                    `codex exec`.
+//   one-shot         kind "d" (detail) and every retry run alone on a fresh one-shot
+//                    session.
 //
 // A request missing from the reply or invalid is retried once alone (one-shot), then
 // resolved as { status: "error", err }. Timeouts kill the whole process tree.
@@ -23,12 +24,12 @@
 // the names appended to "tr".
 'use strict';
 
-const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const childProcess = require('child_process');
-const readline = require('readline');
 const { LOCALES, DEFAULT_LOCALE, normalizeLocale, loadGlossary } = require('./glossary');
+const providers = require('./providers');
+const claude = require('./providers/claude');
+const cli = require('./providers/cli');
 
 // ---------------------------------------------------------------------------
 // System prompt (spec 5), one per player language
@@ -225,25 +226,8 @@ ${exampleFor(info)}`;
 const SYSTEM_PROMPT = buildSystemPrompt(DEFAULT_LOCALE);
 
 // ---------------------------------------------------------------------------
-// Command line
+// Prompts
 // ---------------------------------------------------------------------------
-
-// Flags verified against Claude Code 2.1.289 (docs/research/claude-cli-latency.md):
-// --tools "" disables every built-in tool, --setting-sources "" skips user/project/local
-// settings (hooks, CLAUDE.md-adjacent config), --strict-mcp-config skips MCP servers.
-// --bare is not used: it drops OAuth/subscription auth.
-function commonArgs(model, systemPrompt) {
-  return ['--model', model, '--tools', '', '--system-prompt', systemPrompt,
-    '--setting-sources', '', '--strict-mcp-config', '--no-session-persistence'];
-}
-
-function claudeArgs(mode, model, systemPrompt = SYSTEM_PROMPT) {
-  if (mode === 'persistent') {
-    return ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose',
-      ...commonArgs(model, systemPrompt)];
-  }
-  return ['-p', '--output-format', 'json', ...commonArgs(model, systemPrompt)];
-}
 
 // The known-terms block for a list of requests: one line per glossary hit,
 // '#<id> "<as written>": TERM = expansion | translation | note: ambiguity'. '' if none.
@@ -296,119 +280,6 @@ function buildPrompt(requests, opts = {}) {
     linksBlock(requests) +
     (opts.note || '') +
     'Requests (answer with the JSON array only):\n' + JSON.stringify(list);
-}
-
-// The stream-json input line for one user turn.
-function userTurnLine(text) {
-  return JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'text', text }] } }) + '\n';
-}
-
-// ---------------------------------------------------------------------------
-// Finding the executable (from wow-ai agents.resolveCommand, Claude only)
-// ---------------------------------------------------------------------------
-
-const INSTALL_HINT = 'install Claude Code (https://claude.com/claude-code), run `claude` once and log in, or set claudePath in bridge/config.json';
-
-function exists(p) { try { return fs.statSync(p).isFile(); } catch { return false; } }
-
-function pathDirs(platform = process.platform, env = process.env) {
-  const sep = platform === 'win32' ? ';' : ':';
-  const dirs = String(env.PATH || env.Path || '').split(sep).filter(Boolean);
-  if (platform === 'win32' && env.APPDATA) dirs.push(path.join(env.APPDATA, 'npm'));
-  return dirs;
-}
-
-// A configured path: a script is run with this node, anything else directly.
-function fromPath(p) {
-  if (/\.(c|m)?js$/i.test(p)) return { file: process.execPath, args: [p], found: exists(p) };
-  return { file: p, args: [], found: exists(p) };
-}
-
-// npm's Windows launchers are .cmd files that Node can't spawn directly (and cmd.exe would
-// mangle a system prompt with % or " in it). Read the target out of the shim and run that:
-// the native claude.exe, or the .js launcher with this node.
-function unwrapShim(shim) {
-  let src;
-  try { src = fs.readFileSync(shim, 'utf8'); } catch { return null; }
-  const m = [...src.matchAll(/"%~?dp0%?\\([^"]+)"/g)].find(x => !/(^|\\)node\.exe$/i.test(x[1]));
-  if (!m) return null;
-  const script = path.resolve(path.dirname(shim), m[1].split('\\').join(path.sep));
-  if (!exists(script)) return null;
-  if (/\.exe$/i.test(script)) return { file: script, args: [], found: true };
-  return { file: process.execPath, args: [script], found: true };
-}
-
-// { file, args, found, note }: what to spawn for claude, and whether it is there.
-// opts: { platform, env, home } for tests.
-function resolveCommand(claudePath = '', opts = {}) {
-  const platform = opts.platform || process.platform;
-  const env = opts.env || process.env;
-  const home = opts.home || os.homedir();
-  if (claudePath) {
-    if (/\.(cmd|bat)$/i.test(claudePath)) {
-      const r = unwrapShim(claudePath);
-      if (r) return r;
-      return { file: claudePath, args: [], found: false, note: `claudePath ${claudePath} could not be unwrapped` };
-    }
-    const r = fromPath(claudePath);
-    if (!r.found) r.note = `claudePath ${claudePath} does not exist`;
-    return r;
-  }
-  const dirs = pathDirs(platform, env);
-  if (platform !== 'win32') {
-    const local = path.join(home, '.local', 'bin', 'claude');
-    if (exists(local)) return { file: local, args: [], found: true };
-    for (const d of dirs) { const p = path.join(d, 'claude'); if (exists(p)) return { file: p, args: [], found: true }; }
-    return { file: 'claude', args: [], found: false, note: INSTALL_HINT };
-  }
-  const local = path.join(home, '.local', 'bin', 'claude.exe');
-  if (exists(local)) return { file: local, args: [], found: true };
-  for (const d of dirs) { const exe = path.join(d, 'claude.exe'); if (exists(exe)) return { file: exe, args: [], found: true }; }
-  for (const d of dirs) {
-    const shim = path.join(d, 'claude.cmd');
-    if (exists(shim)) { const r = unwrapShim(shim); if (r) return r; }
-  }
-  return { file: 'claude.exe', args: [], found: false, note: INSTALL_HINT };
-}
-
-// ---------------------------------------------------------------------------
-// Process control
-// ---------------------------------------------------------------------------
-
-// Stop a run and whatever it spawned. Windows: taskkill /T /F (an npm launcher runs the
-// real binary as its child). Elsewhere the child is started as a process-group leader
-// (detached), so the whole group is signalled.
-function killTree(child, platform = process.platform) {
-  if (!child || child.exitCode !== null || child.signalCode !== null) return;
-  if (platform === 'win32') {
-    try {
-      const k = childProcess.spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
-      k.on('error', () => { try { child.kill(); } catch {} });
-      return;
-    } catch {}
-  }
-  try { process.kill(-child.pid, 'SIGKILL'); return; } catch {}
-  try { child.kill('SIGKILL'); } catch {}
-}
-
-// The environment claude runs with. Haiku 4.5 thinks by default (6000+ thinking tokens,
-// ~50 s for one chat line, and --effort low does not change that); MAX_THINKING_TOKENS=0
-// brings a call to ~4 s. cfg.maxThinkingTokens: number (default 0), or null to leave the
-// user's environment alone.
-function claudeEnv(opts = {}) {
-  const env = { ...process.env };
-  const m = opts.maxThinkingTokens === undefined ? 0 : opts.maxThinkingTokens;
-  if (m !== null && m !== '') env.MAX_THINKING_TOKENS = String(m);
-  return env;
-}
-
-function spawnClaude(cmd, args, opts) {
-  const cwd = opts.workDir;
-  fs.mkdirSync(cwd, { recursive: true });
-  return childProcess.spawn(cmd.file, [...cmd.args, ...args, ...(opts.extraArgs || [])], {
-    cwd, env: claudeEnv(opts), windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'],
-    detached: process.platform !== 'win32',
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -576,159 +447,75 @@ function withNames(result, names) {
   return names.length ? { ...result, tr: result.tr + ' ' + names.join(' ') } : result;
 }
 
-// A Claude result event that reports failure -> short error text.
-function claudeError(ev) {
-  const t = String(typeof ev.result === 'string' ? ev.result : (ev.error || ev.subtype || 'error')).trim().replace(/\s+/g, ' ');
-  if (/log ?in|auth|api key|credential|unauthori[sz]ed/i.test(t)) return 'claude not logged in: ' + t.slice(0, 100);
-  return 'claude: ' + t.slice(0, 120);
-}
-
-// ---------------------------------------------------------------------------
-// One-shot run
-// ---------------------------------------------------------------------------
-
-// -> Promise<{ ok: true, text } | { ok: false, err }>. `track` (optional Set) holds the
-// child while it runs, so the runner can kill it on stop.
-function runOnce(cmd, model, prompt, opts, track) {
-  return new Promise((resolve) => {
-    let child;
-    try { child = spawnClaude(cmd, claudeArgs('oneshot', model, opts.systemPrompt), opts); } catch (e) {
-      resolve({ ok: false, err: 'claude could not start: ' + e.message }); return;
-    }
-    if (track) track.add(child);
-    let out = '', errText = '', settled = false;
-    const finish = (r) => { if (settled) return; settled = true; clearTimeout(timer); if (track) track.delete(child); resolve(r); };
-    const timer = setTimeout(() => { killTree(child); finish({ ok: false, err: 'timeout' }); }, opts.timeoutMs);
-    child.stdout.setEncoding('utf8');
-    child.stderr.setEncoding('utf8');
-    child.stdout.on('data', d => { out += d; });
-    child.stderr.on('data', d => { if (errText.length < 4000) errText += d; });
-    child.stdin.on('error', () => {});
-    child.on('error', e => finish({ ok: false, err: 'claude could not start: ' + e.message }));
-    child.on('close', (code) => {
-      let ev = null;
-      try { ev = JSON.parse(out); } catch {
-        const last = out.trim().split('\n').reverse().find(l => l.trim().startsWith('{'));
-        try { ev = last ? JSON.parse(last) : null; } catch {}
-      }
-      if (Array.isArray(ev)) ev = ev.find(e => e && e.type === 'result') || null;
-      if (ev && ev.type === 'result') {
-        if (ev.is_error) finish({ ok: false, err: claudeError(ev) });
-        else finish({ ok: true, text: typeof ev.result === 'string' ? ev.result : JSON.stringify(ev.result ?? '') });
-        return;
-      }
-      const why = (errText || out).trim().replace(/\s+/g, ' ').slice(0, 120);
-      finish({ ok: false, err: `claude exited (${code})${why ? ': ' + why : ''}` });
-    });
-    child.stdin.end(prompt);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Persistent process
-// ---------------------------------------------------------------------------
-
-class PersistentClaude {
-  constructor(cmd, model, opts) {
-    this.cmd = cmd; this.model = model; this.opts = opts;
-    this.child = null; this.turns = 0; this.current = null; this.starts = 0;
-  }
-
-  alive() { return !!this.child; }
-
-  start() {
-    const child = spawnClaude(this.cmd, claudeArgs('persistent', this.model, this.opts.systemPrompt), this.opts);
-    this.child = child; this.turns = 0; this.starts++;
-    this.stderr = '';
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', d => { if (this.stderr.length < 4000) this.stderr += d; });
-    child.stdin.on('error', () => {});
-    const rl = readline.createInterface({ input: child.stdout });
-    rl.on('line', (line) => {
-      let ev; try { ev = JSON.parse(line); } catch { return; }
-      if (child !== this.child) return;
-      if (ev.type === 'result' && this.current) {
-        const cur = this.current; this.current = null;
-        if (ev.is_error) cur.finish({ ok: false, err: claudeError(ev) });
-        else cur.finish({ ok: true, text: typeof ev.result === 'string' ? ev.result : JSON.stringify(ev.result ?? '') });
-      }
-    });
-    const gone = (why) => {
-      if (child !== this.child) return;
-      this.child = null;
-      if (this.current) {
-        const cur = this.current; this.current = null;
-        const tail = this.stderr.trim().replace(/\s+/g, ' ').slice(0, 120);
-        cur.finish({ ok: false, err: why + (tail ? ': ' + tail : '') });
-      }
-    };
-    child.on('error', e => gone('claude could not start: ' + e.message));
-    child.on('close', code => gone(`claude exited (${code})`));
-  }
-
-  // Kill the process; a turn in flight resolves with `why`.
-  stop(why = 'claude restarted') {
-    const c = this.child; this.child = null;
-    if (c) { try { c.stdin.end(); } catch {} killTree(c); }
-    if (this.current) { const cur = this.current; this.current = null; cur.finish({ ok: false, err: why }); }
-  }
-
-  // One user turn -> Promise<{ ok, text } | { ok: false, err }>. One turn at a time.
-  turn(prompt) {
-    if (this.child && this.turns >= this.opts.persistentMaxTurns) this.stop();
-    if (!this.child) {
-      try { this.start(); } catch (e) { return Promise.resolve({ ok: false, err: 'claude could not start: ' + e.message }); }
-    }
-    this.turns++;
-    return new Promise((resolve) => {
-      let settled = false;
-      const cur = {
-        finish: (r) => { if (settled) return; settled = true; clearTimeout(timer); resolve(r); },
-      };
-      const timer = setTimeout(() => { this.stop('timeout'); cur.finish({ ok: false, err: 'timeout' }); }, this.opts.timeoutMs);
-      this.current = cur;
-      try { this.child.stdin.write(userTurnLine(prompt)); } catch (e) { this.stop(); cur.finish({ ok: false, err: 'claude stdin: ' + e.message }); }
-    });
-  }
-}
-
 // ---------------------------------------------------------------------------
 // The runner
 // ---------------------------------------------------------------------------
 
+// models: {} = the provider's defaultModels (Claude: haiku / haiku / sonnet).
 const DEFAULTS = {
-  claudePath: '', models: { explain: 'haiku', translate: 'haiku', detail: 'sonnet' },
+  agent: providers.DEFAULT_AGENT, claudePath: '', codexPath: '', models: {},
   timeoutMs: 60000, batchWindowMs: 400, persistent: true, persistentMaxTurns: 40, maxBatch: 8,
   maxThinkingTokens: 0, extraArgs: [],
 };
 
+// Model ids from config.json -> { explain, translate, detail } for the provider: a
+// missing or empty entry takes the provider's default. So does an entry that is not a
+// string, or that is another provider's default model id: "agent" switched by hand in
+// config.json leaves the old provider's ids behind ("haiku" means nothing to Codex).
+// Each dropped entry is logged once.
+function modelsFor(provider, models = {}, log = () => {}) {
+  const out = { ...provider.defaultModels };
+  const own = new Set(Object.values(provider.defaultModels));
+  const foreign = new Map();  // model id -> provider name
+  for (const name of providers.list()) {
+    if (name === provider.name) continue;
+    for (const m of Object.values(providers.get(name).defaultModels)) if (m && !own.has(m)) foreign.set(m, name);
+  }
+  for (const k of Object.keys(out)) {
+    const v = models ? models[k] : undefined;
+    if (v === undefined || v === null || (typeof v === 'string' && !v.trim())) continue;
+    if (typeof v !== 'string') { log(`ai: models.${k} in config.json is not a string; using the ${provider.name} default`); continue; }
+    if (foreign.has(v.trim())) { log(`ai: models.${k} "${v.trim()}" is a ${foreign.get(v.trim())} model, not ${provider.name}; using the ${provider.name} default`); continue; }
+    out[k] = v.trim();
+  }
+  return out;
+}
+
 class AiRunner {
-  // cfg: the bridge config (claudePath, models, timeoutMs, batchWindowMs, persistent,
-  // persistentMaxTurns) plus workDir (empty folder claude runs in), optional command
-  // ({ file, args } to skip resolveCommand), systemPrompt (one fixed prompt for every
-  // language, tests), glossary (a glossary.Glossary; default: loadGlossary(cfg.glossaryFile)),
-  // log.
+  // cfg: the bridge config (agent, claudePath / codexPath, models, timeoutMs, batchWindowMs,
+  // persistent, persistentMaxTurns) plus workDir (empty folder the CLI runs in), optional
+  // provider (a provider object, tests; default: providers.get(cfg.agent), which throws on
+  // an unknown name), command ({ file, args } to skip resolveCommand), systemPrompt (one
+  // fixed prompt for every language, tests), glossary (a glossary.Glossary; default:
+  // loadGlossary(cfg.glossaryFile)), log.
   constructor(cfg = {}) {
+    this.provider = cfg.provider || providers.get(cfg.agent);
+    this.log = cfg.log || (() => {});
     this.opts = {
       ...DEFAULTS, ...cfg,
-      models: { ...DEFAULTS.models, ...(cfg.models || {}) },
+      agent: this.provider.name,
+      models: modelsFor(this.provider, cfg.models, this.log),
       workDir: cfg.workDir || path.join(os.tmpdir(), 'wow-chat-helper-cwd'),
     };
     delete this.opts.glossary;
+    delete this.opts.provider;
     this.fixedPrompt = cfg.systemPrompt || null;
     this.prompts = new Map();  // locale -> system prompt
-    this.cmd = cfg.command ? { found: true, args: [], ...cfg.command } : resolveCommand(this.opts.claudePath);
-    this.log = cfg.log || (() => {});
+    this.cmd = cfg.command ? { found: true, args: [], ...cfg.command } : this.provider.resolveCommand(this.opts);
     this.glossary = cfg.glossary || loadGlossary(cfg.glossaryFile || undefined, this.log);
     this.queues = new Map();   // "model|locale" -> { items: [{req, resolve}], timer, busy }
-    this.procs = new Map();    // "model|locale" -> PersistentClaude
-    this.children = new Set(); // one-shot processes running
+    this.procs = new Map();    // "model|locale" -> the batch session (persistent for Claude)
+    this.oneShots = new Set(); // one-shot sessions running
     this.stats = { turns: 0, oneShots: 0, retries: 0, nameRetries: 0, namesAppended: 0 };
     this.stopped = false;
   }
 
+  // "<name> CLI not found: <what to install>"
+  notFound() { return `${this.provider.name} CLI not found: ` + (this.cmd.note || this.provider.installHint); }
+
   modelFor(req) {
-    if (req.model === 'haiku' || req.model === 'sonnet') return req.model;
+    // A record may name one of the provider's own default models (the addon sends "").
+    if (req.model && Object.values(this.provider.defaultModels).includes(req.model)) return req.model;
     const m = this.opts.models;
     return req.kind === 'd' ? m.detail : req.kind === 't' ? m.translate : m.explain;
   }
@@ -742,18 +529,31 @@ class AiRunner {
     return this.prompts.get(locale);
   }
 
-  optsFor(locale) { return { ...this.opts, systemPrompt: this.systemPromptFor(locale) }; }
-
   promptFor(reqs, locale) { return buildPrompt(reqs, { locale, glossary: this.glossary }); }
 
-  // Spec 5: one-shot is the fallback (persistent=false) and always used for Sonnet.
-  usesPersistent(model) { return !!this.opts.persistent && model !== 'sonnet'; }
+  roleFor(kind) { return kind === 'd' ? 'detail' : kind === 't' ? 'translate' : 'explain'; }
+
+  session(role, model, locale, oneShot) {
+    return this.provider.createSession({
+      role, model, systemPrompt: this.systemPromptFor(locale), cfg: this.opts, log: this.log, command: this.cmd, oneShot,
+    });
+  }
+
+  // ask() as { ok, text } | { ok: false, err } (the shape the batch logic works with).
+  static asked(p) { return p.then(text => ({ ok: true, text: String(text ?? '') }), e => ({ ok: false, err: String((e && e.message) || e || 'error') })); }
+
+  // One prompt on a fresh one-shot session, closed afterwards (stop() kills it meanwhile).
+  async askOnce(role, model, locale, prompt, o = {}) {
+    const s = this.session(role, model, locale, true);
+    this.oneShots.add(s);
+    try { return await AiRunner.asked(s.ask(prompt, o)); } finally { this.oneShots.delete(s); s.close('done'); }
+  }
 
   // req: { id, kind: 'x'|'t'|'d', channel, sender, model, ctx, text, lang } -> Promise<result>
   // (a result is always returned, never a rejection).
   request(req) {
     return new Promise((resolve) => {
-      if (!this.cmd.found) { resolve(errorResult(req, 'claude CLI not found: ' + (this.cmd.note || INSTALL_HINT))); return; }
+      if (!this.cmd.found) { resolve(errorResult(req, this.notFound())); return; }
       if (this.stopped) { resolve(errorResult(req, 'bridge stopping')); return; }
       if (!['x', 't', 'd'].includes(req.kind)) { resolve(errorResult(req, 'unknown kind ' + req.kind)); return; }
       const model = this.modelFor(req);
@@ -761,7 +561,7 @@ class AiRunner {
       // One queue per model and language: a batch shares one system prompt.
       const key = model + '|' + this.localeFor(req);
       let q = this.queues.get(key);
-      if (!q) { q = { items: [], timer: null, busy: false, model, locale: this.localeFor(req) }; this.queues.set(key, q); }
+      if (!q) { q = { items: [], timer: null, busy: false, model, locale: this.localeFor(req), role: this.roleFor(req.kind) }; this.queues.set(key, q); }
       q.items.push({ req, resolve });
       if (!q.timer && !q.busy) q.timer = setTimeout(() => { q.timer = null; this.flush(key); }, this.opts.batchWindowMs);
     });
@@ -774,7 +574,7 @@ class AiRunner {
     const batch = q.items.splice(0, this.opts.maxBatch);
     q.busy = true;
     let retry = [];
-    try { retry = await this.runBatch(batch, model, locale); } finally {
+    try { retry = await this.runBatch(batch, model, locale, q.role); } finally {
       q.busy = false;
       if (q.items.length && !q.timer) q.timer = setTimeout(() => { q.timer = null; this.flush(key); }, this.opts.batchWindowMs);
     }
@@ -787,40 +587,36 @@ class AiRunner {
     }
   }
 
-  // The persistent process for a model and language. The player switches language
-  // rarely: an idle process of the same model in another language is stopped then (a
-  // busy one finishes its turn and is stopped at the next switch or on stop()).
-  procFor(model, locale) {
+  // The batch session for a model and language (for Claude: the persistent process). The
+  // player switches language rarely: an idle session of the same model in another
+  // language is closed then (a busy one finishes its turn and is closed at the next
+  // switch or on stop()).
+  procFor(model, locale, role = 'explain') {
     const key = model + '|' + locale;
     for (const [k, other] of this.procs) {
-      if (k !== key && k.startsWith(model + '|') && !other.current) { other.stop('language changed'); this.procs.delete(k); }
+      if (k !== key && k.startsWith(model + '|') && !other.busy) { other.close('language changed'); this.procs.delete(k); }
     }
     let p = this.procs.get(key);
     if (p) return p;
-    p = new PersistentClaude(this.cmd, model, this.optsFor(locale));
+    p = this.session(role, model, locale, false);
     this.procs.set(key, p);
     return p;
   }
 
-  async runBatch(batch, model, locale = DEFAULT_LOCALE) {
+  async runBatch(batch, model, locale = DEFAULT_LOCALE, role = 'explain') {
     const reqs = batch.map(b => linkTokens(b.req));
     const prompt = this.promptFor(reqs, locale);
-    let r;
-    const persistent = this.usesPersistent(model);
-    let proc = null;
-    if (persistent) {
-      proc = this.procFor(model, locale);
-      this.stats.turns++;
-      r = await proc.turn(prompt);
-      this.log(`ai: persistent ${model} ${locale} turn, ${reqs.length} request(s): ${r.ok ? 'ok' : r.err}`);
-    } else {
-      this.stats.oneShots++;
-      r = await runOnce(this.cmd, model, prompt, this.optsFor(locale), this.children);
-      this.log(`ai: one-shot ${model} ${locale}, ${reqs.length} request(s): ${r.ok ? 'ok' : r.err}`);
-    }
+    const label = model || 'default';
+    const proc = this.procFor(model, locale, role);
+    if (proc.persistent) this.stats.turns++; else this.stats.oneShots++;
+    const r = await AiRunner.asked(proc.ask(prompt));
+    this.log(`ai: ${proc.persistent ? 'persistent' : 'one-shot'} ${label} ${locale}${proc.persistent ? ' turn' : ''}, ${reqs.length} request(s): ${r.ok ? 'ok' : r.err}`);
     const { done, failed, parsed } = r.ok ? matchResults(r.text, reqs) : { done: new Map(), failed: reqs, parsed: false };
     // A reply that didn't parse means the conversation may be off the rails: start fresh.
-    if (proc && r.ok && (!parsed || failed.length)) proc.stop();
+    if (proc.persistent && r.ok && (!parsed || failed.length)) {
+      proc.close('claude restarted');
+      if (this.procs.get(model + '|' + locale) === proc) this.procs.delete(model + '|' + locale);
+    }
     const firstErr = r.ok ? 'invalid reply' : r.err;
     // Valid items resolve now; the rest are returned for flush() to retry once alone.
     const retry = [];
@@ -847,7 +643,7 @@ class AiRunner {
     const sent = linkTokens(req);
     const note = retry.names && retry.names.length ? namesNote(retry.names, sent.links) : '';
     const prompt = buildPrompt([sent], { locale, glossary: this.glossary, note });
-    const r = await runOnce(this.cmd, model, prompt, this.optsFor(locale), this.children);
+    const r = await this.askOnce(this.roleFor(req.kind), model, locale, prompt);
     if (this.stopped) return errorResult(req, 'bridge stopping');
     if (r.ok) {
       const { done } = matchResults(r.text, [sent]);
@@ -868,15 +664,20 @@ class AiRunner {
     return errorResult(req, err);
   }
 
-  // Startup check (spec 6: "CLI missing / not logged in -> banner says so"): one tiny
-  // one-shot call. -> Promise<{ ok: true } | { ok: false, loggedOut: bool, err }>.
+  // Startup check (spec 6: "CLI missing / not logged in -> banner says so"): the
+  // provider's loginStatus (no model call), then one tiny one-shot call.
+  // -> Promise<{ ok: true } | { ok: false, loggedOut: bool, err }>.
   async checkLogin(text = '好') {
+    const name = this.provider.name;
+    if (!this.cmd.found) return { ok: false, loggedOut: false, err: this.notFound() };
+    const st = await this.provider.loginStatus({ ...this.opts, command: this.cmd });
+    // A provider may add a non-fatal warning (e.g. a CLI older than the tested version).
+    const w = st.warning ? { warning: st.warning } : {};
+    if (!st.ok) return { ok: false, loggedOut: true, err: `${name} not logged in: ${st.detail}`, ...w };
     const prompt = buildPrompt([{ id: 1, kind: 't', channel: 'SAY', sender: '', model: '', ctx: '', text }]);
-    if (!this.cmd.found) return { ok: false, loggedOut: false, err: 'claude CLI not found: ' + (this.cmd.note || INSTALL_HINT) };
-    const opts = { ...this.optsFor(DEFAULT_LOCALE), timeoutMs: Math.min(this.opts.timeoutMs, 30000) };
-    const r = await runOnce(this.cmd, this.opts.models.explain, prompt, opts, this.children);
-    if (r.ok) return { ok: true };
-    return { ok: false, loggedOut: /not logged in/.test(r.err), err: r.err };
+    const r = await this.askOnce('explain', this.opts.models.explain, DEFAULT_LOCALE, prompt, { timeoutMs: Math.min(this.opts.timeoutMs, 30000) });
+    if (r.ok) return { ok: true, ...w };
+    return { ok: false, loggedOut: /not logged in/.test(r.err), err: r.err, ...w };
   }
 
   // Every request still queued or in flight resolves as an error.
@@ -886,16 +687,22 @@ class AiRunner {
       if (q.timer) { clearTimeout(q.timer); q.timer = null; }
       for (const { req, resolve } of q.items.splice(0)) resolve(errorResult(req, 'bridge stopping'));
     }
-    for (const p of this.procs.values()) p.stop('bridge stopping');
-    for (const c of this.children) killTree(c);
+    for (const p of this.procs.values()) p.close('bridge stopping');
+    for (const s of this.oneShots) s.close('bridge stopping');
   }
 }
 
+// Backward-compatible names from before bridge/providers/ (tests, live tools): the Claude
+// command line helpers and the CLI lookup with Claude's search rules.
+const resolveCommand = (claudePath = '', opts = {}) => claude.resolveCommand({ claudePath }, opts);
+const claudeArgs = (mode, model, systemPrompt = SYSTEM_PROMPT) => claude.claudeArgs(mode, model, systemPrompt);
+const unwrapShim = (shim) => cli.unwrapShim(shim);
+
 module.exports = {
   SYSTEM_PROMPT, TONES, DEFAULTS, LOCALE_INFO, LOCALES, STYLE_EXAMPLES,
-  buildSystemPrompt, claudeArgs, buildPrompt, termsBlock, userTurnLine,
-  resolveCommand, unwrapShim, pathDirs, killTree, claudeEnv,
-  extractJson, validateItem, matchResults, errorResult, claudeError,
+  buildSystemPrompt, claudeArgs, buildPrompt, termsBlock, userTurnLine: claude.userTurnLine,
+  resolveCommand, unwrapShim, pathDirs: cli.pathDirs, killTree: cli.killTree, claudeEnv: claude.claudeEnv,
+  extractJson, validateItem, matchResults, errorResult, claudeError: claude.claudeError,
   bracketNames, missingNames, withNames, namesNote, linkTokens, restoreLinks, linksBlock,
-  runOnce, PersistentClaude, AiRunner,
+  runOnce: claude.runOnce, PersistentClaude: claude.PersistentClaude, AiRunner, modelsFor,
 };

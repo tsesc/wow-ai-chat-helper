@@ -39,7 +39,19 @@ irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1 
 **移除**：刪掉 `%LOCALAPPDATA%\WoWChatHelper`、桌面捷徑，以及 `Interface\AddOns` 裡所有 `WoWChatHelper*` 資料夾。
 
 安裝器可加參數（存成檔案再執行時）：`-WowPath "G:\battle.net\World of Warcraft\_classic_beta_"` 指定遊戲路徑、
-`-AutoStart` 直接開啟自動啟動、`-NoShortcut` 不建捷徑、`-InstallDir` 換安裝位置。
+`-AutoStart` 直接開啟自動啟動、`-NoShortcut` 不建捷徑、`-InstallDir` 換安裝位置、
+`-Agent codex` 改用 OpenAI Codex。
+
+**改用 OpenAI Codex（不用 Claude）**：一鍵安裝改貼這行。第 2 步會改成
+`npm install -g @openai/codex`，沒登入就跑 `codex login`（用 ChatGPT 帳號登入），
+`bridge\config.json` 會寫入 `"agent": "codex"`，捷徑啟動前也改成確認 Codex 已登入：
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1))) -Agent codex
+```
+
+已安裝的人也可以在 app 資料夾執行 `node setup.js --agent codex` 切換，再重啟 bridge。
+兩種後端的差異見 README 的「AI 後端」。
 
 ## 用 AI 助手安裝
 
@@ -123,9 +135,9 @@ Install WoW Chat Helper from https://github.com/tsesc/wow-ai-chat-helper on this
 - 還是不行就照 [SPIKE-CHECKLIST.md](SPIKE-CHECKLIST.md) 跑一次字型檢查，把結果回報；
   同時確認你完整重啟過 WoW（只 `/reload` 不會載入新字型檔）。
 
-**Claude 沒回應或回錯誤**
-- 在 PowerShell 手動執行 `claude -p "hi"`，確認已登入且可用。
-- bridge 視窗會顯示 Claude CLI 找不到或未登入的訊息；聊天框會出現
+**Claude / Codex 沒回應或回錯誤**
+- 在 PowerShell 手動執行 `claude -p "hi"`（Codex：`codex login status`、`codex exec "hi"`），確認已登入且可用。
+- bridge 視窗會顯示 CLI 找不到或未登入的訊息（`!! Claude Code CLI ...` / `!! Codex CLI ...`）；聊天框會出現
   `[譯] 失敗 (...) [重試]`，點 `[重試]` 即可。
 
 **不要和 wow-ai 同時執行**

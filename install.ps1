@@ -5,9 +5,11 @@ WoW Chat Helper - one-line Windows installer.
 
 What it does (each step is skipped when already done):
   1. Node.js 22+        (winget install OpenJS.NodeJS.LTS)
-  2. Claude Code        (irm https://claude.ai/install.ps1 | iex), then `claude auth login`
-                        if you are not logged in yet - this is where your Claude subscription
-                        (Pro / Max / Team) gets connected. No API key is needed.
+  2. The AI CLI         Claude Code by default (irm https://claude.ai/install.ps1 | iex), then
+                        `claude auth login` if you are not logged in yet - this is where your
+                        Claude subscription (Pro / Max / Team) gets connected. No API key is needed.
+                        With -Agent codex: OpenAI Codex (npm install -g @openai/codex), then
+                        `codex login` (your ChatGPT account) instead.
   3. Downloads this project as a zip (no Git needed) into %LOCALAPPDATA%\WoWChatHelper\app
   4. node setup.js      (copies the addon into WoW, builds the slot addons, writes bridge\config.json)
   5. A desktop shortcut "WoW Chat Helper" that starts the bridge
@@ -20,6 +22,8 @@ Options (when running the file directly instead of the one-liner):
   .\install.ps1 -Ref main -InstallDir "D:\WoWChatHelper" -NoShortcut -AutoStart
   .\install.ps1 -Zip .\wow-ai-chat-helper-main.zip    # install from a local zip (testing)
   .\install.ps1 -NonInteractive                       # never prompt; fail instead
+  .\install.ps1 -Agent codex                          # use OpenAI Codex instead of Claude Code
+                                                      # (without -Agent a re-run keeps the agent in config.json)
 #>
 [CmdletBinding()]
 param(
@@ -30,7 +34,9 @@ param(
   [string]$Zip = '',
   [switch]$NoShortcut,
   [switch]$AutoStart,
-  [switch]$NonInteractive
+  [switch]$NonInteractive,
+  [ValidateSet('claude', 'codex')]
+  [string]$Agent = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -51,13 +57,47 @@ function Refresh-Path {
   # Claude Code installs to ~\.local\bin and adds it to the user PATH; make sure it is visible now.
   $local = Join-Path $env:USERPROFILE '.local\bin'
   if ((Test-Path $local) -and ($env:Path -notlike "*$local*")) { $env:Path = "$local;$env:Path" }
+  # npm -g (Codex) installs its launchers here.
+  $npmBin = Join-Path $env:APPDATA 'npm'
+  if ((Test-Path $npmBin) -and ($env:Path -notlike "*$npmBin*")) { $env:Path = "$env:Path;$npmBin" }
 }
 function Have($cmd) { return [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
+# codex.exe or npm's codex.cmd; never the codex.ps1 shim, which the execution policy may block.
+function Find-Codex {
+  foreach ($n in @('codex.exe', 'codex.cmd')) { $c = Get-Command $n -ErrorAction SilentlyContinue | Select-Object -First 1; if ($c) { return $c.Source } }
+  return $null
+}
+# Runs a block of native commands with $ErrorActionPreference = 'Continue'. Under 'Stop',
+# Windows PowerShell 5.1 turns the first stderr line of a native command into a terminating
+# NativeCommandError (npm warnings, node errors, `codex login status`, which prints on
+# stderr). Callers check $LASTEXITCODE instead.
+function Invoke-Native([scriptblock]$Block) {
+  $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+  try { & $Block } finally { $ErrorActionPreference = $old }
+}
+# `codex login status` exits 0 when logged in.
+function Test-CodexLogin($codex) {
+  Invoke-Native { & $codex login status *> $null }
+  return ($LASTEXITCODE -eq 0)
+}
+# `claude auth status` prints JSON with loggedIn. -> the parsed object, or $null.
+function Get-ClaudeStatus {
+  try { return ((Invoke-Native { & claude auth status 2>$null }) | ConvertFrom-Json) } catch { return $null }
+}
 
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') { Fail 'This installer is for the Windows PC that runs World of Warcraft.' }
 
+# The agent to set up: -Agent, else the one in an existing install's config.json, else claude.
+$agentName = $Agent
+if (-not $agentName) {
+  $existingCfg = Join-Path $InstallDir 'app\bridge\config.json'
+  if (Test-Path $existingCfg) { try { $agentName = [string]((Get-Content $existingCfg -Raw -Encoding UTF8 | ConvertFrom-Json).agent) } catch { } }
+}
+if ($agentName -notin @('claude', 'codex')) { $agentName = 'claude' }
+
 Write-Host "WoW Chat Helper installer  ($Repo @ $Ref)" -ForegroundColor Yellow
 Write-Host "Install folder: $InstallDir"
+Write-Host "AI agent: $agentName"
 
 # ---------------------------------------------------------------- 1. Node.js
 Step 1 'Node.js 22 or newer'
@@ -71,33 +111,58 @@ if (Have node) {
 if (-not $nodeOk) {
   if (-not (Have winget)) { Fail 'Node.js is missing and winget is not available. Install Node.js 22+ from https://nodejs.org and run this again.' }
   Info 'installing Node.js LTS with winget (this can take a minute)...'
-  & winget install -e --id OpenJS.NodeJS.LTS --silent --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Host
+  Invoke-Native { & winget install -e --id OpenJS.NodeJS.LTS --silent --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Host }
   Refresh-Path
   if (-not (Have node)) { Fail 'Node.js was installed but is not on PATH yet. Close this window, open a new PowerShell and run the installer again.' }
   Ok "node $(& node --version)"
 }
 
-# ---------------------------------------------------------------- 2. Claude Code + login
-Step 2 'Claude Code (the bridge talks to Claude through it; your Claude subscription is used)'
-Refresh-Path
-if (-not (Have claude)) {
-  Info 'installing Claude Code...'
-  Invoke-Expression (Invoke-RestMethod 'https://claude.ai/install.ps1')
+# ---------------------------------------------------------------- 2. The AI CLI + login
+if ($agentName -eq 'codex') {
+  Step 2 'OpenAI Codex (the bridge talks to the model through it; your ChatGPT login is used)'
   Refresh-Path
-  if (-not (Have claude)) { Fail 'Claude Code was installed but `claude` is not on PATH yet. Close this window, open a new PowerShell and run the installer again.' }
-}
-Ok "claude $(& claude --version 2>$null)"
-$loggedIn = $false
-try { $st = (& claude auth status 2>$null) | ConvertFrom-Json; $loggedIn = [bool]$st.loggedIn } catch { $loggedIn = $false }
-if ($loggedIn) {
-  Ok "logged in as $($st.email) ($($st.subscriptionType))"
+  $codex = Find-Codex
+  if (-not $codex) {
+    Info 'installing Codex (npm install -g @openai/codex)...'
+    Invoke-Native { & npm.cmd install -g @openai/codex 2>&1 | Out-Host }
+    if ($LASTEXITCODE -ne 0) { Fail "npm install -g @openai/codex failed (exit $LASTEXITCODE); see the npm output above." }
+    Refresh-Path
+    $codex = Find-Codex
+    if (-not $codex) { Fail 'Codex was installed but `codex` is not on PATH yet. Close this window, open a new PowerShell and run the installer again.' }
+  }
+  Ok "codex $(Invoke-Native { & $codex --version 2>$null })"
+  if (Test-CodexLogin $codex) {
+    Ok 'logged in to Codex'
+  } else {
+    if ($NonInteractive) { Fail 'Not logged in to Codex. Run `codex login` once, then run the installer again.' }
+    Info 'Not logged in yet. A browser window will open: sign in with your ChatGPT account.'
+    Invoke-Native { & $codex login }
+    if (-not (Test-CodexLogin $codex)) { Fail 'Login did not complete. Run `codex login`, then run the installer again.' }
+    Ok 'logged in to Codex'
+  }
 } else {
-  if ($NonInteractive) { Fail 'Not logged in to Claude. Run `claude auth login` once, then run the installer again.' }
-  Info 'Not logged in yet. A browser window will open: sign in with the Claude account that has your subscription.'
-  & claude auth login
-  try { $st = (& claude auth status 2>$null) | ConvertFrom-Json; $loggedIn = [bool]$st.loggedIn } catch { $loggedIn = $false }
-  if (-not $loggedIn) { Fail 'Login did not complete. Run `claude auth login`, then run the installer again.' }
-  Ok "logged in as $($st.email) ($($st.subscriptionType))"
+  Step 2 'Claude Code (the bridge talks to Claude through it; your Claude subscription is used)'
+  Refresh-Path
+  if (-not (Have claude)) {
+    Info 'installing Claude Code...'
+    Invoke-Expression (Invoke-RestMethod 'https://claude.ai/install.ps1')
+    Refresh-Path
+    if (-not (Have claude)) { Fail 'Claude Code was installed but `claude` is not on PATH yet. Close this window, open a new PowerShell and run the installer again.' }
+  }
+  Ok "claude $(Invoke-Native { & claude --version 2>$null })"
+  $st = Get-ClaudeStatus
+  $loggedIn = [bool]($st -and $st.loggedIn)
+  if ($loggedIn) {
+    Ok "logged in as $($st.email) ($($st.subscriptionType))"
+  } else {
+    if ($NonInteractive) { Fail 'Not logged in to Claude. Run `claude auth login` once, then run the installer again.' }
+    Info 'Not logged in yet. A browser window will open: sign in with the Claude account that has your subscription.'
+    Invoke-Native { & claude auth login }
+    $st = Get-ClaudeStatus
+    $loggedIn = [bool]($st -and $st.loggedIn)
+    if (-not $loggedIn) { Fail 'Login did not complete. Run `claude auth login`, then run the installer again.' }
+    Ok "logged in as $($st.email) ($($st.subscriptionType))"
+  }
 }
 
 # ---------------------------------------------------------------- 3. Download / update the app
@@ -133,9 +198,11 @@ Ok "version $ver in $app$kept"
 Step 4 'Installing the addon into World of Warcraft'
 Push-Location $app
 try {
-  $setupArgs = @()
+  $agentArgs = @()
+  if ($Agent) { $agentArgs = @('--agent', $Agent) }
+  $setupArgs = @() + $agentArgs
   if ($WowPath) { $setupArgs += @('--wow', $WowPath) }
-  $out = & node setup.js @setupArgs 2>&1
+  $out = Invoke-Native { & node setup.js @setupArgs 2>&1 }
   $rc = $LASTEXITCODE
   if ($rc -ne 0 -and -not $WowPath) {
     # Auto-detect failed: look on every drive for a Forever / classic-beta client.
@@ -159,7 +226,7 @@ try {
       $WowPath = Ask 'WoW client folder (the one that contains Wow*.exe and Interface\), e.g. G:\battle.net\World of Warcraft\_classic_beta_' ''
       if (-not $WowPath) { Fail 'No WoW client folder. Run again with -WowPath "<folder>".' }
     }
-    $out = & node setup.js --wow $WowPath 2>&1
+    $out = Invoke-Native { & node setup.js --wow $WowPath @agentArgs 2>&1 }
     $rc = $LASTEXITCODE
   }
   $out | ForEach-Object { Info $_ }

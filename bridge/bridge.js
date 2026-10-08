@@ -25,6 +25,7 @@ const readline = require('readline');
 const { spawn } = require('child_process');
 const P = require('./protocol');
 const ai = require('./ai');
+const providers = require('./providers');
 const { normalizeLocale, DEFAULT_LOCALE } = require('./glossary');
 const { SILENT_WAV } = require('./install-slots');
 
@@ -35,8 +36,9 @@ const SESSIONS_KEEP = 5;       // sessions whose handled ids are remembered
 const AHEAD_CLEAR = 50;        // signal files kept empty ahead of the newest id / beat
 
 const CONFIG_DEFAULTS = {
-  wowPath: '', addonDir: '', claudePath: '',
-  models: { explain: 'haiku', translate: 'haiku', detail: 'sonnet' },
+  wowPath: '', addonDir: '', agent: providers.DEFAULT_AGENT, claudePath: '', codexPath: '',
+  // Model ids of the chosen agent; a missing entry takes the provider's defaultModels.
+  models: {},
   capture: { enabled: true, corner: 'TOPLEFT', intervalMs: 250, processName: 'WowB', cellPx: 4, cellsPerRow: 200, maxRows: 48 },
   timeoutMs: 60000, batchWindowMs: 400, persistent: true, persistentMaxTurns: 40, maxThinkingTokens: 0,
   glossaryFile: '',
@@ -95,8 +97,8 @@ class Bridge {
     this.handledSets = new Map();
     for (const [s, ids] of Object.entries(this.state.handled)) this.handledSets.set(s, new Set(Array.isArray(ids) ? ids : []));
     this.runner = opts.runner || new ai.AiRunner({
-      // claude runs in an empty folder outside the repo so no project files or CLAUDE.md
-      // are near it (ai.js default: <tmp>/wow-chat-helper-cwd).
+      // the CLI runs in an empty folder outside the repo so no project files, CLAUDE.md or
+      // AGENTS.md are near it (ai.js default: <tmp>/wow-chat-helper-cwd).
       ...this.cfg, workDir: opts.workDir || this.cfg.workDir || undefined, log: (...a) => this.log(...a),
     });
     this.inflight = new Set();
@@ -429,30 +431,37 @@ class Bridge {
 
   banner() {
     const cmd = this.runner.cmd || { found: true, file: '(custom runner)', args: [] };
+    const prov = this.runner.provider || { displayName: 'AI', installHint: '' };
+    const models = (this.runner.opts && this.runner.opts.models) || this.cfg.models;
+    const m = (k) => models[k] || '(default)';
+    const mode = prov.describeMode ? prov.describeMode(this.cfg) : (this.cfg.persistent ? 'persistent mode' : 'one-shot mode');
     const lines = [
       'WoW Chat Helper bridge',
       `  addons   : ${this.cfg.addonDir || '(wowPath not set in config.json)'}`,
       `  addon    : ${this.addonInstalled() ? 'installed' : 'NOT INSTALLED - run: node setup.js, then restart WoW'}`,
       `  slots    : ${this.slotsInstalled() ? this.cfg.slots + ' installed' : 'NOT INSTALLED - run: node setup.js, then restart WoW'}`,
-      `  claude   : ${cmd.found ? [cmd.file, ...cmd.args].join(' ') : 'NOT FOUND - ' + (cmd.note || '')}`,
-      `  models   : explain ${this.cfg.models.explain}, translate ${this.cfg.models.translate}, detail ${this.cfg.models.detail}; ${this.cfg.persistent ? 'persistent' : 'one-shot'} mode, batch window ${this.cfg.batchWindowMs} ms`,
+      `  agent    : ${prov.displayName}, ${cmd.found ? [cmd.file, ...cmd.args].join(' ') : 'NOT FOUND - ' + (cmd.note || '')}`,
+      `  models   : explain ${m('explain')}, translate ${m('translate')}, detail ${m('detail')}; ${mode}, batch window ${this.cfg.batchWindowMs} ms`,
       `  capture  : ${this.cfg.capture.enabled ? `${this.cfg.capture.processName}, ${this.cfg.capture.corner}, every ${this.cfg.capture.intervalMs} ms` : 'off'}`,
       `  session  : ${this.state.session || '(waiting for the addon hello)'}`,
       `  language : ${this.locale()} (from the addon hello: lang=, else the client locale)`,
     ];
     const g = this.runner.glossary;
     if (g) lines.push(`  glossary : ${g.size ? g.size + ' terms from ' + g.file : 'NONE - prompts go without known terms (data/glossary/terms.json missing?)'}`);
-    if (!cmd.found) lines.push('  !! Claude Code CLI not found: every request will come back as an error until it is installed and logged in.');
+    if (!cmd.found) lines.push(`  !! ${prov.displayName} CLI not found: every request will come back as an error until it is installed and logged in.`);
     return lines.join('\n');
   }
 
-  // Banner follow-up: is the CLI logged in? Logs a warning line when it is not.
-  async checkClaude() {
+  // Banner follow-up: is the agent's CLI logged in (provider.loginStatus, then one tiny
+  // call)? Logs "<displayName> : login ok", or a warning line when it is not.
+  async checkAgent() {
     if (typeof this.runner.checkLogin !== 'function' || (this.runner.cmd && !this.runner.cmd.found)) return null;
+    const prov = this.runner.provider || { displayName: 'AI', loginHint: 'Log in to the AI CLI' };
     const r = await this.runner.checkLogin();
-    if (r.ok) this.log('claude   : login ok');
-    else if (r.loggedOut) this.log(`  !! Claude Code CLI is not logged in (${r.err}). Run \`claude\` once in a terminal and log in; until then every request comes back as an error.`);
-    else this.log(`  !! Claude Code CLI check failed: ${r.err}`);
+    if (r.warning) this.log(`  !! ${r.warning}`);
+    if (r.ok) this.log(`${prov.displayName} : login ok`);
+    else if (r.loggedOut) this.log(`  !! ${prov.displayName} CLI is not logged in (${r.err}). ${prov.loginHint}; until then every request comes back as an error.`);
+    else this.log(`  !! ${prov.displayName} CLI check failed: ${r.err}`);
     return r;
   }
 
@@ -516,6 +525,7 @@ async function main(argv) {
   }
   const cfg = resolveConfig(raw);
   if (!cfg.addonDir) { console.error('config.json: set wowPath (the WoW client folder).'); process.exit(2); }
+  try { providers.get(cfg.agent); } catch (e) { console.error(`config.json "agent": ${e.message}`); process.exit(2); }
   const bridge = createBridge(cfg, { stateFile: arg('state') ? path.resolve(arg('state')) : undefined, workDir: cfg.workDir || undefined });
   console.log(bridge.banner());
   const injectFile = arg('inject');
@@ -531,12 +541,12 @@ async function main(argv) {
   }
   console.log('Leave this window open while you play. Ctrl+C to stop.\n');
   bridge.start({ capture: !argv.includes('--no-capture') });
-  if (cfg.startupCheck !== false) bridge.checkClaude().catch(() => {});
+  if (cfg.startupCheck !== false) bridge.checkAgent().catch(() => {});
   const stop = () => { bridge.stop(); process.exit(0); };
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
   // Windows does not kill child processes with their parent: on any exit (including a
-  // crash) take capture.ps1 and the claude processes down too. capture.ps1 also exits
+  // crash) take capture.ps1 and the AI CLI processes down too. capture.ps1 also exits
   // by itself once this process is gone (-ParentPid).
   process.on('exit', () => { if (!bridge.stopped) { try { bridge.kill(); } catch {} } });
   process.on('uncaughtException', (e) => { console.error(e); try { bridge.kill(); } catch {} process.exit(1); });

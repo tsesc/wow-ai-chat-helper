@@ -7,6 +7,8 @@
 //                                          JSON lines in, JSON lines out: system/init,
 //                                          assistant, result per user turn
 //   --version                              "2.1.289 (Claude Code)"
+//   auth status                            {"loggedIn": true, ...} (false with
+//                                          FAKE_CLAUDE_LOGGED_OUT=1, exit 1)
 //
 // The reply is built from the requests in the prompt (the JSON array after "Requests").
 // Markers inside a request's text change the behavior:
@@ -30,6 +32,7 @@
 //
 // Env: FAKE_CLAUDE_LOG  append one JSON line per process start and per turn
 //      FAKE_CLAUDE_STATE a folder for "seen" counters (#invalid-once)
+//      FAKE_CLAUDE_LOGGED_OUT  `auth status` reports loggedIn: false
 'use strict';
 
 const fs = require('fs');
@@ -39,6 +42,12 @@ const readline = require('readline');
 
 const argv = process.argv.slice(2);
 if (argv.includes('--version')) { console.log('2.1.289 (Claude Code)'); process.exit(0); }
+if (argv[0] === 'auth' && argv[1] === 'status') {
+  const out = !!process.env.FAKE_CLAUDE_LOGGED_OUT;
+  console.log(JSON.stringify(out ? { loggedIn: false, authMethod: 'none', apiProvider: 'firstParty' }
+    : { loggedIn: true, authMethod: 'claude.ai', apiProvider: 'firstParty', subscriptionType: 'max' }, null, 2));
+  process.exit(out ? 1 : 0);
+}
 
 const has = (f) => argv.includes(f);
 const val = (f) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : undefined; };

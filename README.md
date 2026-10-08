@@ -52,7 +52,7 @@ running. So the project has **two parts that must both be installed**:
 | Part | Where it runs | What it does |
 |---|---|---|
 | **Addon** (`WoWChatHelper` + glossary + slot addons) | inside WoW | watches chat, shows explanations and reply buttons, glossary window |
-| **Bridge** (Node.js program in this repo) | on the same Windows PC, next to the game | reads the addon's messages off the screen, asks Claude, hands the answers back |
+| **Bridge** (Node.js program in this repo) | on the same Windows PC, next to the game | reads the addon's messages off the screen, asks the AI (Claude or Codex), hands the answers back |
 
 ```
  WoW (addon)                                  Bridge (Node.js, same PC)
@@ -67,9 +67,10 @@ running. So the project has **two parts that must both be installed**:
 - **Out:** the addon draws the message as a short strip of coloured 4-pixel squares in
   the top-left corner of the screen for a moment; the bridge screen-captures and decodes
   it.
-- **AI:** the bridge looks up known WoW terms in the message, then asks the local
-  [Claude Code](https://claude.com/claude-code) CLI (`claude -p`) for an explanation and
-  reply ideas.
+- **AI:** the bridge looks up known WoW terms in the message, then asks a local AI CLI for
+  an explanation and reply ideas: [Claude Code](https://claude.com/claude-code)
+  (`claude -p`, the default) or [OpenAI Codex](https://github.com/openai/codex)
+  (`codex exec`). See [AI backends](#ai-backends).
 - **In:** the bridge writes the answer into a pool of 200 pre-made load-on-demand addon
   files; the game loads one a few seconds later. No `/reload` needed.
 
@@ -82,9 +83,13 @@ Nothing injects code, reads game memory or presses keys. Technical details:
 - **World of Warcraft: Forever** (tested on 1.60.1.69977–70205), in **windowed** or
   **windowed fullscreen / borderless** mode. Exclusive fullscreen blocks screen capture.
 - **[Node.js](https://nodejs.org) 22.2 or newer** (24 LTS works).
-- **[Claude Code](https://claude.com/claude-code)**, installed and **logged in** with a
-  Claude account (`claude auth status` shows `loggedIn: true`). Its usage counts against
-  your Claude plan.
+- **One AI CLI, installed and logged in** (either one; the installer sets it up):
+  - **[Claude Code](https://claude.com/claude-code)** (default), logged in with a Claude
+    account (`claude auth status` shows `loggedIn: true`). Usage counts against your
+    Claude plan.
+  - **or [OpenAI Codex](https://github.com/openai/codex)** (`npm install -g @openai/codex`),
+    logged in with `codex login` (`codex login status` says `Logged in`). Tested with
+    codex-cli 0.154.0; older versions get a warning. Usage counts against your ChatGPT plan.
 - Git is **not** required: the installer downloads a zip. (Developers can clone instead.)
 
 ## Install
@@ -101,6 +106,15 @@ key), downloads this project to `%LOCALAPPDATA%\WoWChatHelper`, installs the add
 and puts a **WoW Chat Helper** shortcut on the desktop that starts the bridge. Run the same
 line again to update. Full guide (Traditional Chinese): [docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md).
 
+**Prefer OpenAI Codex?** Use this line instead; it installs Codex (`npm install -g
+@openai/codex`) and runs `codex login` instead of the Claude steps:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1))) -Agent codex
+```
+
+Re-running the installer without `-Agent` keeps the agent already in `bridge\config.json`.
+
 **Using a coding agent instead?** Paste this into Claude Code (or Codex, Gemini CLI, Copilot)
 on the PC that runs WoW:
 
@@ -109,7 +123,7 @@ Install WoW Chat Helper from https://github.com/tsesc/wow-ai-chat-helper on this
 ```
 
 [AGENTS.md](AGENTS.md) tells the agent how to install, verify, update and uninstall without
-asking you for anything except the Claude login.
+asking you for anything except the Claude (or Codex) login.
 
 <details>
 <summary>Manual install (Git users, developers)</summary>
@@ -119,11 +133,13 @@ asking you for anything except the Claude login.
 winget install OpenJS.NodeJS.LTS
 irm https://claude.ai/install.ps1 | iex      # Claude Code
 claude auth login                            # log in once, in a browser
+# ...or Codex instead:  npm install -g @openai/codex ; codex login
 
 # 2. This project
 git clone https://github.com/tsesc/wow-ai-chat-helper
 cd wow-ai-chat-helper
 node setup.js                                # or: node setup.js --wow "G:\...\World of Warcraft\_classic_beta_"
+                                             # Codex: node setup.js --agent codex
 ```
 
 `setup.js` finds the Forever client (`_forever_` or `_classic_beta_` under your Battle.net
@@ -133,7 +149,8 @@ folder; pass `--wow` if it can't), then:
 - creates 200 slot addons (`WoWChatHelper_S001`…`S200`) and about 2,800 tiny signal
   `.wav` files. That many files is normal: the game only notices addon files that
   already exist when it starts;
-- writes `bridge\config.json` and checks that `claude` is installed.
+- writes `bridge\config.json` and reports, for Claude Code and Codex, whether each is
+  installed and logged in (`--agent claude|codex` picks the one the bridge uses).
 
 Then:
 
@@ -145,8 +162,8 @@ Then:
    npm start                      # in the project folder
    # or double-click bridge\start-window.cmd
    ```
-   The banner shows the WoW folder, the glossary size, the language and
-   `claude : login ok`. The bridge restarts itself if it crashes.
+   The banner shows the WoW folder, the agent, the glossary size, the language and
+   `Claude Code : login ok` (or `Codex : login ok`). The bridge restarts itself if it crashes.
 6. In game, type `/wch`. The light turns **green** once the addon and the bridge see each
    other.
 
@@ -237,16 +254,32 @@ The keys you are most likely to change:
 | Key | Default | Meaning |
 |---|---|---|
 | `wowPath` | found by setup | The Forever client folder (`...\_classic_beta_` during the beta) |
-| `claudePath` | `""` | Full path to `claude.exe` if it isn't found automatically |
-| `models.explain` / `translate` / `detail` | `haiku` / `haiku` / `sonnet` | Claude model for each kind of request |
+| `agent` | `claude` | Which AI CLI to use: `claude` or `codex` (see [AI backends](#ai-backends)) |
+| `claudePath` / `codexPath` | `""` | Full path to `claude.exe` / `codex.exe` (or npm's `codex.cmd`) if it isn't found automatically |
+| `models.explain` / `translate` / `detail` | (not set) | Model id of the chosen agent for each kind of request. Not set = the agent's default: Claude `haiku` / `haiku` / `sonnet`; Codex uses its own default model |
 | `capture.corner` | `TOPLEFT` | Must match `/wch corner` in game |
 | `capture.processName` | `WowB` | The game's process name |
-| `batchWindowMs` | `400` | Messages arriving this close together are sent to Claude in one go |
-| `persistent` | `true` | Keep one Claude process running (faster) instead of starting one per request |
+| `batchWindowMs` | `400` | Messages arriving this close together are sent to the AI in one go |
+| `persistent` | `true` | Claude only: keep one Claude process running (faster) instead of starting one per request |
 | `maxThinkingTokens` | `0` | Turns off extended thinking for Haiku; without it, answers took 24–80 s instead of 2–4 s |
 | `timeoutMs` | `60000` | Give up on a request after this long |
 
 Restart the bridge after editing it.
+
+### AI backends
+
+The bridge drives a CLI you have logged in to; it never asks for an API key.
+
+| `agent` | CLI | Log in | Notes |
+|---|---|---|---|
+| `claude` (default) | [Claude Code](https://claude.com/claude-code) | `claude auth login` | One Claude process stays running, so answers take a few seconds. Haiku for chat, Sonnet for "detail". |
+| `codex` | [OpenAI Codex](https://github.com/openai/codex) | `codex login` | Each answer is a fresh `codex exec` run (about 7–15 s), read-only, with Codex's tools switched off. Uses Codex's default model unless `models` says otherwise. |
+
+To switch: `node setup.js --agent codex` (or edit `"agent"` in `bridge\config.json`), then
+restart the bridge. Switching with setup.js drops `models`, since model ids belong to one
+agent. Want another model or CLI? Providers are small plug-ins in `bridge/providers/`; see
+[docs/PROVIDERS.md](docs/PROVIDERS.md) for the interface, how to test one with a fake CLI,
+and the checklist.
 
 ## Troubleshooting
 
@@ -259,7 +292,9 @@ Restart the bridge after editing it.
 | Replies go to Say instead of Party | Update to the latest version; the reply now keeps the channel your chat box is on. |
 | "Slots running low" warning | Each answer uses one of 200 slots per session. Type `/reload` when convenient to reset them. |
 | Chinese/Korean shows as boxes | `/wch font on`. |
-| `claude : not logged in` in the bridge banner | Run `claude auth login` once on that PC. |
+| `!! Claude Code CLI is not logged in` in the bridge window | Run `claude auth login` once on that PC. |
+| `!! Codex CLI is not logged in` in the bridge window, or answers say `codex not logged in` | Run `codex login` once on that PC (`codex login status` must say `Logged in`). |
+| `config.json "agent": unknown agent` and the bridge stops | `"agent"` must be `claude` or `codex`. |
 | Answers take 20 s or more | Check `maxThinkingTokens` is `0` in `bridge/config.json`. |
 
 The bridge also writes everything it does to its console window; when you report a bug,
@@ -270,10 +305,11 @@ include the last 30 lines.
 - **What leaves your PC:** the text of chat lines that get explained (sender name,
   channel and up to four previous lines of that conversation for context) and the
   sentences you translate are sent to Anthropic through Claude Code, under your Claude
-  account's terms. Nothing is sent for messages that are not explained. Nothing else
+  account's terms (or to OpenAI through Codex, when `agent` is `codex`). Nothing is sent for messages that are not explained. Nothing else
   from the game is read.
-- **Cost:** it uses your Claude plan's usage through Claude Code; there is no separate
-  bill. Haiku is used for almost everything to keep it light.
+- **Cost:** it uses your Claude plan's usage through Claude Code (or your ChatGPT plan's
+  through Codex); there is no separate bill. With Claude, Haiku is used for almost
+  everything to keep it light.
 - **Game rules:** the addon only uses Blizzard's documented addon API. The bridge only
   reads a small corner of the screen and writes ordinary files; it does not read game
   memory, inject anything or press keys, and **it never sends chat for you**. It is

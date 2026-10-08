@@ -1,11 +1,8 @@
 {
   "wowPath": "C:\\Program Files (x86)\\World of Warcraft\\_forever_",
+  "agent": "claude",
   "claudePath": "",
-  "models": {
-    "explain": "haiku",
-    "translate": "haiku",
-    "detail": "sonnet"
-  },
+  "codexPath": "",
   "capture": {
     "enabled": true,
     "corner": "TOPLEFT",

@@ -49,7 +49,7 @@ WoW 的 addon 在沙盒裡執行：遊戲中不能連網路、也不能讀檔。
 | 部分 | 跑在哪裡 | 做什麼 |
 |---|---|---|
 | **Addon**（`WoWChatHelper`、術語表、slot addon） | 遊戲裡 | 看聊天、顯示說明和回覆按鈕、術語表視窗 |
-| **Bridge 橋接程式**（本 repo 的 Node.js 程式） | 同一台 Windows 電腦，在遊戲旁邊 | 從畫面讀取 addon 的訊息、問 Claude、把答案送回遊戲 |
+| **Bridge 橋接程式**（本 repo 的 Node.js 程式） | 同一台 Windows 電腦，在遊戲旁邊 | 從畫面讀取 addon 的訊息、問 AI（Claude 或 Codex）、把答案送回遊戲 |
 
 ```
  WoW（addon）                                  Bridge（Node.js，同一台電腦）
@@ -62,8 +62,9 @@ WoW 的 addon 在沙盒裡執行：遊戲中不能連網路、也不能讀檔。
 ```
 
 - **送出**：addon 把訊息畫成畫面左上角一小排 4 像素的彩色方格，bridge 截圖解碼。
-- **AI**：bridge 先比對訊息裡的 WoW 術語，再交給本機的
-  [Claude Code](https://claude.com/claude-code) CLI（`claude -p`）產生說明和回覆建議。
+- **AI**：bridge 先比對訊息裡的 WoW 術語，再交給本機的 AI CLI 產生說明和回覆建議：
+  [Claude Code](https://claude.com/claude-code)（`claude -p`，預設）或
+  [OpenAI Codex](https://github.com/openai/codex)（`codex exec`）。見 [AI 後端](#ai-後端)。
 - **送回**：bridge 把答案寫進 200 個預先建立的「隨需求載入」addon 檔，遊戲幾秒後載入其中
   一個。不需要 `/reload`。
 
@@ -75,8 +76,12 @@ WoW 的 addon 在沙盒裡執行：遊戲中不能連網路、也不能讀檔。
 - **WoW: Forever**（測試過 1.60.1.69977–70205），**視窗**或**全螢幕（視窗模式）／無邊框**。
   獨佔全螢幕會擋住截圖。
 - **[Node.js](https://nodejs.org) 22.2 以上**（24 LTS 可以）。
-- **[Claude Code](https://claude.com/claude-code)**，已安裝並用 Claude 帳號**登入**
-  （`claude auth status` 顯示 `loggedIn: true`）。用量算在你的 Claude 方案裡。
+- **一個 AI CLI，已安裝並登入**（兩者擇一，安裝器會幫你裝）：
+  - **[Claude Code](https://claude.com/claude-code)**（預設），用 Claude 帳號登入
+    （`claude auth status` 顯示 `loggedIn: true`）。用量算在你的 Claude 方案裡。
+  - **或 [OpenAI Codex](https://github.com/openai/codex)**（`npm install -g @openai/codex`），
+    用 `codex login` 登入（`codex login status` 顯示 `Logged in`）。測試版本為 codex-cli 0.154.0，
+    較舊的版本會顯示警告。用量算在你的 ChatGPT 方案裡。
 - **不需要** Git：安裝器直接下載 zip。（開發者可以自己 clone。）
 
 ## 安裝
@@ -92,13 +97,22 @@ irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1 
 把 addon 裝進 WoW，最後在桌面放一個 **WoW Chat Helper** 捷徑用來啟動 bridge。要更新就再貼一次同一行。
 完整逐步說明：[docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md)。
 
+**想用 OpenAI Codex？** 改貼這一行；它會改裝 Codex（`npm install -g @openai/codex`）並跑
+`codex login`，取代 Claude 的步驟：
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/tsesc/wow-ai-chat-helper/main/install.ps1))) -Agent codex
+```
+
+之後重跑安裝器沒帶 `-Agent` 時，會沿用 `bridge\config.json` 裡已設定的 agent。
+
 **習慣用 AI 助手？** 在跑遊戲的 PC 上開 Claude Code（Codex、Gemini CLI、Copilot 也行），貼這句：
 
 ```text
 Install WoW Chat Helper from https://github.com/tsesc/wow-ai-chat-helper on this Windows PC, following the repo's AGENTS.md.
 ```
 
-[AGENTS.md](AGENTS.md) 會告訴助手怎麼安裝、驗證、更新、移除；除了登入 Claude 以外不會問你別的。
+[AGENTS.md](AGENTS.md) 會告訴助手怎麼安裝、驗證、更新、移除；除了登入 Claude（或 Codex）以外不會問你別的。
 
 <details>
 <summary>手動安裝（有 Git 的人、開發者）</summary>
@@ -108,11 +122,13 @@ Install WoW Chat Helper from https://github.com/tsesc/wow-ai-chat-helper on this
 winget install OpenJS.NodeJS.LTS
 irm https://claude.ai/install.ps1 | iex      # Claude Code
 claude auth login                            # 在瀏覽器登入一次
+# ……或改用 Codex：npm install -g @openai/codex ; codex login
 
 # 2. 本專案
 git clone https://github.com/tsesc/wow-ai-chat-helper
 cd wow-ai-chat-helper
 node setup.js                                # 或：node setup.js --wow "G:\...\World of Warcraft\_classic_beta_"
+                                             # Codex：node setup.js --agent codex
 ```
 
 `setup.js` 會在 Battle.net 資料夾底下找 Forever client（`_forever_` 或 beta 期間的
@@ -121,7 +137,8 @@ node setup.js                                # 或：node setup.js --wow "G:\...
 - 把 addon 複製到 `Interface\AddOns\WoWChatHelper`，加上 9 個語系的術語 addon；
 - 建立 200 個 slot addon（`WoWChatHelper_S001`…`S200`）和約 2,800 個很小的訊號 `.wav`。
   檔案多是正常的：遊戲只會在啟動時偵測 addon 檔案，所以要先建好；
-- 寫入 `bridge\config.json`，並確認 `claude` 有安裝。
+- 寫入 `bridge\config.json`，並列出 Claude Code 與 Codex 各自有沒有安裝、有沒有登入
+  （`--agent claude|codex` 決定 bridge 用哪一個）。
 
 接著：
 
@@ -133,7 +150,8 @@ node setup.js                                # 或：node setup.js --wow "G:\...
    npm start                      # 在專案資料夾
    # 或雙擊 bridge\start-window.cmd
    ```
-   開頭會顯示 WoW 資料夾、術語數量、語言和 `claude : login ok`。當掉會自動重啟。
+   開頭會顯示 WoW 資料夾、agent、術語數量、語言和 `Claude Code : login ok`（或
+   `Codex : login ok`）。當掉會自動重啟。
 6. 進遊戲打 `/wch`，addon 和 bridge 連上後燈號會變**綠色**。
 
 **更新**：`git pull`，再跑一次 `node setup.js`，重啟 bridge。如果更新加了新的 addon 檔案
@@ -213,16 +231,31 @@ esMX 也用這個）**、**巴西葡萄牙文（ptBR）**、**俄文（ruRU）**
 | 項目 | 預設 | 說明 |
 |---|---|---|
 | `wowPath` | setup 自動找 | Forever client 資料夾（beta 期間是 `...\_classic_beta_`） |
-| `claudePath` | `""` | 找不到 `claude.exe` 時填完整路徑 |
-| `models.explain` / `translate` / `detail` | `haiku` / `haiku` / `sonnet` | 各類請求用的 Claude 模型 |
+| `agent` | `claude` | 用哪個 AI CLI：`claude` 或 `codex`（見 [AI 後端](#ai-後端)） |
+| `claudePath` / `codexPath` | `""` | 找不到 `claude.exe` / `codex.exe`（或 npm 的 `codex.cmd`）時填完整路徑 |
+| `models.explain` / `translate` / `detail` | （不設） | 所選 agent 的模型 id，依請求種類。不設 = 該 agent 的預設：Claude 是 `haiku` / `haiku` / `sonnet`；Codex 用它自己的預設模型 |
 | `capture.corner` | `TOPLEFT` | 要和遊戲內 `/wch corner` 一致 |
 | `capture.processName` | `WowB` | 遊戲的程序名稱 |
-| `batchWindowMs` | `400` | 這段時間內到達的訊息會合併成一次送給 Claude |
-| `persistent` | `true` | 常駐一個 Claude 程序（較快），而不是每次重開 |
+| `batchWindowMs` | `400` | 這段時間內到達的訊息會合併成一次送給 AI |
+| `persistent` | `true` | 僅 Claude：常駐一個 Claude 程序（較快），而不是每次重開 |
 | `maxThinkingTokens` | `0` | 關閉 Haiku 的延伸思考；不關的話每次要 24–80 秒，關了 2–4 秒 |
 | `timeoutMs` | `60000` | 單一請求逾時 |
 
 改完要重啟 bridge。
+
+### AI 後端
+
+bridge 透過你已登入的 CLI 呼叫模型，不會跟你要 API key。
+
+| `agent` | CLI | 登入 | 說明 |
+|---|---|---|---|
+| `claude`（預設） | [Claude Code](https://claude.com/claude-code) | `claude auth login` | 常駐一個 Claude 程序，回應幾秒內。聊天用 Haiku，「詳細」用 Sonnet。 |
+| `codex` | [OpenAI Codex](https://github.com/openai/codex) | `codex login` | 每次回答都是一次新的 `codex exec`（約 7–15 秒），唯讀、關閉 Codex 的工具。沒設 `models` 時用 Codex 預設模型。 |
+
+切換方式：`node setup.js --agent codex`（或直接改 `bridge\config.json` 的 `"agent"`），再重啟
+bridge。用 setup.js 切換會清掉 `models`，因為模型 id 只對原本的 agent 有意義。想接其他模型或
+CLI？provider 是 `bridge/providers/` 裡的小外掛，介面、用假 CLI 寫測試的方法和檢查清單見
+[docs/PROVIDERS.md](docs/PROVIDERS.md)（英文）。
 
 ## 疑難排解
 
@@ -235,7 +268,9 @@ esMX 也用這個）**、**巴西葡萄牙文（ptBR）**、**俄文（ruRU）**
 | 回覆跑到「說」而不是隊伍 | 更新到最新版，回覆會沿用聊天框目前的頻道。 |
 | 「slot 快用完」提示 | 每個答案用掉一個 slot，每次登入 200 個。方便時打 `/reload` 重置。 |
 | 中文／韓文變方塊 | `/wch font on`。 |
-| bridge 開頭顯示 `claude : not logged in` | 在那台電腦執行一次 `claude auth login`。 |
+| bridge 視窗顯示 `!! Claude Code CLI is not logged in` | 在那台電腦執行一次 `claude auth login`。 |
+| bridge 視窗顯示 `!! Codex CLI is not logged in`，或答案顯示 `codex not logged in` | 在那台電腦執行一次 `codex login`（`codex login status` 要顯示 `Logged in`）。 |
+| bridge 顯示 `config.json "agent": unknown agent` 後停止 | `"agent"` 只能是 `claude` 或 `codex`。 |
 | 回應要 20 秒以上 | 確認 `bridge/config.json` 的 `maxThinkingTokens` 是 `0`。 |
 
 bridge 會把所有動作印在它的視窗裡；回報問題時請附上最後 30 行。
@@ -244,9 +279,9 @@ bridge 會把所有動作印在它的視窗裡；回報問題時請附上最後 
 
 - **哪些資料會離開你的電腦**：被解釋的那幾則聊天（發話者名稱、頻道，以及同一段對話的前
   4 句作為上下文），以及你要翻譯的句子，會透過 Claude Code 送到 Anthropic，適用你 Claude
-  帳號的條款。沒有被解釋的訊息不會送出，遊戲的其他內容也不會被讀取。
-- **費用**：透過 Claude Code 使用你 Claude 方案的額度，沒有額外帳單。幾乎都用 Haiku，
-  負擔很輕。
+  帳號的條款（`agent` 是 `codex` 時則透過 Codex 送到 OpenAI）。沒有被解釋的訊息不會送出，遊戲的其他內容也不會被讀取。
+- **費用**：透過 Claude Code 使用你 Claude 方案的額度（或透過 Codex 使用 ChatGPT 方案的
+  額度），沒有額外帳單。用 Claude 時幾乎都用 Haiku，負擔很輕。
 - **遊戲規範**：addon 只用 Blizzard 公開的 addon API。bridge 只讀畫面一小角、寫一般檔案，
   不讀遊戲記憶體、不注入、不模擬按鍵，**也絕不替你發話**。但它仍是 Blizzard 沒有背書的
   第三方工具，請自行依 Blizzard 使用條款評估風險。

@@ -15,6 +15,7 @@ const { createVM } = require('./helpers/lua');
 
 const ROOT = path.join(__dirname, '..');
 const FAKE = path.join(__dirname, 'fakes', 'fake-claude.js');
+const FAKE_CODEX = path.join(__dirname, 'fakes', 'fake-codex.js');
 const FAKE_CAPTURE = path.join(__dirname, 'fakes', 'fake-capture.js');
 const INJECT = path.join(__dirname, 'fixtures', 'inject.jsonl');
 const TERMS = path.join(__dirname, 'fixtures', 'terms.json');
@@ -35,7 +36,7 @@ function installed() {
   const w = fakeClient();
   const configFile = path.join(w.dir, 'config.json');
   const lines = [];
-  const res = setup(['--wow', w.client, '--config', configFile, '--claude', FAKE], (l) => lines.push(l));
+  const res = setup(['--wow', w.client, '--config', configFile, '--claude', FAKE, '--codex', FAKE_CODEX], (l) => lines.push(l));
   const logFile = path.join(w.dir, 'fake.log');
   process.env.FAKE_CLAUDE_LOG = logFile;
   process.env.FAKE_CLAUDE_STATE = path.join(w.dir, 'fake-state');
@@ -82,8 +83,15 @@ test('setup: copies the addon, writes config.json, finds claude, builds slots an
   assert.strictEqual(cfg.claudePath, FAKE);
   assert.strictEqual(cfg.capture.processName, 'Wow');
   assert.strictEqual(cfg.persistent, true);
-  assert.deepStrictEqual(cfg.models, { explain: 'haiku', translate: 'haiku', detail: 'sonnet' });
+  assert.strictEqual(cfg.agent, 'claude');
+  assert.strictEqual(cfg.models, undefined, 'models come from the provider defaults');
+  assert.deepStrictEqual(B.createBridge(cfg, { stateFile: path.join(w.dir, 's.json') }).runner.opts.models, { explain: 'haiku', translate: 'haiku', detail: 'sonnet' });
+  assert.strictEqual(res.agent, 'claude');
   assert.strictEqual(res.claude.found, true);
+  assert.strictEqual(res.claude.loggedIn, true);
+  assert.ok(w.lines.some(l => /^agent {4}: claude \(Claude Code\)/.test(l)), w.lines.join('\n'));
+  assert.ok(w.lines.some(l => /^ {2}claude : .*fake-claude\.js {2}\(2\.1\.289 \(Claude Code\)\), login ok$/.test(l)), w.lines.join('\n'));
+  assert.ok(w.lines.some(l => /^ {2}codex {2}: /.test(l)), 'every provider is reported');
   assert.match(res.claude.version, /Claude Code/);
   for (const n of [1, 77, 200]) {
     const name = P.slotAddonName(n);
@@ -131,10 +139,10 @@ test('setup: a folder that is not a client is refused', () => {
 test('setup: works on a Windows-style path with spaces (cli run)', () => {
   const w = fakeClient();
   const configFile = path.join(w.dir, 'my config', 'config.json');
-  const r = spawnSync(process.execPath, [path.join(ROOT, 'setup.js'), '--wow', w.client, '--config', configFile, '--claude', FAKE], { encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'setup.js'), '--wow', w.client, '--config', configFile, '--claude', FAKE, '--codex', FAKE_CODEX], { encoding: 'utf8' });
   assert.strictEqual(r.status, 0, r.stderr);
   assert.match(r.stdout, /client {3}: .*World of Warcraft/);
-  assert.match(r.stdout, /claude {3}: .*fake-claude\.js {2}\(2\.1\.289 \(Claude Code\)\)/);
+  assert.match(r.stdout, /claude : .*fake-claude\.js {2}\(2\.1\.289 \(Claude Code\)\), login ok/);
   assert.ok(fs.existsSync(path.join(w.addons, 'WoWChatHelper_S200', 'Inbox.lua')));
 });
 
@@ -422,14 +430,74 @@ test('publish survives Windows EPERM renames: retried, slots still written, read
   } finally { fs.renameSync = realRename; bridge.stop(); }
 });
 
-test('checkClaude: a logged-out CLI is named in the bridge window at startup', async () => {
+test('checkAgent: a logged-out CLI is named in the bridge window at startup; ok -> "<displayName> : login ok"', async () => {
   const w = installed();
   const { bridge, logs } = makeBridge(w);
   bridge.runner.checkLogin = async () => ({ ok: false, loggedOut: true, err: 'claude not logged in: Invalid API key' });
   try {
-    await bridge.checkClaude();
-    assert.ok(logs.some(l => /!! Claude Code CLI is not logged in/.test(l)), logs.join('\n'));
+    assert.match(bridge.banner(), /persistent mode \(Sonnet one-shot\), batch window/);
+    await bridge.checkAgent();
+    assert.ok(logs.some(l => /!! Claude Code CLI is not logged in .*claude auth login/.test(l)), logs.join('\n'));
+    bridge.runner.checkLogin = async () => ({ ok: true });
+    await bridge.checkAgent();
+    assert.ok(logs.includes('Claude Code : login ok'), logs.join('\n'));
   } finally { bridge.stop(); }
+});
+
+test('agent codex: banner names Codex and its default model; requests go through codex', async () => {
+  const w = installed();
+  const { bridge, logs } = makeBridge(w, { agent: 'codex', codexPath: FAKE_CODEX });
+  try {
+    assert.match(bridge.banner(), /agent {4}: Codex, .*fake-codex\.js/);
+    assert.match(bridge.banner(), /models {3}: explain \(default\), translate \(default\), detail \(default\); one `codex exec` per batch/);
+    assert.ok(!/persistent/.test(bridge.banner()), 'codex has no persistent mode');
+    bridge.handleRecords([rec(1, 'x', 'lf1m strat')]);
+    await bridge.idle();
+    const r = loadSlot(slotSrc(w, 1)).results.find(x => x.id === 1);
+    assert.strictEqual(r.status, 'done');
+    assert.strictEqual(r.tr, '譯：lf1m strat');
+    await bridge.checkAgent();
+    assert.ok(logs.includes('Codex : login ok'), logs.join('\n'));
+  } finally { bridge.stop(); }
+});
+
+test('cli: an unknown "agent" in config.json exits 2 and lists the valid names', () => {
+  const w = installed();
+  const cfg = JSON.parse(fs.readFileSync(w.configFile, 'utf8'));
+  fs.writeFileSync(w.configFile, JSON.stringify({ ...cfg, agent: 'gemini' }));
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'bridge', 'bridge.js'), '--config', w.configFile, '--no-capture'], { encoding: 'utf8', timeout: 10000 });
+  assert.strictEqual(r.status, 2);
+  assert.match(r.stderr, /config\.json "agent": unknown agent "gemini" \(available: claude, codex\)/);
+});
+
+test('setup --agent codex: writes agent and codexPath, reports codex logged in; switching drops models; unknown agent fails', () => {
+  const w = fakeClient();
+  const configFile = path.join(w.dir, 'config.json');
+  const lines = [];
+  const res = setup(['--wow', w.client, '--config', configFile, '--agent', 'codex', '--codex', FAKE_CODEX, '--claude', FAKE], (l) => lines.push(l));
+  let cfg = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  assert.strictEqual(cfg.agent, 'codex');
+  assert.strictEqual(cfg.codexPath, FAKE_CODEX);
+  assert.strictEqual(res.agent, 'codex');
+  assert.strictEqual(res.agents.codex.found, true);
+  assert.strictEqual(res.agents.codex.loggedIn, true);
+  assert.ok(lines.some(l => /^agent {4}: codex \(Codex\)/.test(l)), lines.join('\n'));
+  assert.ok(lines.some(l => /^ {2}codex {2}: .*fake-codex\.js {2}\(codex-cli 0\.154\.0\), login ok$/.test(l)), lines.join('\n'));
+  // Back to claude with Claude model ids set, then to codex again: the ids are dropped.
+  fs.writeFileSync(configFile, JSON.stringify({ ...cfg, agent: 'claude', models: { explain: 'haiku' } }));
+  const lines2 = [];
+  setup(['--wow', w.client, '--config', configFile, '--agent', 'codex'], (l) => lines2.push(l));
+  cfg = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  assert.strictEqual(cfg.agent, 'codex');
+  assert.strictEqual(cfg.models, undefined);
+  assert.ok(lines2.some(l => /updated \(agent, models \(now the codex defaults\)\)/.test(l)), lines2.join('\n'));
+  // A logged-out agent gets a hint at the end.
+  process.env.FAKE_CODEX_LOGGED_OUT = '1';
+  const lines3 = [];
+  try { setup(['--wow', w.client, '--config', configFile], (l) => lines3.push(l)); } finally { delete process.env.FAKE_CODEX_LOGGED_OUT; }
+  assert.ok(lines3.some(l => /NOT LOGGED IN - Not logged in/.test(l)), lines3.join('\n'));
+  assert.ok(lines3.some(l => /!! Codex is not logged in: Run `codex login`/.test(l)), lines3.join('\n'));
+  assert.throws(() => setup(['--wow', w.client, '--config', configFile, '--agent', 'gpt'], () => {}), /unknown agent "gpt" \(available: claude, codex\)/);
 });
 
 // ---------------------------------------------------------------------------

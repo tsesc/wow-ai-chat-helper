@@ -3,12 +3,14 @@
 //
 // One-shot installer:
 //
-//   node setup.js [--wow "<client folder>"] [--config <file>] [--claude "<path to claude>"]
+//   node setup.js [--wow "<client folder>"] [--config <file>] [--agent claude|codex]
+//                 [--claude "<path to claude>"] [--codex "<path to codex>"]
 //
 // Finds the WoW: Forever client, copies addon/WoWChatHelper and the per-language glossary
 // addons (addon/WoWChatHelper_Glossary_<locale>, load-on-demand) into Interface\AddOns, writes
-// bridge/config.json from config.example.json (if missing), reports whether the Claude
-// Code CLI was found, and builds the slot pool + signal files (bridge/install-slots.js).
+// bridge/config.json from config.example.json (if missing), reports for every AI provider
+// (bridge/providers/) whether its CLI was found and is logged in, and builds the slot pool +
+// signal files (bridge/install-slots.js). --agent picks the provider the bridge uses.
 // Re-running is safe: an existing config.json and generated files are kept.
 'use strict';
 
@@ -24,6 +26,7 @@ const ADDON_SRC = path.join(ADDONS_SRC, ADDON);
 const GLOSSARY_PREFIX = ADDON + '_Glossary_';
 const BRIDGE = path.join(ROOT, 'bridge');
 const EXAMPLE = path.join(BRIDGE, 'config.example.json');
+const providers = require(path.join(BRIDGE, 'providers'));
 
 function parseArgs(argv) {
   const args = {};
@@ -119,12 +122,29 @@ function removeStaleGlossary(client, src = ADDON_SRC) {
   return true;
 }
 
+// --agent / --claude / --codex -> config fields. Switching agent drops "models": model ids
+// belong to one provider ("haiku" means nothing to Codex), so the new one starts from its
+// defaults. -> the names of the fields changed.
+function applyAgentArgs(cfg, args) {
+  const notes = [];
+  if (typeof args.agent === 'string') {
+    const name = providers.get(args.agent).name;
+    if ((cfg.agent || providers.DEFAULT_AGENT) !== name) {
+      cfg.agent = name; notes.push('agent');
+      if (cfg.models) { delete cfg.models; notes.push(`models (now the ${name} defaults)`); }
+    } else if (!cfg.agent) cfg.agent = name;
+  }
+  if (typeof args.claude === 'string' && cfg.claudePath !== args.claude) { cfg.claudePath = args.claude; notes.push('claudePath'); }
+  if (typeof args.codex === 'string' && cfg.codexPath !== args.codex) { cfg.codexPath = args.codex; notes.push('codexPath'); }
+  return notes;
+}
+
 function writeConfig(configFile, client, args, log) {
   if (fs.existsSync(configFile)) {
     const cfg = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     const notes = [];
     if (cfg.wowPath !== client) { cfg.wowPath = client; notes.push('wowPath'); }
-    if (typeof args.claude === 'string' && cfg.claudePath !== args.claude) { cfg.claudePath = args.claude; notes.push('claudePath'); }
+    notes.push(...applyAgentArgs(cfg, args));
     if (notes.length) {
       fs.writeFileSync(configFile, JSON.stringify(cfg, null, 2) + '\n');
       log(`config   : ${configFile} updated (${notes.join(', ')}); everything else kept`);
@@ -133,7 +153,7 @@ function writeConfig(configFile, client, args, log) {
   }
   const cfg = JSON.parse(fs.readFileSync(EXAMPLE, 'utf8'));
   cfg.wowPath = client;
-  if (typeof args.claude === 'string') cfg.claudePath = args.claude;
+  applyAgentArgs(cfg, args);
   const exe = gameExe(client);
   if (exe) cfg.capture.processName = exe.replace(/\.exe$/i, '');
   fs.mkdirSync(path.dirname(configFile), { recursive: true });
@@ -142,18 +162,36 @@ function writeConfig(configFile, client, args, log) {
   return cfg;
 }
 
-// Is the Claude Code CLI there, and which version? (No model call.)
-function claudeReport(cfg) {
-  const ai = require(path.join(BRIDGE, 'ai.js'));
-  const cmd = ai.resolveCommand(cfg.claudePath || '');
-  if (!cmd.found) return { found: false, line: 'NOT FOUND - ' + cmd.note };
+// provider.loginStatus is async (it spawns the CLI); setup is synchronous, so it runs in a
+// child node and the answer comes back as JSON. -> { ok, detail }.
+function loginStatusSync(name, cfg) {
+  const code = `require(${JSON.stringify(path.join(BRIDGE, 'providers'))}).get(${JSON.stringify(name)})` +
+    `.loginStatus(${JSON.stringify(cfg)}).then(r => process.stdout.write(JSON.stringify(r)))`;
+  const r = spawnSync(process.execPath, ['-e', code], { encoding: 'utf8', timeout: 30000, windowsHide: true });
+  try { return JSON.parse(r.stdout); } catch { return { ok: false, detail: 'login check failed: ' + String(r.stderr || r.error || '').trim().split('\n')[0] }; }
+}
+
+// Is a provider's CLI there, which version, and is it logged in? (No model call.)
+function providerReport(name, cfg) {
+  const p = providers.get(name);
+  const cmd = p.resolveCommand(cfg);
+  if (!cmd.found) return { name, found: false, loggedIn: false, line: 'NOT FOUND - ' + cmd.note };
   const r = spawnSync(cmd.file, [...cmd.args, '--version'], { encoding: 'utf8', timeout: 20000, windowsHide: true });
   const version = String(r.stdout || '').trim().split('\n')[0];
-  return { found: true, cmd, version, line: [cmd.file, ...cmd.args].join(' ') + (version ? `  (${version})` : '') };
+  const login = loginStatusSync(name, cfg);
+  const warning = login.warning || '';
+  return {
+    name, found: true, cmd, version, loggedIn: !!login.ok, login, warning,
+    line: [cmd.file, ...cmd.args].join(' ') + (version ? `  (${version})` : '') + (login.ok ? ', login ok' : `, NOT LOGGED IN - ${login.detail}`) +
+      (warning ? `; WARNING: ${warning}` : ''),
+  };
 }
+
+const claudeReport = (cfg) => providerReport('claude', cfg);
 
 function setup(argv, log = console.log) {
   const args = parseArgs(argv);
+  if (args.agent !== undefined) providers.get(args.agent === true ? '' : args.agent); // unknown name -> error listing the valid ones
   const configFile = path.resolve(typeof args.config === 'string' ? args.config : path.join(BRIDGE, 'config.json'));
   const client = findClient(typeof args.wow === 'string' ? args.wow : '');
   log(`client   : ${client}`);
@@ -165,8 +203,14 @@ function setup(argv, log = console.log) {
     ? `glossary : ${glossary.names.length} language addon(s), ${glossary.copied} file(s): ${glossary.names.map(n => n.slice(GLOSSARY_PREFIX.length)).join(' ')}`
     : 'glossary : no addon/WoWChatHelper_Glossary_* folders found (run: node tools/build-glossary.js); in-game glossary will be empty');
   const cfg = writeConfig(configFile, client, args, log);
-  const claude = claudeReport(cfg);
-  log(`claude   : ${claude.line}`);
+  const agent = providers.get(cfg.agent);
+  log(`agent    : ${agent.name} (${agent.displayName}), set by "agent" in config.json`);
+  const agents = {};
+  for (const name of providers.list()) {
+    agents[name] = providerReport(name, cfg);
+    log(`  ${name.padEnd(7)}: ${agents[name].line}`);
+  }
+  const chosen = agents[agent.name];
   log('slots    : building the reply-slot pool and signal files...');
   const { installSlots } = require(path.join(BRIDGE, 'install-slots.js'));
   const addons = path.join(client, 'Interface', 'AddOns');
@@ -179,8 +223,8 @@ Done. Next:
   3. Start the bridge:  npm start   (or double-click bridge\\start-window.cmd for its own window)
   4. In game:  /wch  (status window; green light = bridge connected)
      /wtr <your text>  translates it into English reply candidates
-${claude.found ? '' : '\n  !! Install Claude Code and log in first (https://claude.com/claude-code, then run `claude` once).\n'}`);
-  return { client, configFile, cfg, addonDest: dest, copied, glossary, made, kept, claude };
+${!chosen.found ? `\n  !! ${agent.displayName} not found: ${agent.installHint}.\n` : !chosen.loggedIn ? `\n  !! ${agent.displayName} is not logged in: ${agent.loginHint}.\n` : ''}`);
+  return { client, configFile, cfg, addonDest: dest, copied, glossary, made, kept, agent: agent.name, agents, claude: agents.claude };
 }
 
 if (require.main === module) {
@@ -190,4 +234,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { setup, findClient, isClient, copyAddon, copyGlossaryAddons, removeStaleGlossary, writeConfig, parseArgs, claudeReport, GLOSSARY_PREFIX };
+module.exports = { setup, findClient, isClient, copyAddon, copyGlossaryAddons, removeStaleGlossary, writeConfig, parseArgs, claudeReport, providerReport, applyAgentArgs, GLOSSARY_PREFIX };
