@@ -4583,5 +4583,41 @@
    "ruRU": "ГГ вайп",
    "itIT": "GG wipe"
   }
+ },
+ {
+  "key": "lf rol",
+  "terms": [
+   "LF",
+   "RoL"
+  ],
+  "tr": {
+   "zhTW": "找羅德隆廢墟的隊伍",
+   "zhCN": "找洛丹伦废墟的队伍",
+   "koKR": "로데론 폐허 파티 구함",
+   "deDE": "Suche RoL-Gruppe",
+   "frFR": "Cherche groupe RoL",
+   "esES": "Busco grupo RoL",
+   "ptBR": "Procuro grupo RoL",
+   "ruRU": "Ищу группу в RoL",
+   "itIT": "Cerco gruppo RoL"
+  }
+ },
+ {
+  "key": "lfm rol",
+  "terms": [
+   "LFM",
+   "RoL"
+  ],
+  "tr": {
+   "zhTW": "羅德隆廢墟徵人",
+   "zhCN": "洛丹伦废墟招人",
+   "koKR": "로데론 폐허 파티원 구함",
+   "deDE": "RoL sucht Mitspieler",
+   "frFR": "RoL cherche joueurs",
+   "esES": "RoL busca más",
+   "ptBR": "RoL procura mais",
+   "ruRU": "Ищем ещё в RoL",
+   "itIT": "RoL cerca altri"
+  }
  }
 ]
