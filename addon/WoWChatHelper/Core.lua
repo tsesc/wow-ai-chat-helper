@@ -75,11 +75,17 @@ function ns.Print(msg)
 	if f then f:AddMessage(ns.C_PREFIX .. "[ChatHelper]|r " .. tostring(msg)) end
 end
 
--- Call fn if it exists, swallowing errors (optional client APIs).
+-- A diagnostic event for /wch report (Transport.Event; nothing before it exists).
+function ns.LogEvent(kind, msg)
+	if ns.Transport and ns.Transport.Event then ns.Transport.Event(kind, msg) end
+end
+
+-- Call fn if it exists, swallowing errors (optional client APIs); errors are logged.
 function ns.Try(fn, ...)
 	if type(fn) ~= "function" then return end
 	local r = { pcall(fn, ...) }
 	if r[1] then return unpack(r, 2) end
+	ns.LogEvent("error", "Try: " .. tostring(r[2]))
 end
 
 -- 12.x names first, the old globals as fallback.
@@ -187,7 +193,10 @@ function ns.LoadGlossary(lang)
 	local ok, reason = false, "NO_API"
 	if C_AddOns and C_AddOns.LoadAddOn then
 		local pok, a, b = pcall(C_AddOns.LoadAddOn, name)
-		if pok then ok, reason = a, b else reason = tostring(a) end
+		if pok then ok, reason = a, b else
+			reason = tostring(a)
+			ns.LogEvent("error", "LoadAddOn " .. name .. ": " .. reason)
+		end
 	end
 	local g = WCH_Glossary
 	if ok and type(g) == "table" and (g.locale == nil or g.locale == lang) then
@@ -362,7 +371,7 @@ end
 -- Slash commands
 ---------------------------------------------------------------------------
 
-local HELP = { "H_STATUS", "H_TR", "H_GLOSSARY", "H_LANG", "H_AUTO", "H_FONT", "H_CORNER", "H_HELLO" }
+local HELP = { "H_STATUS", "H_TR", "H_GLOSSARY", "H_QUICK", "H_REPORT", "H_LANG", "H_AUTO", "H_FONT", "H_CORNER", "H_HELLO" }
 
 local function OnOff(v)
 	v = (v or ""):lower()
@@ -381,6 +390,10 @@ function ns.HandleSlash(msg)
 		if UI then UI.Translate(rest) end
 	elseif cmd == "g" or cmd == "glossary" then
 		if UI then UI.OpenGlossary(rest) end
+	elseif cmd == "say" or cmd == "q" then
+		if UI then UI.OpenQuick() end
+	elseif cmd == "report" then
+		if UI then UI.OpenReport() end
 	elseif cmd == "auto" then
 		local group, v = rest:match("^(%S+)%s*(%S*)$")
 		group = (group or ""):lower()

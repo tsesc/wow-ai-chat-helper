@@ -192,6 +192,15 @@ node setup.js                                # 或：node setup.js --wow "G:\...
 很短又很常見的訊息（`ty`、`gg`、`omw`、`inv pls`…）直接用內建常用語離線解釋，不問 AI，
 會標成 `[譯·離線]`。
 
+**快速語句**：`/wch say`（或 `/wch q`，或 `/wch` 視窗的「快速語句」按鈕）依情境列出美服玩家
+真的會打的短句：打招呼、剛進隊伍、等一下／暫離、道謝、離隊／下線、交易（`hey o/`、`inv pls`、
+`brb 2 min`、`thx for the run`、`gtg, ty all`、`how much?`…），旁邊附中文意思。點一句就填進
+聊天框，頻道是輸入框目前的頻道（如果 2 分鐘內有人密你，就是回給那個人）。按 Enter 才會送出。
+
+**回報問題**：`/wch report`（或 `/wch` 視窗的「複製回報」按鈕）打開一個診斷回報視窗，內容已經
+全選好，按 Ctrl+C 複製、Esc 關閉，貼到回報裡就好。內容有插件與遊戲版本、角色、語言、訊號自檢、
+bridge 狀態、slot、等待中的請求和最近 30 筆傳輸事件；不含任何人的聊天內容。
+
 ## 指令一覽
 
 | 指令 | 作用 |
@@ -200,6 +209,8 @@ node setup.js                                # 或：node setup.js --wow "G:\...
 | `/wch status` | 在聊天框印出同樣資訊 |
 | `/wtr <文字>` | 把你的文字翻成英文候選句。等同 `/wch tr <文字>`。`/tr` 只在沒被遊戲或其他插件佔用時可用（繁中 client 已被佔用） |
 | `/wch g [關鍵字]` | 術語表，可帶關鍵字搜尋 |
+| `/wch say` / `/wch q` | 快速語句：點一句現成的英文填進聊天框（不會替你送出） |
+| `/wch report` | 診斷回報視窗，已全選，Ctrl+C 複製後貼到回報裡 |
 | `/wch lang <代碼>` | 說明和介面的語言：`zhTW zhCN koKR deDE frFR esES ptBR ruRU itIT`；`auto` 跟隨 client；不帶參數列出全部 |
 | `/wch auto <whisper\|party\|raid\|guild> on\|off` | 各類頻道的自動解釋開關 |
 | `/wch font on\|off\|auto` | 聊天框改用內建字型（client 字型缺你的語言的字時才需要） |

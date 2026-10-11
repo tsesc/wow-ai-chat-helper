@@ -11,7 +11,8 @@
 --      tells us which files the bridge has filled: ready/NNN, ack/NNN, presence/kkkk.
 --
 -- Public: Transport.Request(fields, meta) -> id, Transport.Get(id), SayHello(force),
--- SlotsLeft(), PendingCount(), BridgeState(), SignalsWork(), SelfTestResult(), Tick() (tests).
+-- SlotsLeft(), PendingCount(), BridgeState(), SignalsWork(), SelfTestResult(), Tick() (tests),
+-- Event(kind, msg) (the diagnostic log behind /wch report).
 
 local _, ns = ...
 if type(ns) ~= "table" then ns = WCH end
@@ -50,8 +51,39 @@ T.SLOT_COUNT = SLOT_COUNT
 -- run: state of this UI session (never saved). req[id] = request record:
 --   { id, kind, channel, sender, model, ctx, text, wire, meta, createdAt,
 --     shownAt, tries, acked, ackedAt, failed, final, status, result, readyStale, ackStale }
-local run = { req = {}, nextSlot = 1, slotsLeft = SLOT_COUNT, loads = 0 }
+local run = { req = {}, nextSlot = 1, slotsLeft = SLOT_COUNT, loads = 0, events = {} }
 T.run = run
+
+---------------------------------------------------------------------------
+-- Diagnostic events (/wch report): the last EVENT_MAX transport events of this
+-- session, run.events[i] = { t = GetTime(), kind, msg }. Only ids, kinds, statuses and
+-- error codes go in here, never chat text or player names: an error from the bridge may
+-- quote the AI CLI's output, so only its code (ErrCode) is kept. "|" becomes "¦" (the
+-- report is plain text; "||" would survive the copy doubled).
+---------------------------------------------------------------------------
+
+local EVENT_MAX = 30
+local EVENT_MSG_MAX = 160
+T.EVENT_MAX = EVENT_MAX
+
+local function Plain(s) return (tostring(s or ""):gsub("|", "¦"):gsub("[\r\n]+", " ")) end
+
+function T.Event(kind, msg)
+	local ev = run.events
+	ev[#ev + 1] = { t = GetTime(), kind = Plain(kind or "?"), msg = ns.Utf8Truncate(Plain(msg), EVENT_MSG_MAX) }
+	while #ev > EVENT_MAX do table.remove(ev, 1) end
+end
+local Event = T.Event
+
+-- The code of an error text: what comes before the first ":", letters, digits, spaces
+-- and dashes only, at most 24 characters; "error" if nothing is left.
+function T.ErrCode(err)
+	local c = tostring(err or ""):match("^[^:]*") or ""
+	c = ns.Trim((c:gsub("[^%w %-]", "")):sub(1, 24))
+	if c == "" then return "error" end
+	return c
+end
+local ErrCode = T.ErrCode
 
 local function db() return ns.db end
 
@@ -192,6 +224,7 @@ local function SoundValid(path)
 	if not ok then
 		signalAvailable = false
 		st.error = tostring(willPlay)
+		Event("error", "PlaySoundFile: " .. st.error)
 		-- Failing after the self-test passed: fall back to schedule polling and tell the
 		-- bridge (a fresh hello, from a timer: this may run inside a loop over run.req).
 		if run.signalsOk then
@@ -224,7 +257,7 @@ function T.SignalsWork() return run.signalsOk == true end
 -- before trusting it. On failure: schedule-only polling (spec 3.5 / 6).
 -- run.selftest is the reason in words, run.selftestCode the short code the hello
 -- carries (selftest=): ok | off | nosound | emptyplayable | validunplayable | error.
-local function SelfTest()
+local function RunSelfTest()
 	run.signalsOk = false
 	if not signalAvailable then
 		run.selftest, run.selftestCode = "PlaySoundFile missing", "nosound"
@@ -249,6 +282,10 @@ local function SelfTest()
 		run.selftest, run.selftestCode = "passed", "ok"
 		run.signalsOk = true
 	end
+end
+local function SelfTest()
+	RunSelfTest()
+	Event("selftest", tostring(run.selftestCode) .. " (" .. tostring(run.selftest) .. ")")
 end
 T.SelfTest = SelfTest
 
@@ -362,6 +399,7 @@ function T.Request(fields, meta)
 	rec.meta.lang = rec.meta.lang or ns.lang -- the language the bridge will answer in
 	rec.wire = BuildWire(rec)
 	run.req[id] = rec
+	if rec.hello then Event("hello", "#" .. id) else Event("request", "#" .. id .. " kind=" .. tostring(rec.kind)) end
 	if run.signalsOk then
 		-- The bridge can't have answered a request it hasn't seen: a valid file now
 		-- is left over from id-200 (wrap-around) or an earlier session, so don't trust
@@ -375,14 +413,16 @@ function T.Request(fields, meta)
 	return id
 end
 
-local function MarkAcked(rec)
+local function MarkAcked(rec, via)
 	if rec.acked then return end
 	rec.acked, rec.ackedAt = true, GetTime()
+	Event("ack", "#" .. rec.id .. (rec.hello and " (hello)" or "") .. " via=" .. tostring(via or "?"))
 	if rec.status == "queued" then rec.status = "sent" end
 end
 
 local function Fail(rec, err)
 	rec.failed, rec.status = true, "failed"
+	Event("failed", "#" .. rec.id .. " kind=" .. tostring(rec.kind) .. ": " .. ErrCode(err))
 	if ns.UI and ns.UI.OnFailed then ns.UI.OnFailed(rec, err) end
 end
 
@@ -451,7 +491,8 @@ local function ApplySlotData(data)
 	for _, r in ipairs(type(data.results) == "table" and data.results or {}) do
 		local rec = type(r) == "table" and run.req[tonumber(r.id) or -1]
 		if rec and not rec.hello and not rec.final and (r.kind == nil or r.kind == rec.kind) then
-			MarkAcked(rec)
+			MarkAcked(rec, "slot")
+			Event("result", "#" .. rec.id .. " " .. tostring(r.status))
 			if r.status == "done" then
 				rec.final, rec.status, rec.result = true, "done", r
 				resolved[#resolved + 1] = rec.id
@@ -459,6 +500,7 @@ local function ApplySlotData(data)
 			elseif r.status == "error" then
 				rec.final, rec.status = true, "error"
 				resolved[#resolved + 1] = rec.id
+				Event("failed", "#" .. rec.id .. " kind=" .. tostring(rec.kind) .. ": " .. ErrCode(r.err))
 				if ns.UI and ns.UI.OnFailed then ns.UI.OnFailed(rec, r.err or "error") end
 			elseif r.status == "working" then
 				rec.status = "working"
@@ -466,7 +508,7 @@ local function ApplySlotData(data)
 			-- Hellos shown before this record (oldest first, same or earlier frame)
 			-- were read too; without signals this is their only ack.
 			for hid, h in pairs(run.req) do
-				if h.hello and not h.acked and hid < rec.id and h.shownAt then MarkAcked(h) end
+				if h.hello and not h.acked and hid < rec.id and h.shownAt then MarkAcked(h, "slot") end
 			end
 		end
 	end
@@ -482,10 +524,12 @@ local function TryLoadSlot(why)
 	run.lastLoadAt = GetTime()
 	run.loadWanted = nil
 	WCH_SlotData = nil
+	Event("poll", name .. " why=" .. tostring(why))
 	local ok, reason = C_AddOns.LoadAddOn(name)
 	run.nextSlot = run.nextSlot + 1
 	if not ok then
 		run.slotError = reason
+		Event("error", "LoadAddOn " .. name .. ": " .. tostring(reason))
 		if reason == "MISSING" or reason == "DISABLED" or reason == "NOT_INSTALLED" then
 			run.slotsMissing = true
 			ns.Print("|cffff6060" .. F("SLOT_MISSING", name, tostring(reason)) .. "|r")
@@ -562,7 +606,7 @@ function T.Tick()
 		if top and not top.acked and not top.ackStale and CheckSignal("ack", top.id) then
 			for _, id in ipairs(ids) do
 				local r = run.req[id]
-				if r then MarkAcked(r) end
+				if r then MarkAcked(r, "signal") end
 			end
 			NotedBridge()
 			changed = true
@@ -608,6 +652,10 @@ function T.Tick()
 			anyPending = true
 			if run.signalsOk and not r.readyStale and CheckSignal("ready", id) then
 				want = "signal"
+				if not r.readyLogged then
+					r.readyLogged = true
+					Event("signal", "ready #" .. id)
+				end
 				run.signalIds = run.signalIds or {}
 				table.insert(run.signalIds, id)
 			elseif r.acked then

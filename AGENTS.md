@@ -91,6 +91,7 @@ addon settings; ask before deleting it.
 | Chinese shows as boxes | `docs/SPIKE-CHECKLIST.md` (font check) |
 | Anything that happened earlier (window already closed) | Bridge log files: `<InstallDir>\app\bridge\logs\bridge-YYYY-MM-DD.log` (one per day, 7 kept; `logDir` / `logKeepDays` in `config.json`). The banner's `log` line names today's file |
 | Bridge says `warning: signals self-test <code>` | The addon cannot use signal files (hello `selftest=`); the line says the fix, e.g. `validunplayable` = fully restart WoW after installing. In game `/wch status` shows the same reason |
+| What the addon saw in game | Ask the user to type `/wch report` and paste it (Ctrl+C): versions, self-test, bridge state, slots, pending requests, last 30 transport events |
 
 ## Repository map
 
@@ -98,7 +99,7 @@ addon settings; ask before deleting it.
 | --- | --- | --- |
 | Installer | `install.ps1` | One-line Windows install / update (Node, Claude Code or Codex, zip download, setup, shortcut) |
 | Setup | `setup.js` | Finds the client, copies the addon and glossaries, builds the slot pool, writes `bridge/config.json` |
-| Addon | `addon/WoWChatHelper/` | The in-game addon (Lua); `Locales.lua` has the 9 UI languages |
+| Addon | `addon/WoWChatHelper/` | The in-game addon (Lua); `Locales.lua` has the 9 UI languages; `QuickPhrases.lua` is the `/wch say` phrase table (English + 9 languages) |
 | Glossary addons | `addon/WoWChatHelper_Glossary_<locale>/` | Generated from `data/glossary/terms.json` by `tools/build-glossary.js` |
 | Bridge | `bridge/` | Node program on the same PC: `supervisor.js` → `bridge.js` (log files: `logfile.js` → `bridge/logs/`); `start-window.cmd` / `start.ps1` launch it |
 | AI providers | `bridge/providers/` | One file per AI CLI (`claude.js`, `codex.js`), registry in `index.js`; `bridge/ai.js` batches and validates. Adding one: `docs/PROVIDERS.md` |
