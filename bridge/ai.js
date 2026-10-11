@@ -183,8 +183,27 @@ READING CHAT. The literal words are often not the meaning. Get the speaker's int
 - Gold sellers, power-leveling ads, "free mount"/giveaway whispers, fake GM or account-warning messages and any website in chat are spam or scams: "tr" says so and advises to ignore them, not visit the site and report the sender (right-click the name -> Report Spam). Replies stay neutral and short ("no ty", "not interested"): never ask about prices, the site or the offer.
 - Only state what the line says: do not invent who the speaker is (raid leader, enemy) or details that are not there.
 
+TRADE LINES (wts/wtb/wtt, selling, buying, prices, haggling, cod, crafting for others). Work out the roles before writing anything:
+1. What the SPEAKER does. Ask three questions: who has the item now, who pays the gold, who does the work.
+   sell: the speaker has the item and wants gold. buy: the speaker wants the item and pays. trade: item for item, sometimes with gold on top. craft-request: the speaker wants someone else to do the work (make, enchant, transmute) and pays for it. craft-offer: the speaker does the work for others and gets paid; an ad for a service is a craft-offer even when it says "WTS". none: no offer at all (market talk, advice, spam).
+   Two patterns read backwards: a question about who has or who wants something states the opposite need (asking for sellers = buying, asking who wants it = selling); and mentioning materials never decides the side, only who does the work does.
+2. In a WHISPER, a ctx line whose name is not the sender is the player's own line (marked "(player)"). If the player's line offers to sell, the sender is buying; if it asks to buy, the sender is selling or delivering (also by cod mail, which the player pays on receipt). The speaker is never in the player's role.
+3. "tr" starts by saying plainly what the speaker does, as a verb about "he" or "they" (he is selling / he wants to buy from you / he wants to swap / he is looking for an enchanter / he offers enchanting); do not call him "the buyer"/"the seller", never name the player and never explain your reasoning. Then the item, quantity and price spelled out: k = thousand (1.5k = 1500 gold), s = silver, c = copper (1g50s = 1 gold 50 silver), ea/each/per = per item, "per stack"/"a stack" = per stack, a price with no unit word = for everything offered. When there is a quantity above 1 and a per-item price, ALWAYS also give the total ("x8 30g ea" -> 30 gold each, 240 gold for all 8; "x4 12g each" -> 12 gold each, 48 for 4). obo = open to lower offers; firm = no haggling; cod = sent by mail, paid when the mail is taken; tip = the crafter's pay. Handing over gold before the goods arrive (outside the trade window or cod) is how most trade scams work: when a line asks for that, say so and suggest the trade window or cod.
+4. Replies: the player is the OTHER party, never the speaker's own side.
+   speaker sells -> the player buys: ask quantity or price, haggle with a number, take it ("how much for 4?", "would u do 9g ea?", "ill take 2, cod ok?"). Never "wts", never offer to sell.
+   speaker buys -> the player sells: offer what they want at a price ("have 6, 9g ea ok?", "can do 4 for 36g, cod?"). Never "wtb", "ill take" or ask them what they charge.
+   The replies already are the whisper: no "pst", "sending whisper" or "w me". Quote prices that add up (4g ea -> 10 for 40g).
+   trade -> the player answers the swap ("have 3, still need them?"). craft-request -> the player is the crafter: "can do, where r u?", "i can, omw". craft-offer -> the player is the customer: "can u do 1? have mats", "how much tip?". none -> react to the comment; no offer, and nothing for spam but "no ty".
+5. Add a "trade" field to x results for trade lines: {"side": "sell"|"buy"|"trade"|"craft-request"|"craft-offer", "item": "<the [I1] token or item, or \"\">", "qty": <number or null>, "price": <gold as a number: 1.5k -> 1500, 1g50s -> 1.5, 50s -> 0.5; or null>, "per": "each"|"stack"|"total"|""}. No "trade" field for none.
+Trade examples (incoming -> trade field; replies):
+  WHISPER, ctx "Jacky (player): selling [I1], have 30 left", "how many u got? want every one" (he buys all of it) -> {"side":"buy","item":"[I1]","qty":30,"price":null,"per":""}; "30 left, 7g ea" / "all 30 for 200g?"
+  "will swap [I1] for ur [I2] if u add 20g" -> {"side":"trade","item":"[I1]","qty":null,"price":20,"per":"total"}; "make it 15g and deal" / "sure, open trade"
+  "tailor w/ all mats, [I1] for 45g, 10 min" (he makes it and supplies the materials) -> {"side":"craft-offer","item":"[I1]","qty":null,"price":45,"per":"total"}; "ill take 1, where r u?" / "can u do 40?"
+  WHISPER, ctx "Jacky (player): selling [I1] by the stack", "whats a full stack cost?" (he wants to buy) -> {"side":"buy","item":"[I1]","qty":null,"price":null,"per":""}; "15g per stack" / "2 stacks for 28g"
+  WHISPER, ctx "Jacky (player): would u take 25 each?", "lol no, 40 each is already cheap" (he sells and refuses the lower offer) -> {"side":"sell","item":"","qty":null,"price":40,"per":"each"}; "ok 40, ill take 2" / "35 and i take 3?"
+
 OUTPUT. Exactly one JSON array with one object per request, same ids, in the same order. Nothing before or after it: no prose, no markdown, no code fences.
-  x: {"id": 12, "kind": "x", "tr": "<explanation>", "terms": [{"term": "LF1M", "expansion": "Looking For 1 More", "tr": "<short translation>"}], "replies": [<2 or 3 replies>]}
+  x: {"id": 12, "kind": "x", "tr": "<explanation>", "terms": [{"term": "LF1M", "expansion": "Looking For 1 More", "tr": "<short translation>"}], "replies": [<2 or 3 replies>], "trade": {<only for trade lines, see TRADE LINES>}}
   t: {"id": 13, "kind": "t", "replies": [<2 or 3 replies>]}
   d: {"id": 14, "kind": "d", "detail": "${l1}: …\\n${l2}: …\\n${l3}: …"}
   reply: {"en": "<exactly what the player would type>", "tr": "<its meaning in the player's language>", "tone": "casual" | "polite" | "short"}
@@ -207,13 +226,13 @@ REPLIES. Natural US-realm WoW chat English, never textbook English:
 - tones: casual = relaxed, may use lol or :) ; polite = still short and lowercase, adds pls/ty/np/sry, for strangers and trade; short = 1-3 words for combat, ready checks, summons.
 - 2 or 3 replies with different tones, each something the player would really say to THIS line right now. Every reply responds to the specifics of the message: the role asked for, the item, the price, the dungeon, the question. Test each reply: if it would fit under a different message just as well, it is filler; rewrite it.
   - LFG/LFM: offer exactly one of the roles they ask for (they need heals + dps -> "heals here, inv?" or "dps lf inv", never tank); "pst" means whisper them, so the replies are that whisper.
-  - Trade (WTS/WTB): the replies are what the player whispers to the seller/buyer ("how much for 5?", "ill take 2, cod ok?"); never tell the seller to "pst" you back.
-  - Trade (wts/wtb/selling/cod): about that item or price: ask the price, haggle with a number, take it, or ask for mats/cod ("how much for [Name]?", "would u do 4g ea?", "ill take 5"). Item links may be repeated in "en" exactly as written.
+  - Trade: the replies are what the player whispers to the speaker, as the other party (TRADE LINES rule 4), about that item and price; never tell them to "pst" you back. Item links may be repeated in "en" exactly as written.
   - A question: answer it or say you don't know ("idk", "no sry"); a ready check -> "r".
   - Never generic filler like "noted", "understood", "appreciated", "sounds good", "ty for the feedback", "cool".
 - Insults and taunts: offer a calm short reply ("k", "ok") and/or a light, non-mocking one ("doing my best lol", "carry me then"; avoid sarcasm like "cool story bro", it reads as escalating); never apologize, promise to improve or explain yourself (no "sry ill do better", "ill work on it"), unless the line names a concrete mistake the player made ("my bad" then); this holds for the polite tone too (polite = "tips welcome, otherwise chill", not "sry if i messed up"); never insult back or escalate.
 - If the meaning is unclear, one reply can ask ("wdym?", "which one?"). "gg" after a wipe is sarcastic or means "we're done": don't suggest "gg" back unless the run really ended.
 - "t": the replies ARE the player's own message, said in English by the player (first person), in this chat style: never an answer to it. Keep the player's meaning, add no claims they did not make.
+- "t" trade messages (the player sells, buys, swaps, offers or looks for a craft): write them the way US trade chat does, "wts|wtb|wtt <item> x<qty> <price> ea|per stack". Units: gold = g, silver = s, copper = c (1g50s), 1000+ gold may be 1k/1.5k; per item = ea; a total stays without ea; fixed price = firm; negotiable = obo; cash on delivery = cod; whisper me = pst. Keep [I1] tokens; an item without a link gets its English name. Examples: 用 [I1] 加 20 金換你的 [I2] -> "wtt [I1] + 20g for [I2]"; [I1] 材料我自己出，做一件收 45 金 -> "can craft [I1] w/ my mats, 45g"; 40 金一個已經很便宜了，不能再低 -> "40g ea is already cheap, cant go lower". In a whisper answering someone's ad, drop the wts/wtb prefix and just haggle, ask or accept (一組 [I1] 多少？ -> "how much for a stack of [I1]?"). All replies keep the same format, every number and every condition (mats, tip, firm, obo, cod); they differ only in small wording, so the "short" one is the bare ad, not a shortened offer.
 Style examples (incoming -> replies):
 ${style}
 
@@ -266,6 +285,19 @@ function linksBlock(requests) {
   return lines.length ? 'Linked game names (write the token, e.g. [I1], wherever you mean that thing; never the name or a translation):\n' + lines.join('\n') + '\n' : '';
 }
 
+// A whisper has two parties: ctx lines ("name: text") from anyone but the sender are the
+// player's own (addon Chat.lua logs outgoing whispers under the player's name). They get
+// " (player)" after the name, so the model knows who posted "WTS ..." and who answers.
+function markPlayerLines(r) {
+  const ctx = r.ctx || '';
+  const sender = String(r.sender || '').replace(/-.*$/, '').toLowerCase();
+  if (!ctx || !sender || !['WHISPER', 'BN'].includes(r.channel)) return ctx;
+  return ctx.split('\n').map(line => {
+    const m = /^([^:\n]{1,40}):\s/.exec(line);
+    return m && m[1].replace(/-.*$/, '').toLowerCase() !== sender ? m[1] + ' (player)' + line.slice(m[1].length) : line;
+  }).join('\n');
+}
+
 // The text of one user turn for a list of requests. opts: { locale, glossary, note }; the
 // locale defaults to the first request's `lang`, then zhTW; `note` (optional) goes right
 // before the requests. Requests with `links` (linkTokens) are sent with their tokens and
@@ -273,7 +305,7 @@ function linksBlock(requests) {
 function buildPrompt(requests, opts = {}) {
   const locale = normalizeLocale(opts.locale || (requests[0] && requests[0].lang)) || DEFAULT_LOCALE;
   const list = requests.map(r => ({
-    id: r.id, kind: r.kind, channel: r.channel || '', sender: r.sender || '', ctx: r.ctx || '', text: r.text || '',
+    id: r.id, kind: r.kind, channel: r.channel || '', sender: r.sender || '', ctx: markPlayerLines(r), text: r.text || '',
   }));
   return `Player language: ${locale}, ${LOCALE_INFO[locale].name} (explanations, glosses and term translations in it; replies in US-realm English).\n` +
     termsBlock(requests, opts.glossary, locale) +
@@ -332,6 +364,25 @@ function validReplies(list) {
 
 const MAX_TERM = { count: 6, term: 40, expansion: 80, tr: 40 };
 
+// The optional "trade" field of an explain result (TRADE LINES rule 5) -> a normalized
+// { side, item, qty, price, per } or null (no field, unknown side). The addon ignores it
+// for now; it is kept small because every result goes into all slot files.
+const TRADE_SIDES = new Set(['sell', 'buy', 'trade', 'craft-request', 'craft-offer']);
+const TRADE_PER = new Set(['each', 'stack', 'total']);
+function validTrade(t) {
+  if (!t || typeof t !== 'object' || Array.isArray(t)) return null;
+  const side = str(t.side).toLowerCase();
+  if (!TRADE_SIDES.has(side)) return null;
+  const num = (v) => { const n = typeof v === 'string' && v.trim() ? Number(v) : v; return typeof n === 'number' && Number.isFinite(n) && n >= 0 && n < 1e7 ? n : null; };
+  const per = str(t.per).toLowerCase();
+  const out = { side, item: str(t.item).slice(0, 60) };
+  const qty = num(t.qty), price = num(t.price);
+  if (qty !== null) out.qty = qty;
+  if (price !== null) out.price = price;
+  if (TRADE_PER.has(per)) out.per = per;
+  return out;
+}
+
 // One reply object for request `req` -> a normalized "done" result, or null if invalid.
 // Lenient where it is safe: an unknown tone becomes "casual", a 4th reply is dropped,
 // a term without "tr" is dropped. Strict where the UI needs it: x needs tr and 2+ replies,
@@ -353,7 +404,9 @@ function validateItem(item, req) {
       terms.push({ term, expansion: str(t.expansion).slice(0, MAX_TERM.expansion), tr: ttr.slice(0, MAX_TERM.tr) });
       if (terms.length >= MAX_TERM.count) break;
     }
-    return { id: req.id, kind: 'x', status: 'done', tr, terms, replies };
+    const trade = validTrade(item.trade);
+    return trade ? { id: req.id, kind: 'x', status: 'done', tr, terms, replies, trade }
+      : { id: req.id, kind: 'x', status: 'done', tr, terms, replies };
   }
   if (req.kind === 't') {
     const replies = validReplies(item.replies);
@@ -702,7 +755,7 @@ module.exports = {
   SYSTEM_PROMPT, TONES, DEFAULTS, LOCALE_INFO, LOCALES, STYLE_EXAMPLES,
   buildSystemPrompt, claudeArgs, buildPrompt, termsBlock, userTurnLine: claude.userTurnLine,
   resolveCommand, unwrapShim, pathDirs: cli.pathDirs, killTree: cli.killTree, claudeEnv: claude.claudeEnv,
-  extractJson, validateItem, matchResults, errorResult, claudeError: claude.claudeError,
+  extractJson, validateItem, validTrade, matchResults, errorResult, claudeError: claude.claudeError,
   bracketNames, missingNames, withNames, namesNote, linkTokens, restoreLinks, linksBlock,
   runOnce: claude.runOnce, PersistentClaude: claude.PersistentClaude, AiRunner, modelsFor,
 };

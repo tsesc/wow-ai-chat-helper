@@ -264,3 +264,142 @@ items they were.
   the links block as a hint (`I1 = Arcanite Bar (奧金錠)`) and allow "token + local name".
 
 Raw files: `$TMPDIR/wch-eval/round2-{outputs,grades,meta}.json` (not committed).
+
+---
+
+# Live eval: trade chat (haiku, real Claude Code CLI)
+
+Date: 2026-10-12. Script: `tests/live/eval_trade.js` (not part of `npm test`). Branch
+`feat/trade-ai`; baseline = commit 3951b48 (its `bridge/` and `data/glossary/`, run with
+`--ai`).
+
+## Headline (the real result): the post-tuning holdout
+
+`data/eval/trade-holdout.json` (12 explain lines) and `trade-translate-holdout.json`
+(6 `/wtr` lines) were written after the prompt was final, checked to share no 4-word
+sequence with the prompt's trade section, and run once on each side. The prompt was not
+changed after they were written. zhTW, haiku.
+
+| category | n | judge side | judge reply | natural | total/price in tr (rule) | struct |
+|---|---|---|---|---|---|---|
+| | | before → after | before → after | before → after | before → after | after |
+| wts | 2 | 100 → 100% | 100 → 100% | 4.50 → 4.50 | 50 → 100% | 100% |
+| wtb | 2 | 100 → 100% | 100 → 100% | 4.00 → 4.00 | 0 → 50% | 100% |
+| wtt | 1 | 100 → 100% | 100 → 100% | 3.00 → 4.00 | 100 → 100% | 100% |
+| haggle (whisper) | 2 | 100 → 100% | 100 → 100% | 3.50 → 4.00 | 100 → 100% | 100% |
+| craft-request | 1 | 100 → 100% | 100 → 100% | 4.00 → 5.00 | 100 → 100% | 100% |
+| craft-offer | 1 | 100 → 100% | 100 → 100% | 4.00 → 4.00 | 100 → 100% | 100% |
+| ah | 1 | 100 → 100% | 100 → 100% | 4.00 → 4.00 | 100 → 100% | 100% |
+| scam | 1 | 100 → 100% | 100 → 100% | 3.00 → 4.00 | 100 → 100% | 100% |
+| dir-tricky | 1 | 100 → 100% | 100 → 100% | 5.00 → 5.00 | 0 → 0% | 100% |
+| **all** | 12 | **100 → 100%** | **100 → 100%** | **3.92 → 4.25** | **67 → 83%** | 0 → 100% |
+
+Judge price was 100% on both sides (n = 9). `/wtr` (6 lines): a reply in the US trade
+format **17% → 100%**, first reply 17% → 83%, all replies 17% → 67%.
+
+What this says:
+- **On new wording, the baseline already got the direction and the reply side right**
+  (12/12). The direction gains reported on the tuning set below (92 → 100%) do not
+  reproduce here; with n = 12 a real gain of a few points cannot be seen either way.
+- **The `/wtr` change is the clear, real gain.** The baseline answered the player's own
+  ad instead of writing it: "收 40 個 [Thorium Bar]" became "ill sell 40 [Thorium Bar]
+  at 1g80s ea" (the wrong side), "找附魔師…" became "can enchant it, u send mats". After:
+  `wts [Mooncloth] x6 11g ea, cod ok`-style ads for 6 of 6 lines.
+- **Totals in the explanation improved but are not reliable**: 67 → 83%. Still missing:
+  "need [Thorium Bar] asap, 40 of them, 1g80s per" (no 72) and "does anyone need
+  [Elemental Earth]? 15 on me, 5g per" (no 75).
+- **The structured `trade` field** was right for 12/12 (side, price, per, qty, with the
+  stricter scoring below).
+- Naturalness +0.33, within what one or two lines change at n = 12.
+
+Live calls for the headline: 2 runs × (3 persistent turns + 2 Sonnet judge calls) =
+10 calls.
+
+## Earlier rounds: the tuning set (leaked; not the result)
+
+`data/eval/trade.json` (38 explain lines + 8 marked `"holdout"`) and
+`trade-translate.json` (10 + 3). These are the lines the prompt was tuned on.
+
+| round | change | side | reply | rule price | natural | `/wtr` any / all |
+|---|---|---|---|---|---|---|
+| before | baseline 3951b48 | 92% | 92% | 79% | 3.89 | 60 / 40% |
+| r1 | TRADE LINES section, `trade` field, `/wtr` format | 92% | 92% | 82% | 3.89 | 100 / 75% |
+| r2 | whisper ctx `(player)` marker, totals rule, no "pst" | 97% | 97% | 97% | 4.21 | 100 / 80% |
+| r3 | glossary terms/fixes, "short" `/wtr` keeps details | 97% | 100% | 100% | 4.03 | 100 / 83% |
+| r4 | examples reworded (still leaky, see below) | 100% | 100% | 97% | 4.26 | 100 / 87% |
+
+The per-category table of an earlier version of this section ("92 → 100% side", "60 →
+100% `/wtr`") was measured on this set and is **not credible** as an improvement figure:
+
+- **r1-r3 leaked heavily.** The trade examples and rule examples in the prompt were
+  near-copies of eval lines (the enchanter-with-mats request, "anyone selling … paying
+  22g ea", "x10 25g ea", "got 2, 80g ea", "sent cod", the `/wtr` examples matched the
+  `/wtr` items almost word for word).
+- **r4 still leaked.** Its examples used new items and numbers but kept the eval's
+  sentence shapes, and rule 1 listed trigger phrases taken from eval lines (#13, #21-23,
+  #27, #32, #33, #41, #46). The old 8 + 3 "holdout" lines were written during this phase
+  (after r3) and share those shapes, so their "before 88% → after 100%" is not clean
+  either.
+- After review, rule 1 was rewritten as principles (who has the item, who pays the gold,
+  who does the work) plus two abstract patterns, the examples were replaced with shapes
+  that appear in no eval file (buying someone's whole stock, a swap with gold on top, a
+  crafter supplying the mats, asking for a stack price, a seller refusing a lower offer),
+  and only then was the new holdout written. The tuning set was not rerun on that final
+  prompt.
+- Two translate regexes were loosened after r2 because they rejected valid output (`tips?`;
+  `lf [item]` accepted as buying), and two explain lines got an alternative price
+  reading for the struct check. All rounds were re-scored with the final scorer. Since
+  this review the struct check also counts a missing `per` or `qty` as wrong.
+
+## Whisper context (addon + bridge)
+
+r2 showed that marking the player's own lines fixes reversed roles in whispers (haggle
+side 25% → 100% on the tuning set). In the game that marker only fires if the ctx holds
+the player's ad, and a whisper answering a Trade ad starts with an empty ctx. So
+`addon/WoWChatHelper/Chat.lua` now remembers the player's own last CHANNEL (Trade,
+General, LFG …) or SAY line; an incoming WHISPER within 10 minutes gets it as the first
+ctx line ("<player name>: <text>", one line, ctx still at most 4 lines), and
+`bridge/ai.js` `markPlayerLines` labels it `(player)`. Covered by Lua VM tests in
+`tests/trade_test.js`; there is no live eval of this flow (the holdout haggle lines carry
+the ad in ctx the way the addon now builds it).
+
+## Eval set and scoring
+
+- Each explain line has `side`, `qty`, `price` (`gold`, `per`), `total`, `replyAs`,
+  `mustInTr` and `mustMention`; each `/wtr` line has `must` / `mustNot` regexes.
+- **judge** (Sonnet, one call per 8 lines): `side`, `price`, `reply` (every reply speaks
+  as `replyAs`), `natural` 1-5.
+- **rules**: `mustInTr` groups in `tr` (spaces removed); a wrong-side reply regex (weak:
+  it passed everywhere the judge caught wrong-side replies).
+- **struct**: the `trade` field; side, price (gold) with `per`, and `qty` must all match;
+  a missing value counts as wrong.
+- Run: `node tests/live/eval_trade.js --tag after` = 6 persistent turns (48 requests, 8 per
+  turn; explain and `/wtr` share batches) + 5 judge calls. `--holdout` = 3 turns + 2 judge
+  calls. `--holdout-old` = the 8 + 3 old holdout lines. `--ai <old bridge/ai.js>` for a
+  baseline, `--only score` to re-score saved outputs.
+- Raw outputs: `$TMPDIR/wch-eval/trade-*.json` (not committed).
+
+## Other caveats
+
+- zhTW only. The `/wtr` examples in the prompt are Traditional Chinese for all nine
+  languages.
+- Regression check on the general 50-line set (zhTW, after r3): meaning 92%, terms 88%,
+  natural 3.84, language 98%, no errors. Other changes landed on the branch since the
+  earlier runs, so this shows no regression, not an improvement.
+
+## Changes
+
+- `bridge/ai.js`: TRADE LINES section (three-question rule, two patterns, whisper roles,
+  `tr` states what the speaker does and gives prices and totals, replies from the other
+  party, five examples); `/wtr` trade format rule; `markPlayerLines` in `buildPrompt`;
+  optional `trade: {side, item, qty, price, per}` on `x` results via `validTrade` (unknown
+  side dropped; old addons ignore the key).
+- `addon/WoWChatHelper/Chat.lua`: the player's own last public line goes into whisper ctx.
+- `data/glossary/terms.json`: +12 trade terms; fixes ("LF crafter" was an alias of "can
+  craft", "my mats" of "ur mats", "x10"/"x20" of "per stack"); `my mats` / `have mats`
+  translations no longer read as the reader's own; direction notes on WTS/WTB/WTT/LF/bid.
+  The same three alias fixes in `raw-terms.json`. `phrases.json`: +22 trade phrases.
+  Glossary addons regenerated.
+
+Live calls, whole task: about 75 before review (five tuning-set rounds of 11, a
+14-call regression run, two old-holdout runs of 3) and 10 after it.

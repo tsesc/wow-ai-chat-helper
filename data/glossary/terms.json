@@ -137,7 +137,7 @@
   "aliases": [],
   "expansion": "Looking For",
   "cat": "lfg",
-  "ambiguity": "",
+  "ambiguity": "'LF <item>' = wants to BUY it; 'LF enchanter/BS/crafter' = wants something made; 'LF buyer' = is SELLING; 'LF tank/heals' = group search",
   "examples": [],
   "tr": {
    "zhTW": "尋找",
@@ -7717,7 +7717,7 @@
   "aliases": [],
   "expansion": "make an offer",
   "cat": "loot",
-  "ambiguity": "",
+  "ambiguity": "GDKP/loot: bid gold for an item; Auction House: a bid is below the buyout and can be outbid",
   "examples": [],
   "tr": {
    "zhTW": "競標",
@@ -8159,7 +8159,7 @@
   "aliases": [],
   "expansion": "Want To Sell",
   "cat": "trade",
-  "ambiguity": "",
+  "ambiguity": "the speaker SELLS (the player would be the buyer); 'WTS <enchant/craft>' = offers a crafting service",
   "examples": [],
   "tr": {
    "zhTW": "出售",
@@ -8178,7 +8178,7 @@
   "aliases": [],
   "expansion": "Want To Buy",
   "cat": "trade",
-  "ambiguity": "",
+  "ambiguity": "the speaker BUYS (the player would be the seller)",
   "examples": [],
   "tr": {
    "zhTW": "收購",
@@ -8197,7 +8197,7 @@
   "aliases": [],
   "expansion": "Want To Trade",
   "cat": "trade",
-  "ambiguity": "",
+  "ambiguity": "swap item for item, usually no gold",
   "examples": [],
   "tr": {
    "zhTW": "想交換",
@@ -29513,13 +29513,10 @@
  },
  {
   "term": "per stack",
-  "aliases": [
-   "x20",
-   "x10"
-  ],
+  "aliases": [],
   "expansion": "price per stack",
   "cat": "trade",
-  "ambiguity": "",
+  "ambiguity": "a stack is a full stack of the item (usually 20 for cloth, herbs, ore); 'x10' / 'x20' alone is a quantity, not a stack price",
   "examples": [],
   "tr": {
    "zhTW": "每組價格",
@@ -29584,12 +29581,11 @@
  {
   "term": "ur mats",
   "aliases": [
-   "your mats",
-   "my mats"
+   "your mats"
   ],
   "expansion": "customer provides materials",
   "cat": "trade",
-  "ambiguity": "",
+  "ambiguity": "said by a crafter: the customer brings the materials, the crafter only does the work",
   "examples": [
    "your mats + tip"
   ],
@@ -29630,13 +29626,11 @@
  {
   "term": "can craft",
   "aliases": [
-   "can make",
-   "LF crafter",
-   "crafter"
+   "can make"
   ],
-  "expansion": "crafter can make it",
+  "expansion": "offers to craft it",
   "cat": "trade",
-  "ambiguity": "",
+  "ambiguity": "the speaker OFFERS to make it (a crafting service); the player would be the customer",
   "examples": [],
   "tr": {
    "zhTW": "可以製作",
@@ -35844,6 +35838,298 @@
    "ptBR": "Rum Rumsey",
    "ruRU": "Ром Рамси",
    "itIT": "Rum Rumsey"
+  }
+ },
+ {
+  "term": "LF crafter",
+  "aliases": [
+   "LF BS",
+   "LF alch",
+   "LF LW",
+   "LF tailor",
+   "LF engi",
+   "LF crafter pst"
+  ],
+  "expansion": "looking for a crafter (wants something made)",
+  "cat": "trade",
+  "ambiguity": "the speaker is the CUSTOMER: they want someone to make or transmute it, usually with their mats and a tip",
+  "examples": [
+   "LF BS for [Arcanite Reaper], have mats"
+  ],
+  "tr": {
+   "zhTW": "找人代工",
+   "zhCN": "找人代工",
+   "koKR": "제작자 구함",
+   "deDE": "Suche Handwerker",
+   "frFR": "Cherche artisan",
+   "esES": "Busco artesano",
+   "ptBR": "Procuro artesão",
+   "ruRU": "Ищу крафтера",
+   "itIT": "Cerco artigiano"
+  }
+ },
+ {
+  "term": "my mats",
+  "aliases": [
+   "own mats"
+  ],
+  "expansion": "the speaker's own materials",
+  "cat": "trade",
+  "ambiguity": "asking for a craft ('my mats + tip') = they bring the materials; a crafter offering ('my mats 50g') = the crafter supplies them and charges for them",
+  "examples": [
+   "LF tailor for [Mooncloth Robe], my mats"
+  ],
+  "tr": {
+   "zhTW": "（說話者）自備材料",
+   "zhCN": "（说话者）自备材料",
+   "koKR": "본인 재료(말한 사람)",
+   "deDE": "Eigene Mats",
+   "frFR": "Ses propres compos",
+   "esES": "Sus propios materiales",
+   "ptBR": "Materiais próprios",
+   "ruRU": "Свои реагенты",
+   "itIT": "Materiali propri"
+  }
+ },
+ {
+  "term": "have mats",
+  "aliases": [
+   "got mats",
+   "have all mats",
+   "have own mats",
+   "with mats",
+   "w/ mats"
+  ],
+  "expansion": "has the materials",
+  "cat": "trade",
+  "ambiguity": "depends on who says it: someone asking for a craft = they bring the materials (still a request); a crafter = they can supply the materials",
+  "examples": [
+   "LF ench +7 agi gloves, have mats"
+  ],
+  "tr": {
+   "zhTW": "（說話者）有材料",
+   "zhCN": "（说话者）有材料",
+   "koKR": "재료 보유(말한 사람)",
+   "deDE": "Hat die Mats",
+   "frFR": "A les compos",
+   "esES": "Tiene los materiales",
+   "ptBR": "Tem os materiais",
+   "ruRU": "Есть свои реагенты",
+   "itIT": "Ha i materiali"
+  }
+ },
+ {
+  "term": "need mats",
+  "aliases": [
+   "need materials"
+  ],
+  "expansion": "the materials are missing",
+  "cat": "trade",
+  "ambiguity": "a crafter saying it = the customer must bring the materials; a buyer saying it = wants to buy materials",
+  "examples": [],
+  "tr": {
+   "zhTW": "缺材料",
+   "zhCN": "缺材料",
+   "koKR": "재료 필요",
+   "deDE": "Brauche Mats",
+   "frFR": "Besoin de compos",
+   "esES": "Faltan materiales",
+   "ptBR": "Preciso de materiais",
+   "ruRU": "Нужны реагенты",
+   "itIT": "Servono materiali"
+  }
+ },
+ {
+  "term": "tip",
+  "aliases": [
+   "tipping",
+   "will tip",
+   "+ tip",
+   "+tip"
+  ],
+  "expansion": "payment for a crafting service or favor",
+  "cat": "trade",
+  "ambiguity": "in trade = what the customer pays the crafter ('mats + tip', '2g tip'); 'any tips?' elsewhere = advice",
+  "examples": [
+   "mats + tip"
+  ],
+  "tr": {
+   "zhTW": "小費",
+   "zhCN": "小费",
+   "koKR": "팁",
+   "deDE": "Trinkgeld",
+   "frFR": "Pourboire",
+   "esES": "Propina",
+   "ptBR": "Gorjeta",
+   "ruRU": "Чаевые",
+   "itIT": "Mancia"
+  }
+ },
+ {
+  "term": "lowball",
+  "aliases": [
+   "lowballs",
+   "lowballing",
+   "lowballer"
+  ],
+  "expansion": "an offer far below the asking price",
+  "cat": "trade",
+  "ambiguity": "'no lowballs' = don't send very low offers",
+  "examples": [
+   "500g, no lowballs pls"
+  ],
+  "tr": {
+   "zhTW": "亂殺價",
+   "zhCN": "乱压价",
+   "koKR": "후려치기",
+   "deDE": "Dumpingangebot",
+   "frFR": "Offre au rabais",
+   "esES": "Oferta ridícula",
+   "ptBR": "Oferta baixa",
+   "ruRU": "Сбивать цену",
+   "itIT": "Offerta al ribasso"
+  }
+ },
+ {
+  "term": "firm",
+  "aliases": [
+   "price is firm",
+   "firm price"
+  ],
+  "expansion": "fixed price, not negotiable",
+  "cat": "trade",
+  "ambiguity": "after a price ('2k firm', '25 firm') = no haggling",
+  "examples": [],
+  "tr": {
+   "zhTW": "不議價",
+   "zhCN": "不议价",
+   "koKR": "가격 고정",
+   "deDE": "Festpreis",
+   "frFR": "Prix ferme",
+   "esES": "Precio fijo",
+   "ptBR": "Preço fixo",
+   "ruRU": "Цена окончательная",
+   "itIT": "Prezzo fisso"
+  }
+ },
+ {
+  "term": "nego",
+  "aliases": [
+   "negotiable"
+  ],
+  "expansion": "the price is negotiable",
+  "cat": "trade",
+  "ambiguity": "",
+  "examples": [],
+  "tr": {
+   "zhTW": "可議價",
+   "zhCN": "可议价",
+   "koKR": "가격 협의 가능",
+   "deDE": "Verhandelbar",
+   "frFR": "Négociable",
+   "esES": "Negociable",
+   "ptBR": "Negociável",
+   "ruRU": "Торг уместен",
+   "itIT": "Trattabile"
+  }
+ },
+ {
+  "term": "no nego",
+  "aliases": [
+   "non-nego",
+   "non nego",
+   "not negotiable",
+   "nonneg"
+  ],
+  "expansion": "not negotiable (fixed price)",
+  "cat": "trade",
+  "ambiguity": "",
+  "examples": [],
+  "tr": {
+   "zhTW": "不議價",
+   "zhCN": "不议价",
+   "koKR": "가격 협의 불가",
+   "deDE": "Nicht verhandelbar",
+   "frFR": "Non négociable",
+   "esES": "No negociable",
+   "ptBR": "Não negociável",
+   "ruRU": "Без торга",
+   "itIT": "Non trattabile"
+  }
+ },
+ {
+  "term": "paying well",
+  "aliases": [
+   "paying good",
+   "will pay well",
+   "paying top gold"
+  ],
+  "expansion": "will pay a good price (no number given)",
+  "cat": "trade",
+  "ambiguity": "the speaker is BUYING",
+  "examples": [
+   "WTB [Elemental Earth] paying well"
+  ],
+  "tr": {
+   "zhTW": "高價收",
+   "zhCN": "高价收",
+   "koKR": "후하게 쳐줌",
+   "deDE": "Zahle gut",
+   "frFR": "Je paie bien",
+   "esES": "Pago bien",
+   "ptBR": "Pago bem",
+   "ruRU": "Хорошо заплачу",
+   "itIT": "Pago bene"
+  }
+ },
+ {
+  "term": "LF buyer",
+  "aliases": [
+   "LF buyers",
+   "looking for buyer",
+   "looking for buyers"
+  ],
+  "expansion": "looking for a buyer = selling",
+  "cat": "trade",
+  "ambiguity": "the speaker SELLS (the player would be the buyer)",
+  "examples": [
+   "LF buyer for [Dark Iron Ore]"
+  ],
+  "tr": {
+   "zhTW": "找買家（在賣）",
+   "zhCN": "找买家（在卖）",
+   "koKR": "구매자 구함",
+   "deDE": "Suche Käufer",
+   "frFR": "Cherche acheteur",
+   "esES": "Busco comprador",
+   "ptBR": "Procuro comprador",
+   "ruRU": "Ищу покупателя",
+   "itIT": "Cerco acquirente"
+  }
+ },
+ {
+  "term": "anyone selling",
+  "aliases": [
+   "who is selling",
+   "who's selling",
+   "anyone selling?"
+  ],
+  "expansion": "asks who sells = wants to BUY",
+  "cat": "trade",
+  "ambiguity": "the speaker BUYS (the player would be the seller)",
+  "examples": [
+   "anyone selling [Thorium Bar]?"
+  ],
+  "tr": {
+   "zhTW": "有人賣嗎（要買）",
+   "zhCN": "有人卖吗（要买）",
+   "koKR": "파는 분?(구매)",
+   "deDE": "Verkauft wer?",
+   "frFR": "Quelqu'un vend ?",
+   "esES": "¿Alguien vende?",
+   "ptBR": "Alguém vendendo?",
+   "ruRU": "Кто продает?",
+   "itIT": "Qualcuno vende?"
   }
  },
  {

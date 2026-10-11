@@ -206,6 +206,25 @@ A window offers `brb grabbing pots` / `one sec, getting pots` / … Click one; i
 the box on the same channel (or to the person who whispered you in the last two
 minutes). Press Enter to send.
 
+**Trading:** click `[?]` on a Trade-channel line. The explanation says first who does what
+("he is selling" / "he wants to buy" / "he is looking for an enchanter" / "he offers
+enchanting") and spells out the price, with the total ("x10 25g ea" = 25 gold each, 250
+gold for all 10; `1.5k` = 1500 gold, `50s` = 50 silver; obo, firm, cod and tip explained).
+The replies always speak as the other party: to a seller you get "how much for 5?" or
+"would u do 20g ea?", to a buyer "have 5, 20g ea ok?", to someone looking for a crafter
+"can do, where r u?". When someone whispers you within 10 minutes of your own last line
+in a public channel (Trade, General, LookingForGroup) or in /say, that one line goes along
+as context, marked as yours, so a whispered "80g?" is read as an answer to your ad. Only
+the most recent such line is used. To post your own ad, use `/wtr` with the chat box on the Trade channel and write
+the item name as plain text (Chinese is fine; don't shift-click a link into `/wtr`):
+
+```
+/wtr 我想賣 10 個奧金錠一個 25 金
+```
+
+gives `wts arcanite bar x10 25g ea` (`wtb ...` for buying, `lf enchanter for crusader,
+have mats + tip` for a craft you need, `can craft ..., ur mats` for one you offer).
+
 **Glossary:** `/wch g` opens it; `/wch g ah` searches. Built-in terms are tagged
 "built-in", terms the AI explained to you are tagged "AI" and are remembered.
 

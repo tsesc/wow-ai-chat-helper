@@ -13,6 +13,7 @@ ns.Chat = C
 local CTX_LINES = 4
 local MAX_LINES = 400        -- lines remembered for [?] clicks
 local WHISPER_FRESH = 120    -- /tr goes to the last whisper partner within 2 minutes
+local OWN_AD_FRESH = 600     -- the player's own public line stays whisper context for 10 minutes
 
 -- channel: wire name (spec 3.1); group: auto-explain toggle, nil = manual channel.
 local EVENTS = {
@@ -96,6 +97,23 @@ function C.CtxFor(key)
 	return table.concat(out, "\n")
 end
 
+-- ctx (lines joined by "\n") with the player's own last public line in front, if it is at
+-- most OWN_AD_FRESH old and not already there; still at most CTX_LINES lines (the
+-- oldest conversation lines make room). The line is "<player name>: <text>": the
+-- bridge marks lines not from the whisper's sender as the player's (bridge/ai.js).
+function C.WithOwnPublic(ctx)
+	local own = run.lastOwnPublic
+	if not own or GetTime() - own.at > OWN_AD_FRESH then return ctx end
+	local lines = {}
+	for l in string.gmatch(ctx or "", "[^\n]+") do
+		if l == own.line then return ctx end
+		lines[#lines + 1] = l
+	end
+	while #lines > CTX_LINES - 1 do table.remove(lines, 1) end
+	table.insert(lines, 1, own.line)
+	return table.concat(lines, "\n")
+end
+
 local function Push(key, sender, text)
 	local h = run.history[key]
 	if not h then
@@ -135,10 +153,19 @@ local function GetLine(event, msg, sender, ...)
 	end
 	local text = C.ExpandLinks(msg)
 	local conv = ConvKey(info.channel, sender, baseName)
+	local isSelf = IsSelf(sender)
+	local ctx = C.CtxFor(conv)
+	if isSelf and (info.channel == "CHANNEL" or info.channel == "SAY") then
+		-- The player's own Trade/General/LFG or /say line: a whisper that answers it
+		-- (a buyer answering the player's WTS) gets it as context.
+		run.lastOwnPublic = { line = ShortName(sender) .. ": " .. text, at = GetTime() }
+	elseif info.channel == "WHISPER" and not isSelf then
+		ctx = C.WithOwnPublic(ctx)
+	end
 	run.seq = run.seq + 1
 	line = {
 		key = key, n = run.seq, event = event, channel = channel, group = info.group,
-		sender = WireSender(sender), text = text, ctx = C.CtxFor(conv), conv = conv,
+		sender = WireSender(sender), text = text, ctx = ctx, conv = conv,
 		chanIndex = tonumber(chanIndex), frames = {}, frameSet = {},
 	}
 	Push(conv, sender, text)

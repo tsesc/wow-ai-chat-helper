@@ -18974,9 +18974,7 @@
  {
   "term": "per stack",
   "aliases": [
-   "stack",
-   "x20",
-   "x10"
+   "stack"
   ],
   "expansion": "price per stack",
   "cat": "trade",
@@ -19021,8 +19019,7 @@
  {
   "term": "ur mats",
   "aliases": [
-   "your mats",
-   "my mats"
+   "your mats"
   ],
   "expansion": "customer provides materials",
   "cat": "trade",
@@ -19051,9 +19048,7 @@
  {
   "term": "can craft",
   "aliases": [
-   "can make",
-   "LF crafter",
-   "crafter"
+   "can make"
   ],
   "expansion": "crafter can make it",
   "cat": "trade",
