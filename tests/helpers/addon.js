@@ -7,7 +7,7 @@ const { createVM, ROOT } = require('./lua');
 const P = require('../../bridge/protocol');
 
 const ADDON_DIR = path.join(ROOT, 'addon', 'WoWChatHelper');
-const FILES = ['Codec.lua', 'Locales.lua', 'Core.lua', 'Transport.lua', 'Chat.lua', 'UI.lua'].map(f => path.join(ADDON_DIR, f));
+const FILES = ['Codec.lua', 'Locales.lua', 'QuickPhrases.lua', 'Core.lua', 'Transport.lua', 'Chat.lua', 'UI.lua'].map(f => path.join(ADDON_DIR, f));
 const FONT_DIR = 'Interface\\AddOns\\WoWChatHelper\\Fonts\\';
 const FONT = FONT_DIR + 'WCH-CJK.ttf';
 const FONTS = { zhTW: FONT, zhCN: FONT_DIR + 'WCH-SC.ttf', koKR: FONT_DIR + 'WCH-KR.ttf' };

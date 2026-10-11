@@ -267,6 +267,8 @@ function Methods.GetEditBox(self) return self.editBox end
 function Methods.SetCursorPosition(self, p) self.cursor = p end
 function Methods.GetCursorPosition(self) return self.cursor or #(self.text or "") end
 function Methods.HighlightText(self) end
+function Methods.SetMultiLine(self, v) self.multiLine = v and true or false end
+function Methods.IsMultiLine(self) return self.multiLine or false end
 -- Buttons
 function Methods.Click(self, button) STUB.RunScript(self, "PreClick", button or "LeftButton", true); STUB.RunScript(self, "OnClick", button or "LeftButton", true); STUB.RunScript(self, "PostClick", button or "LeftButton", true) end
 function Methods.Enable(self) self.disabled = false end

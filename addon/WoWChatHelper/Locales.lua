@@ -85,6 +85,13 @@ Locales.zhTW = {
 	LANG_USAGE = "用法：/wch lang <代碼>|auto。可用：%s",
 	LANG_UNKNOWN = "不支援的語言代碼：%s",
 	GLOSSARY_MISSING = "找不到術語表插件 %s（%s），暫時沒有離線術語表。請在電腦上執行 node setup.js 後重開遊戲。",
+	BTN_REPORT = "複製回報",
+	REPORT_TITLE = "診斷回報",
+	REPORT_HINT = "按 Ctrl+C 複製，Esc 關閉",
+	BTN_QUICK = "快速語句",
+	QUICK_TITLE = "快速語句 → %s",
+	H_REPORT = "/wch report — 診斷回報視窗（全選好了，Ctrl+C 複製後貼給開發者）",
+	H_QUICK = "/wch say（或 /wch q）— 快速招呼語：點一句英文填入輸入框，按 Enter 才會送出",
 }
 
 Locales.zhCN = {
@@ -149,6 +156,13 @@ Locales.zhCN = {
 	LANG_USAGE = "用法：/wch lang <代码>|auto。可用：%s",
 	LANG_UNKNOWN = "不支持的语言代码：%s",
 	GLOSSARY_MISSING = "找不到术语表插件 %s（%s），暂时没有离线术语表。请在电脑上运行 node setup.js 后重开游戏。",
+	BTN_REPORT = "复制报告",
+	REPORT_TITLE = "诊断报告",
+	REPORT_HINT = "按 Ctrl+C 复制，Esc 关闭",
+	BTN_QUICK = "快捷语句",
+	QUICK_TITLE = "快捷语句 → %s",
+	H_REPORT = "/wch report — 诊断报告窗口（已全选，Ctrl+C 复制后发给开发者）",
+	H_QUICK = "/wch say（或 /wch q）— 快捷招呼语：点一句英文填入输入框，按 Enter 才会发送",
 }
 
 Locales.koKR = {
@@ -213,6 +227,13 @@ Locales.koKR = {
 	LANG_USAGE = "사용법: /wch lang <코드>|auto. 가능: %s",
 	LANG_UNKNOWN = "지원하지 않는 언어 코드: %s",
 	GLOSSARY_MISSING = "용어집 애드온 %s 을(를) 찾을 수 없습니다 (%s). 오프라인 용어집 없이 동작합니다. PC에서 node setup.js 를 실행하고 게임을 다시 시작하세요.",
+	BTN_REPORT = "보고서 복사",
+	REPORT_TITLE = "진단 보고서",
+	REPORT_HINT = "Ctrl+C로 복사, Esc로 닫기",
+	BTN_QUICK = "빠른 문장",
+	QUICK_TITLE = "빠른 문장 → %s",
+	H_REPORT = "/wch report — 진단 보고서 창 (전체 선택됨, Ctrl+C로 복사해 개발자에게 전달)",
+	H_QUICK = "/wch say (또는 /wch q) — 빠른 인사말: 영어 문장을 누르면 입력창에 채워지고, Enter를 눌러야 전송",
 }
 
 Locales.deDE = {
@@ -277,6 +298,13 @@ Locales.deDE = {
 	LANG_USAGE = "Verwendung: /wch lang <Code>|auto. Verfügbar: %s",
 	LANG_UNKNOWN = "Nicht unterstützter Sprachcode: %s",
 	GLOSSARY_MISSING = "Glossar-Addon %s nicht gefunden (%s), kein Offline-Glossar. Auf dem PC node setup.js ausführen und das Spiel neu starten.",
+	BTN_REPORT = "Bericht kopieren",
+	REPORT_TITLE = "Diagnosebericht",
+	REPORT_HINT = "Strg+C zum Kopieren, Esc zum Schließen",
+	BTN_QUICK = "Schnellsätze",
+	QUICK_TITLE = "Schnellsätze → %s",
+	H_REPORT = "/wch report — Diagnosebericht (bereits markiert, mit Strg+C kopieren und an die Entwickler schicken)",
+	H_QUICK = "/wch say (oder /wch q) — Schnellsätze: ein Klick setzt den englischen Satz ins Eingabefeld, gesendet wird erst mit Enter",
 }
 
 Locales.frFR = {
@@ -341,6 +369,13 @@ Locales.frFR = {
 	LANG_USAGE = "Utilisation : /wch lang <code>|auto. Disponibles : %s",
 	LANG_UNKNOWN = "Code de langue non pris en charge : %s",
 	GLOSSARY_MISSING = "Addon de glossaire %s introuvable (%s) ; pas de glossaire hors ligne. Lance node setup.js sur le PC puis redémarre le jeu.",
+	BTN_REPORT = "Copier le rapport",
+	REPORT_TITLE = "Rapport de diagnostic",
+	REPORT_HINT = "Ctrl+C pour copier, Échap pour fermer",
+	BTN_QUICK = "Phrases rapides",
+	QUICK_TITLE = "Phrases rapides → %s",
+	H_REPORT = "/wch report — rapport de diagnostic (déjà sélectionné, Ctrl+C pour le copier et l'envoyer aux développeurs)",
+	H_QUICK = "/wch say (ou /wch q) — phrases rapides : un clic place la phrase anglaise dans la zone de saisie, Entrée pour envoyer",
 }
 
 Locales.esES = {
@@ -405,6 +440,13 @@ Locales.esES = {
 	LANG_USAGE = "Uso: /wch lang <código>|auto. Disponibles: %s",
 	LANG_UNKNOWN = "Código de idioma no compatible: %s",
 	GLOSSARY_MISSING = "No se encuentra el addon de glosario %s (%s); sin glosario sin conexión. Ejecuta node setup.js en el PC y reinicia el juego.",
+	BTN_REPORT = "Copiar informe",
+	REPORT_TITLE = "Informe de diagnóstico",
+	REPORT_HINT = "Ctrl+C para copiar, Esc para cerrar",
+	BTN_QUICK = "Frases rápidas",
+	QUICK_TITLE = "Frases rápidas → %s",
+	H_REPORT = "/wch report — informe de diagnóstico (ya seleccionado, cópialo con Ctrl+C y envíalo a los desarrolladores)",
+	H_QUICK = "/wch say (o /wch q) — frases rápidas: un clic pone la frase en inglés en el cuadro de chat, se envía al pulsar Intro",
 }
 
 Locales.ptBR = {
@@ -469,6 +511,13 @@ Locales.ptBR = {
 	LANG_USAGE = "Uso: /wch lang <código>|auto. Disponíveis: %s",
 	LANG_UNKNOWN = "Código de idioma não suportado: %s",
 	GLOSSARY_MISSING = "Addon de glossário %s não encontrado (%s); sem glossário offline. Rode node setup.js no PC e reinicie o jogo.",
+	BTN_REPORT = "Copiar relatório",
+	REPORT_TITLE = "Relatório de diagnóstico",
+	REPORT_HINT = "Ctrl+C para copiar, Esc para fechar",
+	BTN_QUICK = "Frases rápidas",
+	QUICK_TITLE = "Frases rápidas → %s",
+	H_REPORT = "/wch report — relatório de diagnóstico (já selecionado, copie com Ctrl+C e envie aos desenvolvedores)",
+	H_QUICK = "/wch say (ou /wch q) — frases rápidas: um clique coloca a frase em inglês na caixa de chat, só envia com Enter",
 }
 
 Locales.ruRU = {
@@ -533,6 +582,13 @@ Locales.ruRU = {
 	LANG_USAGE = "Использование: /wch lang <код>|auto. Доступны: %s",
 	LANG_UNKNOWN = "Неподдерживаемый код языка: %s",
 	GLOSSARY_MISSING = "Аддон глоссария %s не найден (%s), офлайн-глоссарий недоступен. Запустите node setup.js на ПК и перезапустите игру.",
+	BTN_REPORT = "Копировать отчёт",
+	REPORT_TITLE = "Диагностический отчёт",
+	REPORT_HINT = "Ctrl+C — копировать, Esc — закрыть",
+	BTN_QUICK = "Быстрые фразы",
+	QUICK_TITLE = "Быстрые фразы → %s",
+	H_REPORT = "/wch report — диагностический отчёт (уже выделен, скопируйте Ctrl+C и отправьте разработчикам)",
+	H_QUICK = "/wch say (или /wch q) — быстрые фразы: клик вставляет английскую фразу в поле чата, отправка — по Enter",
 }
 
 Locales.itIT = {
@@ -597,6 +653,13 @@ Locales.itIT = {
 	LANG_USAGE = "Uso: /wch lang <codice>|auto. Disponibili: %s",
 	LANG_UNKNOWN = "Codice lingua non supportato: %s",
 	GLOSSARY_MISSING = "Addon glossario %s non trovato (%s); nessun glossario offline. Esegui node setup.js sul PC e riavvia il gioco.",
+	BTN_REPORT = "Copia rapporto",
+	REPORT_TITLE = "Rapporto diagnostico",
+	REPORT_HINT = "Ctrl+C per copiare, Esc per chiudere",
+	BTN_QUICK = "Frasi rapide",
+	QUICK_TITLE = "Frasi rapide → %s",
+	H_REPORT = "/wch report — rapporto diagnostico (già selezionato, copialo con Ctrl+C e invialo agli sviluppatori)",
+	H_QUICK = "/wch say (o /wch q) — frasi rapide: un clic mette la frase inglese nella casella della chat, si invia con Invio",
 }
 
 -- ns.L.KEY: the string for the active language (ns.lang), zhTW when that language

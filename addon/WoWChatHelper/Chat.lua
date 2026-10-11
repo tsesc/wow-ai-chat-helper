@@ -50,6 +50,7 @@ local function Ambig(name, ctx)
 	if type(Ambiguate) == "function" then
 		local ok, r = pcall(Ambiguate, name, ctx)
 		if ok and r then return r end
+		if not ok then ns.LogEvent("error", "Ambiguate: " .. tostring(r)) end
 	end
 	return name
 end

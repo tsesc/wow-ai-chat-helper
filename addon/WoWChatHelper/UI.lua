@@ -1,6 +1,7 @@
 -- WoWChatHelper UI (spec 4): annotation lines in the chat frames, the [回覆] / [詳細] /
 -- [重試] / [?] hyperlinks, the reply picker (fills the chat edit box; never sends),
--- /tr translate, detail output, the glossary panel, the status frame and fonts.
+-- /tr translate, detail output, the glossary panel, the status frame, quick phrases
+-- (QuickPhrases.lua), the copyable diagnostic report and fonts.
 -- Every label goes through ns.L (Locales.lua) in the player's language; the tags and
 -- links named above are the zhTW wording.
 
@@ -102,6 +103,16 @@ local function NewWindow(name, w, h, title)
 	f:Hide()
 	table.insert(UISpecialFrames, name) -- Esc closes it
 	return f
+end
+
+-- A standard button whose label uses our font policy.
+local function NewButton(name, parent, w, h, onClick)
+	local b = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
+	b:SetSize(w, h)
+	local fs = b.GetFontString and b:GetFontString()
+	if fs then UI.Font(fs, 12) end
+	b:SetScript("OnClick", function() onClick() end)
+	return b
 end
 
 -- Chat frames that showed the original line (else the default one).
@@ -581,7 +592,7 @@ end
 
 local function BuildStatus()
 	if status then return status end
-	status = NewWindow("WCHStatus", 280, 250, "WoW Chat Helper")
+	status = NewWindow("WCHStatus", 280, 290, "WoW Chat Helper")
 	status:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -40, -200)
 	status.light = status:CreateTexture(nil, "ARTWORK")
 	status.light:SetSize(12, 12)
@@ -605,6 +616,11 @@ local function BuildStatus()
 	status.hint = NewText(status, 11)
 	status.hint:SetPoint("TOPLEFT", status, "TOPLEFT", 14, -204)
 	status.hint:SetWidth(252)
+	-- Below the hint, which may wrap to 3 lines (de/fr/ru).
+	status.quickBtn = NewButton("WCHStatusQuick", status, 130, 22, function() UI.OpenQuick() end)
+	status.quickBtn:SetPoint("BOTTOMLEFT", status, "BOTTOMLEFT", 8, 8)
+	status.reportBtn = NewButton("WCHStatusReport", status, 130, 22, function() UI.OpenReport() end)
+	status.reportBtn:SetPoint("BOTTOMRIGHT", status, "BOTTOMRIGHT", -8, 8)
 	UI.StatusTexts()
 	status:SetScript("OnShow", function() UI.UpdateStatus() end)
 	return status
@@ -617,6 +633,8 @@ function UI.StatusTexts()
 	for g, cb in pairs(status.checks) do cb.label:SetText(L["GROUP_" .. g]) end
 	status.fontCheck.label:SetText(L.FONT_CHECK)
 	status.hint:SetText(DIM .. L.STATUS_HINT .. "|r")
+	status.quickBtn:SetText(L.BTN_QUICK)
+	status.reportBtn:SetText(L.BTN_REPORT)
 end
 
 function UI.UpdateStatus()
@@ -637,6 +655,234 @@ function UI.ToggleStatus(show)
 	if show == nil then show = not s:IsShown() end
 	if show then s:Show() UI.UpdateStatus() else s:Hide() end
 	return s
+end
+
+---------------------------------------------------------------------------
+-- Quick phrases (WCH_QuickPhrases, QuickPhrases.lua): category buttons on the left,
+-- that category's phrases on the right; a click fills the chat box like a reply
+-- (UI.FillChat, same target rule as /wtr), never sends.
+---------------------------------------------------------------------------
+
+local MAX_QUICK = 6
+local quick
+
+local function QuickCategories()
+	local q = WCH_QuickPhrases
+	return type(q) == "table" and type(q.categories) == "table" and q.categories or {}
+end
+
+-- A phrase's or title's text in the active language (zhTW, then English as fallback).
+local function InLang(t, fallback)
+	if type(t) ~= "table" then return fallback or "" end
+	return t[ns.lang] or t.zhTW or fallback or ""
+end
+
+local function BuildQuick()
+	if quick then return quick end
+	quick = NewWindow("WCHQuick", 560, 320, "")
+	quick:SetPoint("CENTER", UIParent, "CENTER", 0, 120)
+	quick.cats, quick.buttons = {}, {}
+	for i, c in ipairs(QuickCategories()) do
+		local b = NewButton("WCHQuickCat" .. i, quick, 120, 24, function() UI.RenderQuick(i) end)
+		b:SetPoint("TOPLEFT", quick, "TOPLEFT", 12, -34 - (i - 1) * 28)
+		b.key = c.key
+		quick.cats[i] = b
+	end
+	for i = 1, MAX_QUICK do
+		local b = CreateFrame("Button", "WCHQuickPhrase" .. i, quick)
+		b:SetSize(400, 40)
+		b:SetPoint("TOPLEFT", quick, "TOPLEFT", 146, -32 - (i - 1) * 44)
+		local hl = b:CreateTexture(nil, "HIGHLIGHT")
+		hl:SetAllPoints(b)
+		hl:SetColorTexture(0.3, 0.5, 0.8, 0.25)
+		b.en = NewText(b, 14)
+		b.en:SetPoint("TOPLEFT", b, "TOPLEFT", 6, -4)
+		b.en:SetWidth(388)
+		b.gloss = NewText(b, 11)
+		b.gloss:SetPoint("TOPLEFT", b, "TOPLEFT", 6, -23)
+		b.gloss:SetWidth(388)
+		b.gloss:SetTextColor(0.7, 0.7, 0.7)
+		b:SetScript("OnClick", function() UI.QuickPick(i) end)
+		quick.buttons[i] = b
+	end
+	return quick
+end
+
+local function QuickTitle()
+	quick.title:SetText(F("QUICK_TITLE", UI.TargetLabel(quick.target)) .. DIM .. L.PICKER_HINT .. "|r")
+end
+
+-- Show category i (default: the one shown last, else the first).
+function UI.RenderQuick(i)
+	if not quick then return end
+	local cats = QuickCategories()
+	i = i or quick.cat or 1
+	if not cats[i] then i = 1 end
+	quick.cat = i
+	QuickTitle()
+	for k, b in ipairs(quick.cats) do
+		b:SetText(InLang(cats[k] and cats[k].title, b.key))
+		if b.LockHighlight then
+			if k == i then b:LockHighlight() else b:UnlockHighlight() end
+		end
+	end
+	local phrases = cats[i] and type(cats[i].phrases) == "table" and cats[i].phrases or {}
+	quick.phrases = phrases
+	for k, b in ipairs(quick.buttons) do
+		local p = phrases[k]
+		if p and type(p.en) == "string" then
+			b.en:SetText(Esc(p.en))
+			b.gloss:SetText(Esc(InLang(p.tr)))
+			b:Show()
+		else
+			b:Hide()
+		end
+	end
+end
+
+function UI.OpenQuick()
+	local q = BuildQuick()
+	-- Where the phrase goes: the last whisper partner within 2 min, else the box's channel.
+	q.target = Chat().TranslateTarget()
+	q:Show()
+	UI.RenderQuick()
+	return q
+end
+
+function UI.QuickPick(i)
+	if not quick or not quick.phrases then return end
+	local p = quick.phrases[i]
+	if not p or type(p.en) ~= "string" then return end
+	-- The window may have been open a while: a new whisper, or the 2 min passing,
+	-- changes where the phrase should go.
+	quick.target = Chat().TranslateTarget()
+	QuickTitle()
+	quick:Hide()
+	return UI.FillChat(p.en, quick.target)
+end
+
+---------------------------------------------------------------------------
+-- Diagnostic report (/wch report, status-window button): plain text in a multi-line
+-- edit box, selected, for the player to Ctrl+C (an addon can't write the clipboard).
+-- English keys; no chat text or other players' names (Transport.Event keeps none).
+---------------------------------------------------------------------------
+
+local REPORT_MAX = 4000
+local REPORT_PENDING_MAX = 20
+local report
+
+local function Secs(x) return string.format("%ds", math.floor((x or 0) + 0.5)) end
+
+function UI.BuildReport()
+	local Tr = T()
+	local tr = Tr.run
+	local now = GetTime()
+	local head = { "WoW Chat Helper report" }
+	local function add(k, v) head[#head + 1] = k .. ": " .. tostring(v) end
+	add("addon", ns.VERSION)
+	local ver, build, _, toc = ns.Try(GetBuildInfo)
+	add("client", tostring(ver or "?") .. " build " .. tostring(build or "?") .. " toc " .. tostring(toc or "?")
+		.. " locale " .. tostring(GetLocale and GetLocale() or "?"))
+	local name, realm
+	if UnitFullName then name, realm = UnitFullName("player") end
+	add("player", tostring(name or "?") .. "-" .. tostring((realm and realm ~= "") and realm or (GetRealmName and GetRealmName()) or "?"))
+	add("lang", tostring(ns.lang) .. (ns.db and ns.db.lang and " (set)" or " (auto)"))
+	add("signals", Tr.SignalsWork() and "ok" or "off")
+	local code, why = Tr.SelfTestResult()
+	add("selftest", tostring(code or "not run") .. (why and (" (" .. why .. ")") or ""))
+	local st = tr.signalStats or {}
+	add("sound checks", tostring(st.checks or 0) .. " hits " .. tostring(st.hits or 0) .. (st.error and (" error " .. st.error) or ""))
+	local state = Tr.BridgeState()
+	add("bridge", state .. (tr.bridgeSeen and (" (last seen " .. Secs(now - tr.bridgeSeen) .. " ago)") or " (never seen)"))
+	add("slots", tostring(Tr.SlotsLeft()) .. "/" .. tostring(Tr.SLOT_COUNT) .. " next " .. tostring(tr.nextSlot)
+		.. " loads " .. tostring(tr.loads or 0)
+		.. (tr.slotsExhausted and " exhausted" or "") .. (tr.slotsMissing and " missing" or "")
+		.. (tr.slotError and (" lastError " .. tostring(tr.slotError)) or ""))
+	add("chat font", ns.ChatFontOn() and "on" or "off")
+	local ids = {}
+	for id, r in pairs(tr.req) do
+		if not r.hello and not r.final and not r.failed then ids[#ids + 1] = id end
+	end
+	table.sort(ids)
+	add("pending", #ids)
+	for k, id in ipairs(ids) do
+		if k > REPORT_PENDING_MAX then
+			head[#head + 1] = "  ... " .. (#ids - REPORT_PENDING_MAX) .. " more"
+			break
+		end
+		local r = tr.req[id]
+		head[#head + 1] = string.format("  #%d %s status=%s acked=%s tries=%s age=%s", id, tostring(r.kind),
+			tostring(r.status), tostring(r.acked == true), tostring(r.tries or 0), Secs(now - (r.createdAt or now)))
+	end
+	add("time", string.format("%.1f", now))
+	local text = table.concat(head, "\n")
+	-- Newest events first until the cap, printed oldest first.
+	local events = tr.events or {}
+	local lines, size = {}, #text + 40
+	for k = #events, 1, -1 do
+		local e = events[k]
+		local l = string.format("  %7.1fs %s %s", (e.t or now) - now, e.kind, e.msg)
+		if size + #l + 1 > REPORT_MAX then break end
+		size = size + #l + 1
+		table.insert(lines, 1, l)
+	end
+	local label = #lines == #events and ("events (" .. #events .. "):")
+		or ("events (" .. #lines .. " of " .. #events .. ", oldest dropped):")
+	text = text .. "\n" .. label
+	if #lines > 0 then text = text .. "\n" .. table.concat(lines, "\n") end
+	return text
+end
+
+local function BuildReportWindow()
+	if report then return report end
+	report = NewWindow("WCHReport", 560, 400, "")
+	report:SetPoint("CENTER", UIParent, "CENTER", 0, 60)
+	local scroll = CreateFrame("ScrollFrame", "WCHReportScroll", report, "UIPanelScrollFrameTemplate")
+	scroll:SetPoint("TOPLEFT", report, "TOPLEFT", 12, -34)
+	scroll:SetPoint("BOTTOMRIGHT", report, "BOTTOMRIGHT", -30, 12)
+	local eb = CreateFrame("EditBox", "WCHReportEdit", scroll)
+	eb:SetMultiLine(true)
+	eb:SetAutoFocus(false)
+	eb:SetWidth(510)
+	eb:SetHeight(340)
+	UI.Font(eb, 12)
+	-- Read-only style: whatever the player types is put back.
+	eb:SetScript("OnTextChanged", function(self, user)
+		if user and report.text and self:GetText() ~= report.text then
+			self:SetText(report.text)
+			self:HighlightText()
+		end
+	end)
+	eb:SetScript("OnEscapePressed", function(self)
+		self:ClearFocus()
+		report:Hide()
+	end)
+	scroll:SetScrollChild(eb)
+	report.scroll, report.edit = scroll, eb
+	return report
+end
+
+function UI.OpenReport()
+	local r = BuildReportWindow()
+	r.title:SetText(L.REPORT_TITLE .. "  " .. DIM .. L.REPORT_HINT .. "|r")
+	r.text = UI.BuildReport()
+	r:Show()
+	r.edit:SetText(r.text)
+	r.edit:SetCursorPosition(0)
+	r.edit:SetFocus()
+	r.edit:HighlightText()
+	-- Again next frame: the chat edit box's own Enter handling (the slash command just
+	-- ran from it) may take the focus back after this.
+	if C_Timer and C_Timer.After then
+		C_Timer.After(0, function()
+			if r:IsShown() then
+				r.edit:SetFocus()
+				r.edit:HighlightText()
+			end
+		end)
+	end
+	ns.Print(L.REPORT_HINT)
+	return r
 end
 
 ---------------------------------------------------------------------------
@@ -691,6 +937,8 @@ function UI.OnLangChanged()
 	end
 	UI.StatusTexts()
 	UI.UpdateStatus()
+	if quick and quick:IsShown() then UI.RenderQuick() end
+	if report then report.title:SetText(L.REPORT_TITLE .. "  " .. DIM .. L.REPORT_HINT .. "|r") end
 	UI.ApplyChatFont(ns.ChatFontOn())
 	UI.FontNotice()
 end

@@ -212,6 +212,19 @@ minutes). Press Enter to send.
 Short, very common messages (`ty`, `gg`, `omw`, `inv pls`, …) are explained offline
 from the built-in phrase list, without asking the AI (tagged `[譯·離線]`).
 
+**Quick phrases:** `/wch say` (or `/wch q`, or the **Quick phrases** button in the `/wch`
+window) lists short lines US players actually type, by situation: greeting, just joined a
+group, waiting / brb, thanks, leaving, trade (`hey o/`, `inv pls`, `brb 2 min`,
+`thx for the run`, `gtg, ty all`, `how much?`, …), each with its meaning in your language.
+Click one: it goes into the chat box on the channel the box is on (or to the person who
+whispered you in the last two minutes). Nothing is sent until you press Enter.
+
+**Reporting a problem:** `/wch report` (or the **Copy report** button in the `/wch`
+window) opens a window with a plain-text diagnostic report, already selected: press
+Ctrl+C to copy it, Esc to close, and paste it into your bug report. It holds the addon
+and client version, your character, language, signal self-test, bridge state, slots,
+pending requests and the last 30 transport events; never the text of anyone's chat.
+
 ## Commands
 
 | Command | What it does |
@@ -220,6 +233,8 @@ from the built-in phrase list, without asking the AI (tagged `[譯·離線]`).
 | `/wch status` | Print the same in chat |
 | `/wtr <text>` | Translate your text into English reply candidates. Same as `/wch tr <text>`. `/tr` also works when no other addon or the game uses it (on the zhTW client it is taken) |
 | `/wch g [word]` | Glossary window, optionally searching for `word` |
+| `/wch say` / `/wch q` | Quick phrases: click a ready-made English line to put it in the chat box (never sent for you) |
+| `/wch report` | Diagnostic report window, selected for Ctrl+C (to paste into a bug report) |
 | `/wch lang <code>` | Language for explanations and the UI: `zhTW zhCN koKR deDE frFR esES ptBR ruRU itIT`; `auto` follows the client; no code lists them |
 | `/wch auto <whisper\|party\|raid\|guild> on\|off` | Turn automatic explanations on or off per channel group |
 | `/wch font on\|off\|auto` | Use the bundled font in chat frames (needed when your client's fonts lack your language's characters) |
