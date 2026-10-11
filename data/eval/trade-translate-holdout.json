@@ -1,0 +1,8 @@
+[
+  { "channel": "CHANNEL:Trade - City", "sender": "", "text": "賣 6 個 [Mooncloth]，每個 11 金，可以 COD", "must": ["\\bwts\\b", "\\[Mooncloth\\]", "\\bx ?6\\b|\\b6 ?x\\b", "\\b11g ?(ea|each)\\b", "\\bcod\\b"], "mustNot": ["\\bwtb\\b"], "note": "sell, each, cod" },
+  { "channel": "CHANNEL:Trade - City", "sender": "", "text": "收 40 個 [Thorium Bar]，一個 1 金 80 銀，私我", "must": ["\\bwtb\\b|\\bbuying\\b|^lf\\b", "\\[Thorium Bar\\]", "\\bx ?40\\b|\\b40 ?x\\b", "\\b1g ?80s\\b|\\b1\\.8g\\b", "\\b(ea|each)\\b", "\\b(pst|w me|/w|whisper|msg)\\b"], "mustNot": ["\\bwts\\b"], "note": "buy, silver" },
+  { "channel": "CHANNEL:Trade - City", "sender": "", "text": "找附魔師幫我法杖上法術能量，材料我出，另外給 15 金", "must": ["\\blf (an? )?(ench|enchanter)\\b", "spell ?power|\\bsp\\b", "mats", "\\b15g\\b"], "mustNot": ["\\bwts\\b", "\\bcan (do|craft|make)\\b"], "note": "craft request" },
+  { "channel": "CHANNEL:Trade - City", "sender": "", "text": "接附魔代工，十字軍跟烈焰武器都可以，材料自備，小費隨意", "must": ["crusader", "fiery", "\\b(ur|your|own) mats\\b", "\\btips?\\b"], "mustNot": ["\\blf\\b", "\\bwtb\\b"], "note": "craft offer" },
+  { "channel": "WHISPER", "sender": "Bob", "ctx": "Bob: wts [Major Mana Potion] 4g ea", "text": "10 瓶算 35 金可以嗎", "must": ["\\b10\\b", "\\b35g?\\b"], "mustNot": ["\\bwts\\b", "\\bwtb\\b"], "note": "haggle as buyer in a whisper" },
+  { "channel": "CHANNEL:Trade - City", "sender": "", "text": "拿 [Living Essence] 換 [Essence of Earth]，一換一", "must": ["\\bwtt\\b|\\btrade\\b|\\bswap", "\\[Living Essence\\]", "\\[Essence of Earth\\]", "1:1|1 for 1|one for one|\\beven\\b|1 ?- ?1|straight"], "mustNot": ["\\bwtb\\b", "\\bwts\\b"], "note": "barter one for one" }
+]

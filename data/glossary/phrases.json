@@ -4619,5 +4619,363 @@
    "ruRU": "Ищем ещё в RoL",
    "itIT": "RoL cerca altri"
   }
+ },
+ {
+  "key": "how much",
+  "terms": [
+   "price?"
+  ],
+  "tr": {
+   "zhTW": "多少錢",
+   "zhCN": "多少钱",
+   "koKR": "얼마예요",
+   "deDE": "Wie viel?",
+   "frFR": "Combien ?",
+   "esES": "¿Cuánto?",
+   "ptBR": "Quanto?",
+   "ruRU": "Сколько?",
+   "itIT": "Quanto?"
+  }
+ },
+ {
+  "key": "how much ea",
+  "terms": [
+   "price?",
+   "ea"
+  ],
+  "tr": {
+   "zhTW": "一個多少",
+   "zhCN": "一个多少",
+   "koKR": "개당 얼마",
+   "deDE": "Wie viel pro Stück?",
+   "frFR": "Combien pièce ?",
+   "esES": "¿Cuánto cada uno?",
+   "ptBR": "Quanto cada?",
+   "ruRU": "Сколько за штуку?",
+   "itIT": "Quanto l'uno?"
+  }
+ },
+ {
+  "key": "how much for all",
+  "terms": [
+   "price?"
+  ],
+  "tr": {
+   "zhTW": "全部多少",
+   "zhCN": "全部多少",
+   "koKR": "전부 얼마",
+   "deDE": "Wie viel für alle?",
+   "frFR": "Combien pour tout ?",
+   "esES": "¿Cuánto por todo?",
+   "ptBR": "Quanto por tudo?",
+   "ruRU": "Сколько за все?",
+   "itIT": "Quanto per tutto?"
+  }
+ },
+ {
+  "key": "price check",
+  "terms": [
+   "PC"
+  ],
+  "tr": {
+   "zhTW": "問行情",
+   "zhCN": "问行情",
+   "koKR": "시세 확인",
+   "deDE": "Preischeck",
+   "frFR": "Check de prix",
+   "esES": "Consulta de precio",
+   "ptBR": "Checar preço",
+   "ruRU": "Проверка цены",
+   "itIT": "Controllo prezzo"
+  }
+ },
+ {
+  "key": "still selling",
+  "terms": [],
+  "tr": {
+   "zhTW": "還在賣嗎",
+   "zhCN": "还在卖吗",
+   "koKR": "아직 파세요?",
+   "deDE": "Noch zu haben?",
+   "frFR": "Toujours en vente ?",
+   "esES": "¿Sigues vendiendo?",
+   "ptBR": "Ainda vendendo?",
+   "ruRU": "Еще продаешь?",
+   "itIT": "Vendi ancora?"
+  }
+ },
+ {
+  "key": "still buying",
+  "terms": [],
+  "tr": {
+   "zhTW": "還在收嗎",
+   "zhCN": "还在收吗",
+   "koKR": "아직 사세요?",
+   "deDE": "Kaufst du noch?",
+   "frFR": "Tu achètes encore ?",
+   "esES": "¿Sigues comprando?",
+   "ptBR": "Ainda comprando?",
+   "ruRU": "Еще покупаешь?",
+   "itIT": "Compri ancora?"
+  }
+ },
+ {
+  "key": "sold",
+  "terms": [],
+  "tr": {
+   "zhTW": "賣掉了",
+   "zhCN": "卖掉了",
+   "koKR": "팔렸어요",
+   "deDE": "Verkauft",
+   "frFR": "Vendu",
+   "esES": "Vendido",
+   "ptBR": "Vendido",
+   "ruRU": "Продано",
+   "itIT": "Venduto"
+  }
+ },
+ {
+  "key": "ill take it",
+  "terms": [],
+  "tr": {
+   "zhTW": "我要了",
+   "zhCN": "我要了",
+   "koKR": "살게요",
+   "deDE": "Nehm ich",
+   "frFR": "Je prends",
+   "esES": "Me lo llevo",
+   "ptBR": "Eu levo",
+   "ruRU": "Беру",
+   "itIT": "Lo prendo"
+  }
+ },
+ {
+  "key": "i'll take it",
+  "terms": [],
+  "tr": {
+   "zhTW": "我要了",
+   "zhCN": "我要了",
+   "koKR": "살게요",
+   "deDE": "Nehm ich",
+   "frFR": "Je prends",
+   "esES": "Me lo llevo",
+   "ptBR": "Eu levo",
+   "ruRU": "Беру",
+   "itIT": "Lo prendo"
+  }
+ },
+ {
+  "key": "ill take all",
+  "terms": [],
+  "tr": {
+   "zhTW": "全部我要",
+   "zhCN": "全部我要",
+   "koKR": "전부 살게요",
+   "deDE": "Nehm alle",
+   "frFR": "Je prends tout",
+   "esES": "Me llevo todo",
+   "ptBR": "Levo tudo",
+   "ruRU": "Беру все",
+   "itIT": "Prendo tutto"
+  }
+ },
+ {
+  "key": "cod ok",
+  "terms": [
+   "CoD"
+  ],
+  "tr": {
+   "zhTW": "可以貨到付款",
+   "zhCN": "可以货到付款",
+   "koKR": "착불 가능",
+   "deDE": "Nachnahme ok",
+   "frFR": "Contre-remb. ok",
+   "esES": "Contra reembolso ok",
+   "ptBR": "Pode ser COD",
+   "ruRU": "Наложенный ок",
+   "itIT": "Contrassegno ok"
+  }
+ },
+ {
+  "key": "sent cod",
+  "terms": [
+   "CoD"
+  ],
+  "tr": {
+   "zhTW": "已寄貨到付款",
+   "zhCN": "已寄货到付款",
+   "koKR": "착불로 보냄",
+   "deDE": "Per Nachnahme raus",
+   "frFR": "Envoyé contre-remb.",
+   "esES": "Enviado contra reemb.",
+   "ptBR": "Mandei COD",
+   "ruRU": "Отправил наложкой",
+   "itIT": "Inviato in contrass."
+  }
+ },
+ {
+  "key": "check ur mail",
+  "terms": [],
+  "tr": {
+   "zhTW": "去看信箱",
+   "zhCN": "去看邮箱",
+   "koKR": "우편함 확인해",
+   "deDE": "Schau in die Post",
+   "frFR": "Regarde ton courrier",
+   "esES": "Revisa tu correo",
+   "ptBR": "Olha o correio",
+   "ruRU": "Проверь почту",
+   "itIT": "Controlla la posta"
+  }
+ },
+ {
+  "key": "obo",
+  "terms": [
+   "obo"
+  ],
+  "tr": {
+   "zhTW": "可議價",
+   "zhCN": "可议价",
+   "koKR": "가격 제안 받음",
+   "deDE": "VB",
+   "frFR": "À débattre",
+   "esES": "Negociable",
+   "ptBR": "Aceito ofertas",
+   "ruRU": "Торг",
+   "itIT": "Trattabile"
+  }
+ },
+ {
+  "key": "no lowballs",
+  "terms": [
+   "lowball"
+  ],
+  "tr": {
+   "zhTW": "別亂殺價",
+   "zhCN": "别乱压价",
+   "koKR": "후려치기 사절",
+   "deDE": "Keine Dumpingangebote",
+   "frFR": "Pas d'offres basses",
+   "esES": "Sin ofertas ridículas",
+   "ptBR": "Sem ofertas baixas",
+   "ruRU": "Не сбивайте цену",
+   "itIT": "No offerte basse"
+  }
+ },
+ {
+  "key": "your mats",
+  "terms": [
+   "ur mats"
+  ],
+  "tr": {
+   "zhTW": "你出材料",
+   "zhCN": "你出材料",
+   "koKR": "재료 지참",
+   "deDE": "Deine Mats",
+   "frFR": "Tes compos",
+   "esES": "Tus materiales",
+   "ptBR": "Seus materiais",
+   "ruRU": "Твои реагенты",
+   "itIT": "I tuoi materiali"
+  }
+ },
+ {
+  "key": "mats + tip",
+  "terms": [
+   "mats",
+   "tip"
+  ],
+  "tr": {
+   "zhTW": "材料加小費",
+   "zhCN": "材料加小费",
+   "koKR": "재료 + 팁",
+   "deDE": "Mats + Trinkgeld",
+   "frFR": "Compos + pourboire",
+   "esES": "Materiales + propina",
+   "ptBR": "Materiais + gorjeta",
+   "ruRU": "Реагенты + чаевые",
+   "itIT": "Materiali + mancia"
+  }
+ },
+ {
+  "key": "have mats",
+  "terms": [
+   "have mats"
+  ],
+  "tr": {
+   "zhTW": "我有材料",
+   "zhCN": "我有材料",
+   "koKR": "재료 있어요",
+   "deDE": "Hab Mats",
+   "frFR": "J'ai les compos",
+   "esES": "Tengo materiales",
+   "ptBR": "Tenho materiais",
+   "ruRU": "Есть реагенты",
+   "itIT": "Ho i materiali"
+  }
+ },
+ {
+  "key": "lf enchanter",
+  "terms": [
+   "LF enchanter"
+  ],
+  "tr": {
+   "zhTW": "找附魔師",
+   "zhCN": "找附魔师",
+   "koKR": "마부사 구함",
+   "deDE": "Suche VZ",
+   "frFR": "Cherche enchanteur",
+   "esES": "Busco encantador",
+   "ptBR": "Procuro encantador",
+   "ruRU": "Ищу чаровника",
+   "itIT": "Cerco incantatore"
+  }
+ },
+ {
+  "key": "can you craft it",
+  "terms": [
+   "can craft"
+  ],
+  "tr": {
+   "zhTW": "你能做嗎",
+   "zhCN": "你能做吗",
+   "koKR": "제작 가능해요?",
+   "deDE": "Kannst du das bauen?",
+   "frFR": "Tu peux le crafter ?",
+   "esES": "¿Puedes fabricarlo?",
+   "ptBR": "Consegue criar?",
+   "ruRU": "Скрафтишь?",
+   "itIT": "Puoi crearlo?"
+  }
+ },
+ {
+  "key": "final offer",
+  "terms": [],
+  "tr": {
+   "zhTW": "最後出價",
+   "zhCN": "最后出价",
+   "koKR": "마지막 제안",
+   "deDE": "Letztes Angebot",
+   "frFR": "Dernière offre",
+   "esES": "Última oferta",
+   "ptBR": "Última oferta",
+   "ruRU": "Последнее предложение",
+   "itIT": "Ultima offerta"
+  }
+ },
+ {
+  "key": "meet in the middle",
+  "terms": [],
+  "tr": {
+   "zhTW": "各退一步",
+   "zhCN": "各退一步",
+   "koKR": "중간에서 맞춰요",
+   "deDE": "Treffen uns in der Mitte",
+   "frFR": "On coupe la poire",
+   "esES": "Partimos la diferencia",
+   "ptBR": "Meio a meio",
+   "ruRU": "Сойдемся посередине",
+   "itIT": "Facciamo a metà"
+  }
  }
 ]
