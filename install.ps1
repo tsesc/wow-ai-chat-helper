@@ -182,26 +182,47 @@ if ($Zip) {
 Expand-Archive -Path $zipFile -DestinationPath $tmp -Force
 $src = Get-ChildItem $tmp -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'setup.js') } | Select-Object -First 1
 if (-not $src) { Fail 'The downloaded zip does not contain setup.js. Wrong -Ref or -Repo?' }
-# Keep the user's bridge settings and log files across updates.
-$keep = @('bridge\config.json', 'bridge\state.json')
-$saved = @{}
-foreach ($k in $keep) { $p = Join-Path $app $k; if (Test-Path $p) { $saved[$k] = Get-Content $p -Raw -Encoding UTF8 } }
-# bridge\logs is moved next to app (same drive) and back, not read into memory.
-$logs = Join-Path $app 'bridge\logs'
-$logsKeep = Join-Path $InstallDir 'logs-update-keep'
-if ((Test-Path $logsKeep) -and (Test-Path $logs)) { Remove-Item $logsKeep -Recurse -Force } # an older leftover
-if (Test-Path $logs) { Move-Item $logs $logsKeep }
-if (Test-Path $app) { Remove-Item $app -Recurse -Force }
-Move-Item $src.FullName $app
-foreach ($k in $saved.Keys) { $p = Join-Path $app $k; New-Item -ItemType Directory -Force -Path (Split-Path $p) | Out-Null; [IO.File]::WriteAllText($p, $saved[$k]) }
-if (Test-Path $logsKeep) {
-  New-Item -ItemType Directory -Force -Path (Join-Path $app 'bridge') | Out-Null
-  Move-Item $logsKeep (Join-Path $app 'bridge\logs')
-  $saved['bridge\logs'] = $true
+# A running bridge holds app\bridge open (node plus the console window that started it),
+# which made an in-place update fail halfway and leave a half-deleted app. Stop it first,
+# matching on the app path (never on process name alone), and never on this script itself.
+$bridgeProcs = @(Get-CimInstance Win32_Process | Where-Object {
+  $_.ProcessId -ne $PID -and $_.ParentProcessId -ne $PID -and $_.CommandLine -and $_.CommandLine -like "*$app\bridge*"
+})
+if ($bridgeProcs.Count) {
+  Info "stopping the running bridge ($(($bridgeProcs | ForEach-Object { $_.Name }) -join ', '))"
+  $bridgeProcs | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+  Start-Sleep -Seconds 2
 }
+# Replace by rename, so a locked folder fails before anything is deleted. The user's bridge
+# settings and log files are copied back from the old folder; the logs are moved, not read.
+$old = "${app}.old"
+if (Test-Path $old) { Remove-Item $old -Recurse -Force -ErrorAction SilentlyContinue }
+if (Test-Path $app) {
+  try { Rename-Item -Path $app -NewName (Split-Path -Leaf $old) -ErrorAction Stop }
+  catch { Fail "Cannot replace $app because something still uses it. Close the bridge window and any Explorer or terminal in that folder, then run the installer again. Nothing was changed." }
+}
+Move-Item $src.FullName $app
+$keptList = @()
+foreach ($k in @('bridge\config.json', 'bridge\state.json')) {
+  $from = Join-Path $old $k; $to = Join-Path $app $k
+  if (Test-Path $from) { New-Item -ItemType Directory -Force -Path (Split-Path $to) | Out-Null; Copy-Item $from $to -Force; $keptList += $k }
+}
+$logsTo = Join-Path $app 'bridge\logs'
+$oldLogs = Join-Path $old 'bridge\logs'
+if (Test-Path $oldLogs) { New-Item -ItemType Directory -Force -Path (Join-Path $app 'bridge') | Out-Null; Move-Item $oldLogs $logsTo; $keptList += 'bridge\logs' }
+# Leftover from the previous installer version, which parked the logs next to app.
+$logsKeep = Join-Path $InstallDir 'logs-update-keep'
+if (Test-Path $logsKeep) {
+  New-Item -ItemType Directory -Force -Path $logsTo | Out-Null
+  Get-ChildItem $logsKeep -File | ForEach-Object { if (-not (Test-Path (Join-Path $logsTo $_.Name))) { Move-Item $_.FullName $logsTo } }
+  Remove-Item $logsKeep -Recurse -Force -ErrorAction SilentlyContinue
+  if ($keptList -notcontains 'bridge\logs') { $keptList += 'bridge\logs' }
+}
+Remove-Item $old -Recurse -Force -ErrorAction SilentlyContinue
+if (Test-Path $old) { Info "could not delete $old (something still uses it); delete it by hand later" }
 Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 $ver = (Get-Content (Join-Path $app 'package.json') -Raw | ConvertFrom-Json).version
-$kept = if ($saved.Count) { " (kept $($saved.Keys -join ', '))" } else { '' }
+$kept = if ($keptList.Count) { " (kept $($keptList -join ', '))" } else { '' }
 Ok "version $ver in $app$kept"
 
 # ---------------------------------------------------------------- 4. setup.js (addon into WoW)
