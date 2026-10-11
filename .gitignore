@@ -2,6 +2,7 @@ node_modules/
 bridge/config.json
 bridge/state.json
 bridge/probe.png
+bridge/logs/
 *.log
 .DS_Store
 .env*

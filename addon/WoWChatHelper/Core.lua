@@ -348,6 +348,9 @@ function ns.HelloSettings()
 		{ "player", tostring(name or (UnitName and UnitName("player")) or "") .. (realm and realm ~= "" and ("-" .. realm) or "") },
 		{ "signals", (ns.Transport and ns.Transport.SignalsWork()) and "ok" or "off" },
 	}
+	-- Why signals are off (Transport.SelfTest): the bridge window names the fix.
+	local code = ns.Transport and ns.Transport.SelfTestResult and ns.Transport.SelfTestResult()
+	if code then kv[#kv + 1] = { "selftest", code } end
 	local parts = {}
 	for _, p in ipairs(kv) do
 		parts[#parts + 1] = p[1] .. "=" .. (tostring(p[2]):gsub("[;=\30\31]", " "))
@@ -416,6 +419,8 @@ function ns.HandleSlash(msg)
 		if T then
 			local _, _, _, _, tip = T.BridgeState()
 			ns.Print(F("STATUS_LINE", tip, T.SlotsLeft(), T.PendingCount()))
+			local code, why = T.SelfTestResult()
+			if code then ns.Print(F("SIGNALS_LINE", code .. (why and why ~= "passed" and (" (" .. why .. ")") or ""))) end
 		end
 	else
 		for _, k in ipairs(HELP) do ns.Print(L[k]) end

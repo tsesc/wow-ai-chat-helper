@@ -12,6 +12,7 @@ const B = require('../bridge/bridge');
 const { installSlots, SILENT_WAV } = require('../bridge/install-slots');
 const { setup, copyGlossaryAddons, removeStaleGlossary } = require('../setup');
 const { createVM } = require('./helpers/lua');
+const { localDate } = require('../bridge/logfile');
 
 const ROOT = path.join(__dirname, '..');
 const FAKE = path.join(__dirname, 'fakes', 'fake-claude.js');
@@ -37,11 +38,14 @@ function installed() {
   const configFile = path.join(w.dir, 'config.json');
   const lines = [];
   const res = setup(['--wow', w.client, '--config', configFile, '--claude', FAKE, '--codex', FAKE_CODEX], (l) => lines.push(l));
+  // CLI runs log to the temp folder, not the repo's bridge/logs.
+  const logDir = path.join(w.dir, 'logs');
+  if (fs.existsSync(configFile)) fs.writeFileSync(configFile, JSON.stringify({ ...JSON.parse(fs.readFileSync(configFile, 'utf8')), logDir }, null, 2));
   const logFile = path.join(w.dir, 'fake.log');
   process.env.FAKE_CLAUDE_LOG = logFile;
   process.env.FAKE_CLAUDE_STATE = path.join(w.dir, 'fake-state');
   const events = () => (fs.existsSync(logFile) ? fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)) : []);
-  return { ...w, configFile, res, lines, events, stateFile: path.join(w.dir, 'state.json'), workDir: path.join(w.dir, 'cwd') };
+  return { ...w, configFile, res, lines, events, logDir, stateFile: path.join(w.dir, 'state.json'), workDir: path.join(w.dir, 'cwd') };
 }
 
 function makeBridge(w, cfgOver = {}) {
@@ -364,9 +368,25 @@ test('capture child process: lines from the capture command reach the AI and the
 test('cli: --inject runs records through the bridge and exits when done', () => {
   const w = installed();
   const r = spawnSync(process.execPath, [path.join(ROOT, 'bridge', 'bridge.js'), '--config', w.configFile, '--state', w.stateFile, '--inject', INJECT],
-    { encoding: 'utf8', env: { ...process.env }, timeout: 30000 });
+    { encoding: 'utf8', env: { ...process.env, TZ: 'Pacific/Kiritimati' }, timeout: 30000 });
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /WoW Chat Helper bridge/);
+  // Everything printed also went to the day's log file (named in the banner).
+  const logs = fs.readdirSync(w.logDir);
+  const kiriDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Kiritimati' }); // YYYY-MM-DD
+  assert.deepStrictEqual(logs, [`bridge-${kiriDate}.log`], 'named by the bridge\'s local date');
+  const logText = fs.readFileSync(path.join(w.logDir, logs[0]), 'utf8');
+  assert.ok(r.stdout.includes(`  log      : ${path.join(w.logDir, logs[0])}`), r.stdout);
+  assert.match(logText, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} WoW Chat Helper bridge\n/);
+  assert.match(logText, /\d{2}:\d{2}:\d{2} {3}log {6}: /);
+  assert.match(logText, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} result #4: done$/m, 'console time kept, only the date added');
+  assert.ok(!/\d{2}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}/.test(logText), 'no time twice');
+  // The console time is local (TZ set far from UTC so a UTC stamp would show).
+  const stamped = r.stdout.match(/^(\d{2}):\d{2}:\d{2} result #4/m);
+  assert.ok(stamped, r.stdout);
+  const want = new Date(new Date().toLocaleString('en-US', { timeZone: 'Pacific/Kiritimati' })).getHours();
+  assert.ok([want, (want + 23) % 24].includes(Number(stamped[1])), `local hour ${want}, got ${stamped[1]}`);
+  assert.ok(!logText.includes('\r'));
   const data = loadSlot(slotSrc(w, 50));
   assert.strictEqual(data.session, 'sessA');
   assert.deepStrictEqual(data.results.map(x => [x.id, x.kind, x.status]), [[2, 'x', 'done'], [3, 't', 'done'], [4, 'd', 'done']]);
@@ -390,7 +410,7 @@ test('supervisor restarts the bridge 3 s after a crash', async () => {
   const dir = tmpdir();
   // wowPath must be a string: path.join throws, the bridge exits 1 (a crash, not exit 2).
   const cfgFile = path.join(dir, 'bad.json');
-  fs.writeFileSync(cfgFile, '{"wowPath": 5}');
+  fs.writeFileSync(cfgFile, JSON.stringify({ wowPath: 5, logDir: path.join(dir, 'logs') }));
   const child = spawn(process.execPath, [path.join(ROOT, 'bridge', 'supervisor.js'), '--config', cfgFile], { stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', d => { out += d; });
@@ -400,6 +420,9 @@ test('supervisor restarts the bridge 3 s after a crash', async () => {
   child.kill('SIGTERM');
   assert.match(out, /bridge exited \(1\); restarting in 3 s/);
   assert.ok(Date.now() - t0 >= 3000, 'waited 3 s between runs');
+  // The supervisor's own lines go to the log file too.
+  const logText = fs.readFileSync(path.join(dir, 'logs', `bridge-${localDate(new Date())}.log`), 'utf8');
+  assert.match(logText, /bridge exited \(1\); restarting in 3 s/);
 });
 
 test('publish survives Windows EPERM renames: retried, slots still written, ready waits for a full publish', async () => {
@@ -534,6 +557,33 @@ test('hello lang=<code> sets the language of every request; client locale is the
     assert.strictEqual(results.find(r => r.id === 4).lang, 'frFR');
     assert.match(bridge.banner(), /language : esES/);
     assert.match(bridge.banner(), /glossary : 9 terms from .*terms\.json/);
+  } finally { bridge.stop(); }
+});
+
+test('hello selftest=<code> is shown on the hello line; a hint is logged once per change of reason', () => {
+  const w = installed();
+  const { bridge, logs } = makeBridge(w);
+  try {
+    bridge.handleRecords([rec(1, 'h', 'addon=0.1;signals=off;selftest=validunplayable')]);
+    assert.strictEqual(bridge.state.settings.selftest, 'validunplayable');
+    assert.ok(logs.some(l => /^hello .*; signals off \(selftest validunplayable\)$/.test(l)), logs.join('\n'));
+    const hints = () => logs.filter(l => /^warning: signals self-test/.test(l));
+    assert.deepStrictEqual(hints(), ['warning: signals self-test validunplayable: ' + B.SELFTEST_HINTS.validunplayable]);
+    assert.match(hints()[0], /not indexed by the client; fully restart WoW/);
+    bridge.handleRecords([rec(2, 'h', 'addon=0.1;signals=off;selftest=validunplayable')]);
+    assert.strictEqual(hints().length, 1, 'same reason: no second hint');
+    bridge.handleRecords([rec(3, 'h', 'addon=0.1;signals=off;selftest=off')]);
+    assert.strictEqual(hints().length, 1, 'turned off by the player: no hint');
+    bridge.handleRecords([rec(4, 'h', 'addon=0.1;signals=off;selftest=emptyplayable')]);
+    assert.match(hints()[1], /self-test emptyplayable: the client reports an empty \.wav as playable/);
+    bridge.handleRecords([rec(5, 'h', 'addon=0.1;signals=ok;selftest=ok')]);
+    assert.ok(logs.some(l => /#5 .*; signals ok \(selftest ok\)$/.test(l)));
+    bridge.handleRecords([rec(6, 'h', 'addon=0.1;signals=off;selftest=nosound'), rec(7, 'h', 'addon=0.1;signals=off;selftest=error')]);
+    assert.match(hints()[2], /self-test nosound: PlaySoundFile is missing/);
+    assert.match(hints()[3], /self-test error: PlaySoundFile raised an error/);
+    bridge.handleRecords([rec(8, 'h', 'addon=0.1;lang=zhTW')]);
+    assert.ok(logs.some(l => /#8 \(addon=0\.1;lang=zhTW\); language zhTW$/.test(l)), 'an old addon without signals/selftest: line unchanged');
+    assert.strictEqual(hints().length, 4);
   } finally { bridge.stop(); }
 });
 

@@ -19,9 +19,62 @@ test('login: hello record carries the session and k=v settings; ack takes the st
   assert.equal(s.corner, 'TOPLEFT');
   assert.equal(s.player, 'Testchar-TestRealm');
   assert.equal(s.signals, 'ok');
+  assert.equal(s.selftest, 'ok');
   ackStrip(vm);
   assert.equal(vm.decodeStrip(), null);
   assert.deepEqual(vm.sent(), []);
+});
+
+test('hello selftest=<code> names why signals are off; /wch status prints it', () => {
+  const helloOf = (vm) => {
+    vm.slash('/wch hello');
+    vm.advance(0.6);
+    const h = vm.decodeStrip().records.find(r => r.kind === 'h');
+    ackStrip(vm);
+    return P.parseSettings(h.text);
+  };
+  // valid.wav not playable: the client has not indexed the signal files.
+  let vm = boot({ signals: false });
+  let s = helloOf(vm);
+  assert.equal(s.signals, 'off');
+  assert.equal(s.selftest, 'validunplayable');
+  vm.slash('/wch status');
+  assert.ok(vm.chatText().some(t => t.includes('訊號自檢：validunplayable (a valid file reports as unplayable')), vm.chatText().join('\n'));
+  // An empty file that reports as playable.
+  vm = boot({ signals: false, preLogin: 'STUB.SetPlayable("Interface/AddOns/WoWChatHelper/sig/ctl/empty.wav")' });
+  assert.equal(vm.str('WCH.Transport.run.selftestCode'), 'emptyplayable');
+  // No PlaySoundFile at all.
+  vm = boot({ signals: false, before: 'PlaySoundFile = nil' });
+  assert.equal(helloOf(vm).selftest, 'nosound');
+  // PlaySoundFile raises.
+  vm = boot({ signals: false, before: 'PlaySoundFile = function() error("boom") end' });
+  assert.equal(vm.str('WCH.Transport.run.selftestCode'), 'error');
+  assert.match(vm.str('WCH.Transport.run.selftest'), /boom/);
+  // Turned off by the player.
+  vm = boot();
+  vm.run('WCH.db.settings.signal = false; WCH.Transport.SelfTest()');
+  s = helloOf(vm);
+  assert.equal(s.signals, 'off');
+  assert.equal(s.selftest, 'off');
+  vm.slash('/wch status');
+  assert.ok(vm.chatText().some(t => t.includes('訊號自檢：off (turned off)')));
+});
+
+test('PlaySoundFile failing after a passed self-test: signals off, selftest=error, a fresh hello', () => {
+  const vm = boot();
+  assert.equal(vm.eval('WCH.Transport.SignalsWork()'), true);
+  vm.run('PlaySoundFile = function() error("sound system gone") end');
+  vm.receiveChat('WHISPER', 'are you there?', 'Bob');
+  vm.advance(0.6);
+  assert.equal(vm.eval('WCH.Transport.SignalsWork()'), false);
+  assert.equal(vm.str('WCH.Transport.run.selftestCode'), 'error');
+  assert.match(vm.str('WCH.Transport.run.selftest'), /sound system gone/);
+  vm.advance(0.6);
+  const hellos = vm.decodeStrip().records.filter(r => r.kind === 'h');
+  assert.equal(hellos.length, 1, 'a fresh hello is on the strip');
+  const s = P.parseSettings(hellos[0].text);
+  assert.equal(s.signals, 'off');
+  assert.equal(s.selftest, 'error');
 });
 
 test('whisper event -> strip bytes decode (protocol.js) to the expected x record with ctx', () => {

@@ -297,8 +297,11 @@ and the checklist.
 | `config.json "agent": unknown agent` and the bridge stops | `"agent"` must be `claude` or `codex`. |
 | Answers take 20 s or more | Check `maxThinkingTokens` is `0` in `bridge/config.json`. |
 
-The bridge also writes everything it does to its console window; when you report a bug,
-include the last 30 lines.
+The bridge also writes everything it does to its console window, and to a log file per
+day in `bridge\logs\` (`bridge-YYYY-MM-DD.log`, the last 7 days are kept; the banner's
+`log` line names today's file). When you report a problem, attach the newest file from
+`bridge\logs\`. If the bridge prints `warning: signals self-test ...`, that line says
+what to do.
 
 ## Privacy, cost and game rules
 

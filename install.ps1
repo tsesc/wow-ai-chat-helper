@@ -182,13 +182,23 @@ if ($Zip) {
 Expand-Archive -Path $zipFile -DestinationPath $tmp -Force
 $src = Get-ChildItem $tmp -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'setup.js') } | Select-Object -First 1
 if (-not $src) { Fail 'The downloaded zip does not contain setup.js. Wrong -Ref or -Repo?' }
-# Keep the user's bridge settings across updates.
+# Keep the user's bridge settings and log files across updates.
 $keep = @('bridge\config.json', 'bridge\state.json')
 $saved = @{}
 foreach ($k in $keep) { $p = Join-Path $app $k; if (Test-Path $p) { $saved[$k] = Get-Content $p -Raw -Encoding UTF8 } }
+# bridge\logs is moved next to app (same drive) and back, not read into memory.
+$logs = Join-Path $app 'bridge\logs'
+$logsKeep = Join-Path $InstallDir 'logs-update-keep'
+if ((Test-Path $logsKeep) -and (Test-Path $logs)) { Remove-Item $logsKeep -Recurse -Force } # an older leftover
+if (Test-Path $logs) { Move-Item $logs $logsKeep }
 if (Test-Path $app) { Remove-Item $app -Recurse -Force }
 Move-Item $src.FullName $app
 foreach ($k in $saved.Keys) { $p = Join-Path $app $k; New-Item -ItemType Directory -Force -Path (Split-Path $p) | Out-Null; [IO.File]::WriteAllText($p, $saved[$k]) }
+if (Test-Path $logsKeep) {
+  New-Item -ItemType Directory -Force -Path (Join-Path $app 'bridge') | Out-Null
+  Move-Item $logsKeep (Join-Path $app 'bridge\logs')
+  $saved['bridge\logs'] = $true
+}
 Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 $ver = (Get-Content (Join-Path $app 'package.json') -Raw | ConvertFrom-Json).version
 $kept = if ($saved.Count) { " (kept $($saved.Keys -join ', '))" } else { '' }

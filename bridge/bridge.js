@@ -28,6 +28,7 @@ const ai = require('./ai');
 const providers = require('./providers');
 const { normalizeLocale, DEFAULT_LOCALE } = require('./glossary');
 const { SILENT_WAV } = require('./install-slots');
+const logfile = require('./logfile');
 
 const HERE = __dirname;
 const ADDON = 'WoWChatHelper';
@@ -43,6 +44,17 @@ const CONFIG_DEFAULTS = {
   timeoutMs: 60000, batchWindowMs: 400, persistent: true, persistentMaxTurns: 40, maxThinkingTokens: 0,
   glossaryFile: '',
   slots: P.SLOT_COUNT, presenceMax: 2000, presenceIntervalMs: 30000, progressWriteMs: 2000, publishRetryMs: 1000,
+  // Rolling log file (logfile.js): '' = bridge/logs; dates kept.
+  logDir: '', logKeepDays: logfile.DEFAULT_KEEP_DAYS,
+};
+
+// The addon's signal self-test (hello selftest=<code>, Transport.lua SelfTest) -> what
+// the player can do about it. ok / off (turned off by the player) need no hint.
+const SELFTEST_HINTS = {
+  nosound: 'PlaySoundFile is missing in this client; the addon polls on a schedule instead (answers arrive a few seconds later)',
+  emptyplayable: 'the client reports an empty .wav as playable, so signals cannot be trusted; the addon polls on a schedule instead (answers arrive a few seconds later)',
+  validunplayable: 'signal files were not indexed by the client; fully restart WoW after installing (a /reload is not enough)',
+  error: 'PlaySoundFile raised an error in the self-test; the addon polls on a schedule instead. In game, /wch status shows the error',
 };
 
 // config.json (or an object) -> full config with defaults and addonDir resolved.
@@ -79,12 +91,15 @@ function atomicWrite(file, content) {
 
 class Bridge {
   // cfg: resolved config. opts: { stateFile, workDir, log, runner (an AiRunner-like
-  // object with request(req) -> Promise<result> and stop()), now () -> epoch seconds }
+  // object with request(req) -> Promise<result> and stop()), now () -> epoch seconds,
+  // logFile (a logfile.LogFile; the banner names its file) }
   constructor(cfg, opts = {}) {
     this.cfg = resolveConfig(cfg);
     this.stateFile = opts.stateFile || path.join(HERE, 'state.json');
-    this.log = opts.log || ((...a) => console.log(new Date().toISOString().slice(11, 19), ...a));
+    this.log = opts.log || ((...a) => console.log(logfile.localTime(new Date()), ...a)); // local HH:MM:SS
     this.nowFn = opts.now || (() => Math.floor(Date.now() / 1000));
+    this.logFile = opts.logFile || null;
+    this.selftest = undefined; // last selftest= code seen in a hello
     const st = readJson(this.stateFile, {});
     this.state = {
       session: typeof st.session === 'string' ? st.session : '',
@@ -333,7 +348,10 @@ class Bridge {
       if (rec.session !== this.state.session) { this.switchSession(rec.session); changed = true; }
       if (rec.kind === 'h') {
         this.state.settings = P.parseSettings(rec.text);
-        this.log(`hello ${rec.session} #${rec.id}` + (rec.text ? ` (${rec.text.slice(0, 120)})` : '') + `; language ${this.locale()}`);
+        const { signals, selftest } = this.state.settings;
+        this.log(`hello ${rec.session} #${rec.id}` + (rec.text ? ` (${rec.text.slice(0, 120)})` : '') + `; language ${this.locale()}` +
+          (signals !== undefined || selftest !== undefined ? `; signals ${signals || '?'}` + (selftest ? ` (selftest ${selftest})` : '') : ''));
+        this.noteSelftest(selftest);
         if (this.state.settings.lang && !normalizeLocale(this.state.settings.lang)) {
           this.log(`warning: unsupported lang=${this.state.settings.lang}; answering in ${this.locale()}`);
         }
@@ -355,6 +373,14 @@ class Bridge {
     if (fresh) this.saveState();
     // Receipts (working status) immediately; a hello-only frame through the throttle.
     if (changed) this.publish(urgent);
+  }
+
+  // A hint for a failed signal self-test, once per change of the reason.
+  noteSelftest(code) {
+    if (code === undefined || code === this.selftest) return;
+    this.selftest = code;
+    if (code === 'ok' || code === 'off' || code === '') return;
+    this.log(`warning: signals self-test ${code}: ${SELFTEST_HINTS[code] || 'unknown reason; the addon polls on a schedule instead'}`);
   }
 
   // The record goes to the AI with the language in force when it is sent; the result
@@ -446,6 +472,7 @@ class Bridge {
       `  session  : ${this.state.session || '(waiting for the addon hello)'}`,
       `  language : ${this.locale()} (from the addon hello: lang=, else the client locale)`,
     ];
+    if (this.logFile) lines.push(`  log      : ${this.logFile.file()}`);
     const g = this.runner.glossary;
     if (g) lines.push(`  glossary : ${g.size ? g.size + ' terms from ' + g.file : 'NONE - prompts go without known terms (data/glossary/terms.json missing?)'}`);
     if (!cmd.found) lines.push(`  !! ${prov.displayName} CLI not found: every request will come back as an error until it is installed and logged in.`);
@@ -524,9 +551,13 @@ async function main(argv) {
     process.exit(2);
   }
   const cfg = resolveConfig(raw);
+  // From here on every console line also goes to the log file.
+  const logFile = logfile.fromConfig(cfg);
+  logFile.prune();
+  logfile.teeConsole(logFile);
   if (!cfg.addonDir) { console.error('config.json: set wowPath (the WoW client folder).'); process.exit(2); }
   try { providers.get(cfg.agent); } catch (e) { console.error(`config.json "agent": ${e.message}`); process.exit(2); }
-  const bridge = createBridge(cfg, { stateFile: arg('state') ? path.resolve(arg('state')) : undefined, workDir: cfg.workDir || undefined });
+  const bridge = createBridge(cfg, { stateFile: arg('state') ? path.resolve(arg('state')) : undefined, workDir: cfg.workDir || undefined, logFile });
   console.log(bridge.banner());
   const injectFile = arg('inject');
   if (injectFile) {
@@ -554,4 +585,4 @@ async function main(argv) {
 
 if (require.main === module) main(process.argv.slice(2)).catch((e) => { console.error(e); process.exit(1); });
 
-module.exports = { Bridge, createBridge, resolveConfig, readInjectFile, atomicWrite, CONFIG_DEFAULTS, main };
+module.exports = { Bridge, createBridge, resolveConfig, readInjectFile, atomicWrite, CONFIG_DEFAULTS, SELFTEST_HINTS, main };

@@ -89,6 +89,8 @@ addon settings; ask before deleting it.
 | Bridge says `capture: waiting for WowB window` | WoW is not running, or runs in exclusive fullscreen; it must be windowed / borderless |
 | Addon light stays red in game | Bridge not running, or the WoW window's top-left corner is covered; `README.md` → Troubleshooting |
 | Chinese shows as boxes | `docs/SPIKE-CHECKLIST.md` (font check) |
+| Anything that happened earlier (window already closed) | Bridge log files: `<InstallDir>\app\bridge\logs\bridge-YYYY-MM-DD.log` (one per day, 7 kept; `logDir` / `logKeepDays` in `config.json`). The banner's `log` line names today's file |
+| Bridge says `warning: signals self-test <code>` | The addon cannot use signal files (hello `selftest=`); the line says the fix, e.g. `validunplayable` = fully restart WoW after installing. In game `/wch status` shows the same reason |
 
 ## Repository map
 
@@ -98,7 +100,7 @@ addon settings; ask before deleting it.
 | Setup | `setup.js` | Finds the client, copies the addon and glossaries, builds the slot pool, writes `bridge/config.json` |
 | Addon | `addon/WoWChatHelper/` | The in-game addon (Lua); `Locales.lua` has the 9 UI languages |
 | Glossary addons | `addon/WoWChatHelper_Glossary_<locale>/` | Generated from `data/glossary/terms.json` by `tools/build-glossary.js` |
-| Bridge | `bridge/` | Node program on the same PC: `supervisor.js` → `bridge.js`; `start-window.cmd` / `start.ps1` launch it |
+| Bridge | `bridge/` | Node program on the same PC: `supervisor.js` → `bridge.js` (log files: `logfile.js` → `bridge/logs/`); `start-window.cmd` / `start.ps1` launch it |
 | AI providers | `bridge/providers/` | One file per AI CLI (`claude.js`, `codex.js`), registry in `index.js`; `bridge/ai.js` batches and validates. Adding one: `docs/PROVIDERS.md` |
 | Docs | `README.md`, `README.zh-TW.md`, `docs/INSTALL-WINDOWS.md`, `docs/ARCHITECTURE.md`, `docs/PROVIDERS.md` | User docs (English and Traditional Chinese), install guide, how the screen-capture transport works, the AI provider interface |
 | Tests | `tests/` (`npm test`) | Node test runner; the addon is tested in a Lua VM (fengari) |

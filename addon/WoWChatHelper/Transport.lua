@@ -11,7 +11,7 @@
 --      tells us which files the bridge has filled: ready/NNN, ack/NNN, presence/kkkk.
 --
 -- Public: Transport.Request(fields, meta) -> id, Transport.Get(id), SayHello(force),
--- SlotsLeft(), PendingCount(), BridgeState(), SignalsWork(), Tick() (tests).
+-- SlotsLeft(), PendingCount(), BridgeState(), SignalsWork(), SelfTestResult(), Tick() (tests).
 
 local _, ns = ...
 if type(ns) ~= "table" then ns = WCH end
@@ -192,6 +192,13 @@ local function SoundValid(path)
 	if not ok then
 		signalAvailable = false
 		st.error = tostring(willPlay)
+		-- Failing after the self-test passed: fall back to schedule polling and tell the
+		-- bridge (a fresh hello, from a timer: this may run inside a loop over run.req).
+		if run.signalsOk then
+			run.signalsOk = false
+			run.selftest, run.selftestCode = "PlaySoundFile error: " .. st.error, "error"
+			C_Timer.After(0, function() T.SayHello(true) end)
+		end
 		return false
 	end
 	if willPlay and handle and StopSound then pcall(StopSound, handle) end
@@ -215,28 +222,38 @@ function T.SignalsWork() return run.signalsOk == true end
 
 -- Prove the sound-file trick distinguishes empty from valid files on this client
 -- before trusting it. On failure: schedule-only polling (spec 3.5 / 6).
+-- run.selftest is the reason in words, run.selftestCode the short code the hello
+-- carries (selftest=): ok | off | nosound | emptyplayable | validunplayable | error.
 local function SelfTest()
 	run.signalsOk = false
 	if not signalAvailable then
-		run.selftest = "PlaySoundFile missing"
+		run.selftest, run.selftestCode = "PlaySoundFile missing", "nosound"
+		if run.signalStats.error then
+			run.selftest, run.selftestCode = "PlaySoundFile error: " .. run.signalStats.error, "error"
+		end
 		return
 	end
 	if not db().settings.signal then
-		run.selftest = "turned off"
+		run.selftest, run.selftestCode = "turned off", "off"
 		return
 	end
 	local emptyOk = SoundValid(SIG .. "ctl\\empty.wav")
 	local validOk = SoundValid(SIG .. "ctl\\valid.wav")
-	if emptyOk then
-		run.selftest = "an empty file reports as playable"
+	if run.signalStats.error then
+		run.selftest, run.selftestCode = "PlaySoundFile error: " .. run.signalStats.error, "error"
+	elseif emptyOk then
+		run.selftest, run.selftestCode = "an empty file reports as playable", "emptyplayable"
 	elseif not validOk then
-		run.selftest = "a valid file reports as unplayable (files not indexed? restart WoW)"
+		run.selftest, run.selftestCode = "a valid file reports as unplayable (files not indexed? restart WoW)", "validunplayable"
 	else
-		run.selftest = "passed"
+		run.selftest, run.selftestCode = "passed", "ok"
 		run.signalsOk = true
 	end
 end
 T.SelfTest = SelfTest
+
+-- The self-test result: code (nil before the first test), reason in words.
+function T.SelfTestResult() return run.selftestCode, run.selftest end
 
 ---------------------------------------------------------------------------
 -- Presence

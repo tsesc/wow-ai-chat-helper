@@ -273,7 +273,10 @@ CLI？provider 是 `bridge/providers/` 裡的小外掛，介面、用假 CLI 寫
 | bridge 顯示 `config.json "agent": unknown agent` 後停止 | `"agent"` 只能是 `claude` 或 `codex`。 |
 | 回應要 20 秒以上 | 確認 `bridge/config.json` 的 `maxThinkingTokens` 是 `0`。 |
 
-bridge 會把所有動作印在它的視窗裡；回報問題時請附上最後 30 行。
+bridge 會把所有動作印在它的視窗裡，同時每天寫一個 log 檔到 `bridge\logs\`
+（`bridge-YYYY-MM-DD.log`，保留最近 7 天；開頭 banner 的 `log` 那行就是今天的檔案）。
+回報問題時請附上 `bridge\logs\` 裡最新的檔案。bridge 若印出 `warning: signals self-test ...`，
+那一行會說明該怎麼處理。
 
 ## 隱私、費用與遊戲規範
 
